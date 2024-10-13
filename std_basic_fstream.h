@@ -318,6 +318,12 @@ public:
 
 
 	/*
+		
+	*/
+	[[nodiscard]] std::vector<std::uint8_t> buffer(void);
+
+
+	/*
 		Set the file stream's buffer size
 	*/
 	void SetBufferSize(char* _Buffer, std::streamsize _Size) { File().rdbuf()->pubsetbuf(_Buffer, _Size); }

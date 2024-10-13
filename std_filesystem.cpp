@@ -75,6 +75,28 @@ catch (...) { Exception(std::current_exception()); return false; }
 
 
 /*
+	Determine if a filesystem path is a directory
+*/
+[[nodiscard]] bool Standard_FileSystem::IsDirectory(std::filesystem::path _Path) try
+{
+	if (_Path.empty()) { return false; }
+	return std::filesystem::is_directory(_Path);
+}
+catch (...) { Exception(std::current_exception()); return false; }
+
+
+/*
+	Determine if a filesystem path is a regular file
+*/
+[[nodiscard]] bool Standard_FileSystem::IsFile(std::filesystem::path _Path) try
+{
+	if (_Path.empty()) { return false; }
+	return std::filesystem::is_regular_file(_Path);
+}
+catch (...) { Exception(std::current_exception()); return false; }
+
+
+/*
 	File Size
 */
 std::uintmax_t Standard_FileSystem::FileSize(std::filesystem::path _Path) try
@@ -137,6 +159,39 @@ bool Standard_FileSystem::SetCurrentWorkingDir(std::filesystem::path& _Path, boo
 	return true;
 }
 catch (...) { Exception(std::current_exception()); return false; }
+
+
+/*
+	Copy file
+*/
+bool Standard_FileSystem::Copy(std::filesystem::path _Source, std::filesystem::path _Destination, bool bOverwrite) try
+{
+	if (!IsFile(_Source)) { return false; }
+	std::filesystem::copy(_Source, _Destination, bOverwrite ? std::filesystem::copy_options::overwrite_existing : std::filesystem::copy_options::skip_existing);
+	return true;
+}
+catch (...) { Exception(std::current_exception()); return false; }
+
+
+/*
+	Get list of regular files in directory
+*/
+std::vector<std::filesystem::path> Standard_FileSystem::GetFileList(std::filesystem::path _Path) try
+{
+	std::filesystem::path Dir = CleanDirectoryPath(_Path);
+
+	if (!Exists(Dir)) { return {}; }
+
+	std::vector<std::filesystem::path> Files;
+
+	for (const auto& Entry : std::filesystem::directory_iterator(Dir))
+	{
+		if (std::filesystem::is_regular_file(Entry)) { Files.push_back(Entry.path()); }
+	}
+
+	return Files;
+}
+catch (...) { Exception(std::current_exception()); return {}; }
 
 
 /*

@@ -248,157 +248,111 @@ public:
 
 
 	/*
-		Get Byte Order Mark (As String)
-	*/
-	String GetBOMStr(void);
-
-	
-	/*
-		Get Byte Order Mark (As Wide String)
-	*/
-	StringW GetBOMStrW(void);
-
-
-	/*
-		Get Byte Order Mark (As 32-bit String)
-	*/
-	String32 GetBOMStr32(void);
-
-
-	/*
 		Set Byte Order Mark
 	*/
 	void SetBOM(TextFileBOM e_BOM) { m_BOM = e_BOM; }
 
 
 	/*
-
+		Get Byte Order Mark (String)
 	*/
-	std::size_t GetLineCount(void)
-	{
-		if (validUTF8())
-		{
-			return UTF8().Line.size();
-		}
-		else if (validUTF16())
-		{
-			return UTF16().Line.size();
-		}
-		else if (validUTF32())
-		{
-			return UTF32().Line.size();
-		}
-		return 0;
-	}
+	String GetBOMStr(void);
+
+	
+	/*
+		Get Byte Order Mark (Wide String)
+	*/
+	StringW GetBOMStrW(void);
 
 
 	/*
-
+		Get Byte Order Mark (32-bit String)
 	*/
-	std::string GetLine(std::size_t Line_No)
-	{
-		if (validUTF8())
-		{
-			if (Line_No < UTF8().Line.size())
-			{
-				return UTF8().Line[Line_No];
-			}
-		}
-		return std::string();
-	}
-
-
-	/*StrVec GetArgs(std::size_t Line_No)
-	{
-		if (validUTF8())
-		{
-			if (Line_No < UTF8().Line.size())
-			{
-				return GetStrVec(UTF8().Line[Line_No].c_str());
-			}
-		}
-		return StrVec();
-	}*/
+	String32 GetBOMStr32(void);
 
 
 	/*
-
+		Get total line count
 	*/
-	std::wstring GetLineW(std::size_t Line_No)
-	{
-		if (validUTF16())
-		{
-			if (Line_No < UTF16().Line.size())
-			{
-				return UTF16().Line[Line_No];
-			}
-		}
-		return std::wstring();
-	}
+	std::size_t GetLineCount(void);
 
 
 	/*
-
+		Get line (String)
 	*/
-	std::u32string GetLine32(std::size_t Line_No)
-	{
-		if (validUTF32())
-		{
-			if (Line_No < UTF32().Line.size())
-			{
-				return UTF32().Line[Line_No];
-			}
-		}
-		return std::u32string();
-	}
+	String GetLine(std::size_t Line_No);
 
 
 	/*
-		
+		Get line (Wide String)
 	*/
-	void AddLine(std::string _String) { m_UTF8.get()->Line.push_back(_String); }
-
-	void AddLine(std::wstring _String) { m_UTF16.get()->Line.push_back(_String); }
-
-	void AddEndLine(void)
-	{
-		std::wstring _String0D = L"\r";
-		//std::wstring _String0A = L"\n";
-		m_UTF16.get()->Line.push_back(_String0D);
-		//m_UTF16.get()->Line.push_back(_String0A);
-	}
+	StringW GetLineW(std::size_t Line_No);
 
 
 	/*
-
+		Get line (32-bit String)
 	*/
-	void FlushUTF8(void)
-	{
-		if (validUTF8())
-		{
-			std::uintmax_t _Ptr = 0;
-			for (auto& Line : m_UTF8.get()->Line)
-			{
-				_Ptr = File().WriteStr(_Ptr, Line, false);
-			}
-		}
-	}
+	String32 GetLine32(std::size_t Line_No);
 
 
 	/*
-
+		Get line arguments (String)
 	*/
-	void FlushUTF16(void)
-	{
-		if (validUTF16())
-		{
-			std::uintmax_t _Ptr = 2;
-			for (auto& Line : m_UTF16.get()->Line)
-			{
-				_Ptr = File().WriteStr(_Ptr, Line, false);
-			}
-		}
-	}
+	StrVec GetArgs(std::size_t Line_No);
+
+
+	/*
+		Get line arguments (Wide String)
+	*/
+	StrVecW GetArgsW(std::size_t Line_No);
+
+
+	/*
+		Get line arguments (32-bit String)
+	*/
+	StrVec32 GetArgs32(std::size_t Line_No);
+
+
+	/*
+		Add line (C-Style formatted String)
+	*/
+	void AddLine(const std::string _Format, ...);
+
+
+	/*
+		Add line (C-Style formatted Wide String)
+	*/
+	void AddLine(const std::wstring _Format, ...);
+
+
+	/*
+		Add line (C-Style formatted 32-bit String)
+	*/
+	//void AddLine(const std::u32string _Format, ...);
+
+
+	/*
+		Add end line
+	*/
+	void AddEndLine(void);
+
+
+	/*
+		Flush contents to file
+	*/
+	void FlushUTF8(void);
+
+
+	/*
+		Flush contents to file
+	*/
+	void FlushUTF16(void);
+
+
+	/*
+		Flush contents to file
+	*/
+	void FlushUTF32(void);
 
 
 };

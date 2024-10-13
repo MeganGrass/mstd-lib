@@ -75,6 +75,18 @@ public:
 
 
 	/*
+		Determine if a filesystem path is a directory
+	*/
+	[[nodiscard]] bool IsDirectory(std::filesystem::path _Path);
+
+
+	/*
+		Determine if a filesystem path is a regular file
+	*/
+	[[nodiscard]] bool IsFile(std::filesystem::path _Path);
+
+
+	/*
 		Get a file or directory's size
 	*/
 	[[nodiscard]] std::uintmax_t FileSize(std::filesystem::path _Path);
@@ -122,6 +134,18 @@ public:
 		Get the system's temporary directory
 	*/
 	[[nodiscard]] std::filesystem::path GetTempDirectory(void) { return std::filesystem::temp_directory_path(); }
+
+
+	/*
+		Copy file from source to destination
+	*/
+	bool Copy(std::filesystem::path _Source, std::filesystem::path _Destination, bool bOverwrite = false);
+
+
+	/*
+		Get list of regular files in directory
+	*/
+	[[nodiscard]] std::vector<std::filesystem::path> GetFileList(std::filesystem::path _Path);
 
 
 	/*

@@ -277,6 +277,227 @@ String32 Standard_Text::GetBOMStr32(void)
 
 
 /*
+	Get total line count
+*/
+std::size_t Standard_Text::GetLineCount(void)
+{
+	if (validUTF8())
+	{
+		return UTF8().Line.size();
+	}
+	else if (validUTF16())
+	{
+		return UTF16().Line.size();
+	}
+	else if (validUTF32())
+	{
+		return UTF32().Line.size();
+	}
+	return 0;
+}
+
+
+/*
+	Get line
+*/
+String Standard_Text::GetLine(std::size_t Line_No)
+{
+	if (validUTF8())
+	{
+		if (Line_No < UTF8().Line.size())
+		{
+			return UTF8().Line[Line_No];
+		}
+	}
+	return std::string();
+}
+
+
+/*
+	Get line (Wide String)
+*/
+StringW Standard_Text::GetLineW(std::size_t Line_No)
+{
+	if (validUTF16())
+	{
+		if (Line_No < UTF16().Line.size())
+		{
+			return UTF16().Line[Line_No];
+		}
+	}
+	return std::wstring();
+}
+
+
+/*
+	Get line (32-bit String)
+*/
+String32 Standard_Text::GetLine32(std::size_t Line_No)
+{
+	if (validUTF32())
+	{
+		if (Line_No < UTF32().Line.size())
+		{
+			return UTF32().Line[Line_No];
+		}
+	}
+	return std::u32string();
+}
+
+
+/*
+	Get line arguments (String)
+*/
+StrVec Standard_Text::GetArgs(std::size_t Line_No)
+{
+	if (validUTF8())
+	{
+		if (Line_No < UTF8().Line.size())
+		{
+			return GetStrVec(UTF8().Line[Line_No].c_str());
+		}
+	}
+	return StrVec();
+}
+
+
+/*
+	Get line arguments (Wide String)
+*/
+StrVecW Standard_Text::GetArgsW(std::size_t Line_No)
+{
+	if (validUTF16())
+	{
+		if (Line_No < UTF16().Line.size())
+		{
+			return GetStrVec(UTF16().Line[Line_No].c_str());
+		}
+	}
+	return StrVecW();
+}
+
+
+/*
+	Get line arguments (32-bit String)
+*/
+StrVec32 Standard_Text::GetArgs32(std::size_t Line_No)
+{
+	if (validUTF32())
+	{
+		if (Line_No < UTF32().Line.size())
+		{
+			return GetStrVec(UTF32().Line[Line_No].c_str());
+		}
+	}
+	return StrVec32();
+}
+
+
+/*
+	Add line (C-Style formatted String)
+*/
+void Standard_Text::AddLine(const std::string _Format, ...)
+{
+	std::va_list _ArgList;
+	va_start(_ArgList, _Format);
+	int _StrLen = (std::vsnprintf(0, 0, _Format.c_str(), _ArgList) + sizeof(char));
+	std::vector<char> String(_StrLen);
+	std::vsnprintf(String.data(), _StrLen, _Format.c_str(), _ArgList);
+	va_end(_ArgList);
+
+	m_UTF8.get()->Line.push_back(String.data());
+}
+
+
+/*
+	Add line (C-Style formatted Wide String)
+*/
+void Standard_Text::AddLine(const std::wstring _Format, ...)
+{
+	std::va_list _ArgList;
+	va_start(_ArgList, _Format);
+	int _StrLen = (std::vswprintf(0, 0, _Format.c_str(), _ArgList) + sizeof(wchar_t));
+	std::vector<wchar_t> String(_StrLen);
+	std::vswprintf(String.data(), _StrLen, _Format.c_str(), _ArgList);
+	va_end(_ArgList);
+
+	m_UTF16.get()->Line.push_back(String.data());
+}
+
+
+/*
+	Add end line
+*/
+void Standard_Text::AddEndLine(void)
+{
+	if (validUTF8())
+	{
+		m_UTF8.get()->Line.push_back("\r");		// 0x0D
+		//m_UTF8.get()->Line.push_back("\n");	// 0x0A
+	}
+	else if (validUTF16())
+	{
+		m_UTF16.get()->Line.push_back(L"\r");	// 0x0D
+		//m_UTF16.get()->Line.push_back(L"\n");	// 0x0A
+	}
+	else if (validUTF32())
+	{
+		m_UTF32.get()->Line.push_back(U"\r");	// 0x0D
+		//m_UTF32.get()->Line.push_back(U"\n");	// 0x0A
+	}
+}
+
+
+/*
+	Flush contents to file
+*/
+void Standard_Text::FlushUTF8(void)
+{
+	if (validUTF8())
+	{
+		std::uintmax_t _Ptr = 0;
+		for (auto& Line : m_UTF8.get()->Line)
+		{
+			_Ptr = File().WriteStr(_Ptr, Line, false);
+		}
+	}
+}
+
+
+/*
+	Flush contents to file
+*/
+void Standard_Text::FlushUTF16(void)
+{
+	if (validUTF16())
+	{
+		std::uintmax_t _Ptr = 0;
+		for (auto& Line : m_UTF16.get()->Line)
+		{
+			_Ptr = File().WriteStr(_Ptr, Line, false);
+		}
+	}
+}
+
+
+/*
+	Flush contents to file
+*/
+void Standard_Text::FlushUTF32(void)
+{
+	if (validUTF32())
+	{
+		std::uintmax_t _Ptr = 0;
+		for (auto& Line : m_UTF32.get()->Line)
+		{
+			_Ptr = File().WriteStr(_Ptr, Line, false);
+		}
+	}
+
+}
+
+
+/*
 	Open Text File (UTF8)
 */
 void Standard_Text::OpenTextFileA(std::uintmax_t _Ptr) try

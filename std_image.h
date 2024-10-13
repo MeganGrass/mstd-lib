@@ -15,6 +15,19 @@
 
 #include "std_string.h"
 
+typedef unsigned __int64 ULONG_PTR, * PULONG_PTR;
+typedef ULONG_PTR DWORD_PTR, * PDWORD_PTR;
+
+typedef DWORD COLORREF;
+
+#define LOBYTE(w)           ((BYTE)(((DWORD_PTR)(w)) & 0xff))
+#define HIBYTE(w)           ((BYTE)((((DWORD_PTR)(w)) >> 8) & 0xff))
+#define RGB(r,g,b)          ((COLORREF)(((BYTE)(r)|((WORD)((BYTE)(g))<<8))|(((DWORD)(BYTE)(b))<<16)))
+#define GetRValue(rgb)		(LOBYTE(rgb))
+#define GetGValue(rgb)      (LOBYTE(((WORD)(rgb)) >> 8))
+#define GetBValue(rgb)		(LOBYTE((rgb)>>16))
+#define GetAValue(rgb)      (LOBYTE((rgb)>>24))
+
 
 enum class ImageFormat : int
 {
@@ -67,34 +80,6 @@ private:
 	#endif
 
 	#pragma pack(pop)
-
-	#ifndef LOBYTE
-	#define LOBYTE(w)           ((BYTE)(((uint64_t)(w)) & 0xFF))
-	#endif
-
-	#ifndef HIBYTE
-	#define HIBYTE(w)           ((BYTE)((((uint64_t)(w)) >> 8) & 0xFF))
-	#endif
-
-	#ifndef RGB
-	#define RGB(r,g,b)          ((DWORD)(((BYTE)(r)|((WORD)((BYTE)(g))<<8))|(((DWORD)(BYTE)(b))<<16)))
-	#endif
-
-	#ifndef GetRValue
-	#define GetRValue(rgb)      (LOBYTE(rgb))
-	#endif
-
-	#ifndef GetGValue
-	#define GetGValue(rgb)      (LOBYTE(((WORD)(rgb)) >> 8))
-	#endif
-
-	#ifndef GetBValue
-	#define GetBValue(rgb)      (LOBYTE((rgb)>>16))
-	#endif
-
-	#ifndef GetAValue
-	#define GetAValue(rgb)      (LOBYTE((rgb)>>24))
-	#endif
 
 	// Pixels
 	std::vector<uint8_t> Pixels;

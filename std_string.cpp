@@ -301,6 +301,22 @@ StrVecW Standard_String::GetStrVec(StringW _String) try
 }
 catch (...) { Exception(std::current_exception()); return StrVecW(); }
 
+StrVec32 Standard_String::GetStrVec(String32 _String) try
+{
+	// Output Op
+	std::basic_stringstream<std::u32string::value_type> strStream(_String);
+
+	// Output Vector
+	StrVec32 ArgVec;
+
+	// String Op
+	while (strStream >> std::quoted(_String)) { ArgVec.push_back(_String); }
+
+	// Complete
+	return ArgVec;
+}
+catch (...) { Exception(std::current_exception()); return StrVec32(); }
+
 
 /*
 	Compare String Vector

@@ -182,6 +182,12 @@ public:
 
 
 	/*
+		Split whitespace separated substrings into a string vector
+	*/
+	[[nodiscard]] StrVec32 GetStrVec(String32 _String);
+
+
+	/*
 		Compare two string vectors and return true if they are equal
 	*/
 	[[nodiscard]] bool StrVecCompare(StrVec _StrVec0, StrVec _StrVec1);

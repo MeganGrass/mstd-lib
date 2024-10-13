@@ -13,6 +13,20 @@
 
 
 /*
+
+*/
+[[nodiscard]] std::vector<std::uint8_t> Standard_Basic_FStream::buffer(void) try
+{
+	std::vector<std::uint8_t> _Buffer(size(File()));
+
+	read(File(), 0, _Buffer.data(), _Buffer.size());
+
+	return _Buffer;
+}
+catch (...) { Exception(std::current_exception()); return std::vector<std::uint8_t>(); }
+
+
+/*
 	Open File Stream
 */
 std::fstream Standard_Basic_FStream::open(std::filesystem::path _Filename, FileAccessMode e_Mode, bool b_Binary, bool b_Truncate) try
