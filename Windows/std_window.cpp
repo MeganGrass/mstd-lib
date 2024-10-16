@@ -491,6 +491,8 @@ bool Standard_Window::ResizeToWindow(HWND hWndChild, bool b_Center)
 	GetClientRect(hWnd, &ParentRect);
 	m_Width = (ParentRect.right - ParentRect.left);
 	m_Height = (ParentRect.bottom - ParentRect.top);
+
+	return true;
 }
 
 
