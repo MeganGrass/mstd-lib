@@ -13,6 +13,23 @@
 
 #include "std_window.h"
 
+// temp
+#ifndef IDC_TOOLBAR_OPEN
+#define IDC_TOOLBAR_OPEN IDC_STATIC
+#endif
+
+#ifndef IDC_TOOLBAR_CLOSE
+#define IDC_TOOLBAR_CLOSE IDC_STATIC
+#endif
+
+#ifndef IDC_TOOLBAR_SAVE
+#define IDC_TOOLBAR_SAVE IDC_STATIC
+#endif
+
+#ifndef IDC_TOOLBAR_NEW
+#define IDC_TOOLBAR_NEW IDC_STATIC
+#endif
+
 
 /*
 	Parse Window Creation and Style Options
@@ -79,7 +96,7 @@ void Standard_Window::Create(int Width, int Height, HINSTANCE hInstance, int nCm
 	// Error
 	if (hWnd)
 	{
-		Message(L"Create Window Error: The parent window already exists.");
+		Message(L"Create Window Error: The parent window already exist");
 		return;
 	}
 
@@ -213,7 +230,7 @@ HWND Standard_Window::CreateChild(int x, int y, int Width, int Height, HINSTANCE
 	// Error
 	if (!hWnd)
 	{
-		Message(L"Create Window Error: The parent window doesn't exists.");
+		Message(L"Create Window Error: The parent window doesn't exist");
 		return nullptr;
 	}
 
@@ -308,6 +325,226 @@ HWND Standard_Window::CreateChild(int x, int y, int Width, int Height, HINSTANCE
 
 	// Complete
 	return v_ChildWindows.back()->hWnd;
+}
+
+
+/*
+	Create Parent Window
+*/
+bool Standard_Window::AddChildWindow(HWND hWndChild, bool b_Borderless)
+{
+	// Error
+	if (!hWnd)
+	{
+		Message(L"Create Window Error: The parent window doesn't exist");
+		return false;
+	}
+
+	// Error
+	if (!hWndChild)
+	{
+		Message(L"Create Window Error: The child window doesn't exist");
+		return false;
+	}
+
+	std::unique_ptr<Standard_Window> Window = std::make_unique<Standard_Window>();
+
+	Window->b_ChildWindow = true;
+	Window->b_Borderless = b_Borderless;
+	Window->PresetWindowColor(255, 0, 255);
+	Window->PresetClassName(s_ClassName + std::to_wstring(v_ChildWindows.size()));
+
+	// Parse Window Styles
+	Window->ParsePresets();
+
+	// Create Window
+	Window->hWnd = hWndChild;
+
+	// Standard Windows Common Class
+	Window->SetCommonInstance(h_Instance);
+	Window->SetCommonOwner(hWnd);
+
+	// Borderless
+	if (Window->b_Borderless) { SetWindowLong(Window->hWnd, GWL_STYLE, 0); }
+
+	// Size and Position
+	RECT ParentRect{};
+	GetClientRect(hWnd, &ParentRect);
+
+	RECT ChildRect{};
+	GetClientRect(hWndChild, &ChildRect);
+
+	int x = (ParentRect.right - ChildRect.right) / 2;
+	int y = (ParentRect.bottom - ChildRect.bottom) / 2;
+
+	if (!b_ToolBar) { y = 0; }
+	if (!b_StatusBar)
+	{
+		if (b_ToolBar)
+		{
+			const int CySizeFrame = GetSystemMetricsForDpi(SM_CYFRAME, m_SysDPI) * 2;
+			const int CyBorder = GetSystemMetricsForDpi(SM_CYBORDER, m_SysDPI) * 2;
+			y += CySizeFrame;
+			y += CyBorder;
+
+			RECT ToolBarRect{};
+			GetWindowRect(h_ToolBar, &ToolBarRect);
+			AdjustWindowRectExForDpi(&ToolBarRect, NULL, false, NULL, m_SysDPI);
+			y += ((ToolBarRect.bottom - ToolBarRect.top) / 4);
+		}
+	}
+	else
+	{
+		if (b_ToolBar)
+		{
+			const int CyEdge = GetSystemMetricsForDpi(SM_CYEDGE, m_SysDPI) * 2;
+			y += CyEdge;
+		}
+	}
+
+	SetWindowPos(hWndChild, 0, x, y, 0, 0, SWP_NOSIZE | SWP_NOZORDER | SWP_NOREDRAW | SWP_NOACTIVATE | SWP_NOCOPYBITS | SWP_NOOWNERZORDER | SWP_NOSENDCHANGING | SWP_DEFERERASE | SWP_ASYNCWINDOWPOS);
+
+	// Set Parent
+	SetParent(Window->hWnd, hWnd);
+
+	// Show Window
+	ShowWindow(Window->hWnd, SW_SHOW);
+
+	// Update Window
+	UpdateWindow(Window->hWnd);
+
+	// Setup Complete
+	Window->b_CreationComplete = true;
+
+	// Add to Child Windows
+	v_ChildWindows.push_back(std::move(Window));
+
+	// Set focus to the parent window
+	SetFocus(hWnd);
+
+	// Complete
+	return true;
+}
+
+
+/*
+	Resize to child window
+*/
+bool Standard_Window::ResizeToWindow(HWND hWndChild, bool b_Center)
+{
+	// Error
+	if (!hWnd)
+	{
+		Message(L"Resize Window Error: The parent window doesn't exist");
+		return false;
+	}
+
+	// Error
+	if (!hWndChild)
+	{
+		Message(L"Resize Window Error: The child window doesn't exist");
+		return false;
+	}
+
+	// Child Window Size
+	RECT ChildRect{};
+	GetClientRect(hWndChild, &ChildRect);
+
+	// Adjust window size and position
+	RECT Rect{};
+	Rect.left = 0;
+	Rect.right = ChildRect.right;
+	Rect.top = 0;
+	Rect.bottom = ChildRect.bottom;
+
+	if (!AdjustWindowRectExForDpi(&Rect, m_Style, b_Menu, m_StyleEx, m_SysDPI)) { GetErrorMessage(); }
+
+	// ToolBar
+	RECT ToolBarRect{};
+	if (b_ToolBar)
+	{
+		GetClientRect(h_ToolBar, &ToolBarRect);
+	}
+
+	// StatusBar
+	RECT StatusBarRect{};
+	if (b_StatusBar)
+	{
+		GetClientRect(h_StatusBar, &StatusBarRect);
+	}
+
+	// Adjust window size
+	if (ToolBarRect.bottom - ToolBarRect.top) { Rect.bottom += (ToolBarRect.bottom - ToolBarRect.top); }
+	if (StatusBarRect.bottom - StatusBarRect.top) { Rect.bottom += (StatusBarRect.bottom - StatusBarRect.top); }
+	SetWindowPos(hWnd, 0, 0, 0, (Rect.right - Rect.left), (Rect.bottom - Rect.top), SWP_NOMOVE | SWP_NOZORDER | SWP_NOREDRAW | SWP_NOACTIVATE | SWP_NOCOPYBITS | SWP_NOOWNERZORDER | SWP_NOSENDCHANGING | SWP_DEFERERASE | SWP_ASYNCWINDOWPOS);
+
+	// Center Window
+	if (b_Center)
+	{
+		const int CxScreen = ((GetSystemMetricsForDpi(SM_CXSCREEN, m_SysDPI) - (Rect.right - Rect.left)) / 2);
+		const int CyScreen = ((GetSystemMetricsForDpi(SM_CYSCREEN, m_SysDPI) - (Rect.bottom - Rect.top)) / 2);
+		SetWindowPos(hWnd, 0, CxScreen, CyScreen, 0, 0, SWP_NOSIZE | SWP_NOZORDER | SWP_NOREDRAW | SWP_NOACTIVATE | SWP_NOCOPYBITS | SWP_NOOWNERZORDER | SWP_NOSENDCHANGING | SWP_DEFERERASE | SWP_ASYNCWINDOWPOS);
+	}
+
+	// get client rect
+	RECT ParentRect{};
+	GetClientRect(hWnd, &ParentRect);
+	m_Width = (ParentRect.right - ParentRect.left);
+	m_Height = (ParentRect.bottom - ParentRect.top);
+}
+
+
+/*
+	Create tooltip
+*/
+HWND Standard_Window::CreateTooltip(HWND hWndParent, ULONG ResourceID, StringW Tooltip)
+{
+	// Error
+	if (!IsWindow(hWndParent))
+	{
+		Message(L"Create Tooltip Error: The parent window doesn't exist");
+		return nullptr;
+	}
+
+	// Error
+	if (Tooltip.empty())
+	{
+		Message(L"Create Tooltip Error: The tooltip text is empty");
+		return nullptr;
+	}
+
+	// Get the window of the tool
+	HWND hwndTool = GetDlgItem(hWndParent, ResourceID);
+	if (!hwndTool)
+	{
+		Message(L"Create Tooltip Error: The resource item doesn't exist");
+		return nullptr;
+	}
+
+	// Create the tooltip
+	HWND hwndTip = CreateWindowEx(NULL, TOOLTIPS_CLASS, NULL,
+		WS_POPUP | TTS_ALWAYSTIP | TTS_BALLOON,
+		CW_USEDEFAULT, CW_USEDEFAULT,
+		CW_USEDEFAULT, CW_USEDEFAULT,
+		hWndParent, NULL,
+		h_Instance, NULL);
+	if (!hwndTip)
+	{
+		Message(L"Create Tooltip Error: The tooltip window couldn't be created");
+		return nullptr;
+	}
+
+	// Associate the tooltip with the tool
+	TOOLINFO toolInfo = { 0 };
+	toolInfo.cbSize = sizeof(toolInfo);
+	toolInfo.hwnd = hWndParent;
+	toolInfo.uFlags = TTF_IDISHWND | TTF_SUBCLASS;
+	toolInfo.uId = (UINT_PTR)hwndTool;
+	toolInfo.lpszText = Tooltip.data();
+	SendMessage(hwndTip, TTM_ADDTOOL, 0, (LPARAM)&toolInfo);
+
+	// Complete
+	return hwndTip;
 }
 
 

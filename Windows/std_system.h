@@ -15,7 +15,7 @@
 
 #include "std_common.h"
 
-#include "../std_thread_pool.h"
+//#include "../std_thread_pool.h"
 
 #include <versionhelpers.h>
 
@@ -25,8 +25,7 @@ extern std::unique_ptr<StdWinSystem> WinSystem;
 
 
 class Standard_Windows_System final :
-	public Standard_Windows_Common,
-	public Standard_Thread_Pool {
+	public Standard_Windows_Common {
 private:
 
 	// Move

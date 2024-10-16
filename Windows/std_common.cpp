@@ -225,6 +225,44 @@ std::optional<std::filesystem::path> Standard_Windows_Common::GetSaveFilename(St
 
 
 /*
+	Get Folder Dialog
+*/
+[[nodiscard]] std::optional<std::filesystem::path> Standard_Windows_Common::GetFileDirectory(void)
+{
+	// CoCreate
+	IFileDialog* pFileDialog;
+	if (CoCreateInstance(CLSID_FileOpenDialog, 0, CLSCTX_INPROC_SERVER, IID_PPV_ARGS(&pFileDialog)) != S_OK) { return std::nullopt; }
+
+	// Options
+	DWORD dwFlags;
+	if (pFileDialog->GetOptions(&dwFlags) != S_OK) { return std::nullopt; }
+	if (pFileDialog->SetOptions(FOS_PICKFOLDERS | FOS_FORCEFILESYSTEM | FOS_PATHMUSTEXIST | FOS_NOCHANGEDIR | FOS_DONTADDTORECENT) != S_OK) { return std::nullopt; }
+
+	// Show
+	if (pFileDialog->Show(hWndOwner) != S_OK) { return std::nullopt; }
+
+	// Result
+	IShellItem* pShellItem;
+	if (pFileDialog->GetResult(&pShellItem) != S_OK) { return std::nullopt; }
+
+	// Path
+	LPWSTR Name;
+	if (pShellItem->GetDisplayName(SIGDN_FILESYSPATH, &Name) != S_OK) { return std::nullopt; }
+
+	// Buffer
+	std::filesystem::path Path = Name;
+
+	// Cleanup
+	CoTaskMemFree(Name);
+	pShellItem->Release();
+	pFileDialog->Release();
+
+	// Complete
+	return Path;
+}
+
+
+/*
 	Message Box Question
 */
 bool Standard_Windows_Common::Question(const std::wstring _Question, ...)

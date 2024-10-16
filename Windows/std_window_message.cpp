@@ -165,15 +165,18 @@ void Standard_Window::MsgMouseHWheel(WPARAM wParam, LPARAM lParam)
 void Standard_Window::MsgDropFiles(WPARAM wParam, LPARAM lParam)
 {
 	HDROP hDrop = (HDROP)wParam;
+
 	DragQueryPoint(hDrop, &m_DropPoint);
+
 	UINT Count = DragQueryFileW(hDrop, 0xFFFFFFFF, 0, 0);
+
 	for (UINT iFile = 0; iFile < Count; iFile++)
 	{
 		UINT StrLen = DragQueryFileW(hDrop, iFile, 0, 0);
 		std::vector<wchar_t> String(StrLen + sizeof(wchar_t));
 		DragQueryFileW(hDrop, iFile, String.data(), StrLen + sizeof(wchar_t));
-		//OnDropFiles(String.data());
-		Message(FormatCStyle(L"Dropped: %ws", String.data()));
+		DroppedFiles.push_back(String.data());
+		//Message(L"Dropped: %ws", DroppedFiles[iFile].c_str());
 	}
 	DragFinish(hDrop);
 }

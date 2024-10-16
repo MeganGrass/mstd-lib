@@ -104,12 +104,15 @@ public:
 		Inheritance
 	*/
 	using Standard_FileSystem::Exists;
+	using Standard_FileSystem::CleanPath;
 	using Standard_FileSystem::GetDirectory;
 	using Standard_FileSystem::CreateDirectory;
 	using Standard_FileSystem::GetCurrentWorkingDir;
 	using Standard_FileSystem::SetCurrentWorkingDir;
 	using Standard_FileSystem::GetTempDirectory;
 	using Standard_FileSystem::GetFileName;
+	using Standard_FileSystem::IsDirectory;
+	using Standard_FileSystem::IsFile;
 	using Standard_String::FormatCStyle;
 	using Standard_String::GetStrVec;
 	using Standard_String::GetCommandline;
@@ -159,6 +162,12 @@ public:
 		Save File Dialog
 	*/
 	[[nodiscard]] std::optional<std::filesystem::path> GetSaveFilename(StrVecW _Description = { L"All Files" }, StrVecW _Filter = { L"*.*" });
+
+
+	/*
+		Get Folder Dialog
+	*/
+	[[nodiscard]] std::optional<std::filesystem::path> GetFileDirectory(void);
 
 
 	/*

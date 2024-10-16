@@ -145,6 +145,9 @@ private:
 	// Child Windows
 	std::vector<std::unique_ptr<Standard_Window>> v_ChildWindows;
 
+	// Drag and Drop
+	StrVecW DroppedFiles;				// Dropped File List
+
 	// Parse Window Creation and Style Options
 	void ParsePresets(void);
 
@@ -213,6 +216,21 @@ public:
 	// Deconstruction
 	virtual ~Standard_Window(void) noexcept
 	{
+		ShowWindow(hWnd, SW_HIDE);
+
+		// Clean dropped files
+		DroppedFiles.clear();
+
+		// Destroy Child Windows
+		for (auto& Child : v_ChildWindows)
+		{
+			if (Child.get()->GetHandle())
+			{
+				DestroyWindow(Child.get()->GetHandle());
+			}
+			Child.reset();
+		}
+		
 		// Destroy Brushes
 		if (h_Brush) { DeleteObject(h_Brush); }
 		if (m_Class.hbrBackground) { DeleteObject(m_Class.hbrBackground); }
@@ -361,11 +379,20 @@ public:
 	// Create child window
 	HWND CreateChild(int x, int y, int Width, int Height, HINSTANCE hInstance, int nCmdShow, WNDPROC WndProc);
 
+	// Add child window
+	bool AddChildWindow(HWND hWndChild, bool b_Borderless);
+
+	// Resize to window
+	bool ResizeToWindow(HWND hWndChild, bool b_Center = true);
+
 	// Get child window count
 	std::size_t GetChildWindowCount(void) const { return v_ChildWindows.size(); }
 
 	// Get child window
 	Standard_Window* GetChildWindow(UINT Index) { return v_ChildWindows[Index].get(); }
+
+	// Create tooltip
+	HWND CreateTooltip(HWND hWndParent, ULONG ResourceID, StringW Tooltip);
 
 	// Set accelerator table
 	void SetAcceleratorTable(HINSTANCE hInstance, ULONG ResourceID)
@@ -375,11 +402,17 @@ public:
 		if (!h_AccelTable) { Message(L"An error occurred when trying to load the window accelerator table."); }
 	}
 
+	// Get accelerator table
+	HACCEL GetAcceleratorTable(void) const { return h_AccelTable; }
+
 	// Get window handle
 	HWND GetHandle(void) const { return hWnd; }
 
-	// Get window instance
+	// Get instance handle
 	HINSTANCE GetInstance(void) const { return h_Instance; }
+
+	// Get menu handle
+	HMENU GetMenu(void) const { return h_Menu; }
 
 	// Get window color
 	COLORREF GetColor(void) const { return m_Color; }
@@ -401,6 +434,12 @@ public:
 
 	// Get client rect height
 	INT GetHeight(void) const { return m_Height; }
+
+	// Get dropped files
+	StrVecW GetDroppedFiles(void) const { return DroppedFiles; }
+
+	// Empty the dropped file list
+	void EmptyDroppedFiles(void) { DroppedFiles.clear(); }
 
 	// Status bar message
 	void Status(int iPart, const String _Message, ...);
