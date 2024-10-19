@@ -200,23 +200,23 @@ void Windows_Devices::GetDisplayReport(void)
 		StdText TextFile{ Path, FileAccessMode::Write_Ex, TextFileBOM::UTF8 };
 
 		// Handle
-		TextFile.AddLine(FormatCStyle("Handle: %p\r\n", Display->Handle));
+		TextFile.AddLine("Handle: %p\r\n", Display->Handle);
 
 		// Info
-		TextFile.AddLine(FormatCStyle("Device: %ws\r\n", Display->Info.szDevice));
-		TextFile.AddLine(FormatCStyle("Name: %ws\r\n", Display->Device.DeviceName));
-		TextFile.AddLine(FormatCStyle("Description: %ws\r\n", Display->Device.DeviceString));
+		TextFile.AddLine("Device: %ws\r\n", Display->Info.szDevice);
+		TextFile.AddLine("Name: %ws\r\n", Display->Device.DeviceName);
+		TextFile.AddLine("Description: %ws\r\n", Display->Device.DeviceString);
 
 		// Rect
-		TextFile.AddLine(FormatCStyle("rcDevice: %d, %d, %d, %d\r\n", Display->Rect.left, Display->Rect.top, Display->Rect.right, Display->Rect.bottom));
-		TextFile.AddLine(FormatCStyle("rcMonitor: %d, %d, %d, %d\r\n", Display->Info.rcMonitor.left, Display->Info.rcMonitor.top, Display->Info.rcMonitor.right, Display->Info.rcMonitor.bottom));
-		TextFile.AddLine(FormatCStyle("rcWork: %d, %d, %d, %d\r\n", Display->Info.rcWork.left, Display->Info.rcWork.top, Display->Info.rcWork.right, Display->Info.rcWork.bottom));
+		TextFile.AddLine("rcDevice: %d, %d, %d, %d\r\n", Display->Rect.left, Display->Rect.top, Display->Rect.right, Display->Rect.bottom);
+		TextFile.AddLine("rcMonitor: %d, %d, %d, %d\r\n", Display->Info.rcMonitor.left, Display->Info.rcMonitor.top, Display->Info.rcMonitor.right, Display->Info.rcMonitor.bottom);
+		TextFile.AddLine("rcWork: %d, %d, %d, %d\r\n", Display->Info.rcWork.left, Display->Info.rcWork.top, Display->Info.rcWork.right, Display->Info.rcWork.bottom);
 
 		// Flags
-		if (Display->Info.dwFlags) { TextFile.AddLine(FormatCStyle("Flags: MONITORINFOF_PRIMARY\r\n")); }\
+		if (Display->Info.dwFlags) { TextFile.AddLine("Flags: MONITORINFOF_PRIMARY\r\n"); }
 
-			// State Flags
-			String StateString = "State Flags: ";
+		// State Flags
+		String StateString = "State Flags: ";
 		if (Display->Device.StateFlags == 0) { StateString += "0"; }
 		else
 		{
@@ -231,27 +231,27 @@ void Windows_Devices::GetDisplayReport(void)
 		TextFile.AddLine(StateString + "\r\n");
 
 		// Driver Name
-		if (!Display->Mode.empty()) { TextFile.AddLine(FormatCStyle("Driver Name: %ws.dll\r\n", Display->Mode[0].dmDeviceName)); }
+		if (!Display->Mode.empty()) { TextFile.AddLine("Driver Name: %ws.dll\r\n", Display->Mode[0].dmDeviceName); }
 
 		// Mode
 		int iMode = 0;
 		for (auto& Mode : Display->Mode)
 		{
-			TextFile.AddLine(FormatCStyle("\r\nMode: %d\r\n", iMode));
+			TextFile.AddLine("\r\nMode: %d\r\n", iMode);
 
 			// Fields
-			//TextFile.AddLine(FormatCStyle("Fields: %X\r\n", Mode.dmFields));
-			if (Mode.dmFields & DM_PELSWIDTH) { TextFile.AddLine(FormatCStyle("Pixel Width: %d\r\n", Mode.dmPelsWidth)); }
-			if (Mode.dmFields & DM_PELSHEIGHT) { TextFile.AddLine(FormatCStyle("Pixel Height: %d\r\n", Mode.dmPelsHeight)); }
-			if (Mode.dmFields & DM_BITSPERPEL) { TextFile.AddLine(FormatCStyle("Bits Per Pixel: %d\r\n", Mode.dmBitsPerPel)); }
-			if (Mode.dmFields & DM_DISPLAYFREQUENCY) { TextFile.AddLine(FormatCStyle("Display Frequency: %d\r\n", Mode.dmDisplayFrequency)); }
-			if (Mode.dmFields & DM_ORIENTATION) { TextFile.AddLine(FormatCStyle("Orientation: %d\r\n", Mode.dmOrientation)); }
-			if (Mode.dmFields & DM_PAPERSIZE) { TextFile.AddLine(FormatCStyle("Paper Size: %d\r\n", Mode.dmPaperSize)); }
-			if (Mode.dmFields & DM_PAPERLENGTH) { TextFile.AddLine(FormatCStyle("Paper Length: %d\r\n", Mode.dmPaperLength)); }
-			if (Mode.dmFields & DM_PAPERWIDTH) { TextFile.AddLine(FormatCStyle("Paper Width: %d\r\n", Mode.dmPaperWidth)); }
-			if (Mode.dmFields & DM_SCALE) { TextFile.AddLine(FormatCStyle("Scale: %d\r\n", Mode.dmScale)); }
-			if (Mode.dmFields & DM_POSITION) { TextFile.AddLine(FormatCStyle("Position: %d, %d\r\n", Mode.dmPosition.x, Mode.dmPosition.y)); }
-			if (Mode.dmFields & DM_NUP) { TextFile.AddLine(FormatCStyle("Nup: %d\r\n", Mode.dmNup)); }
+			//TextFile.AddLine("Fields: %X\r\n", Mode.dmFields);
+			if (Mode.dmFields & DM_PELSWIDTH) { TextFile.AddLine("Pixel Width: %d\r\n", Mode.dmPelsWidth); }
+			if (Mode.dmFields & DM_PELSHEIGHT) { TextFile.AddLine("Pixel Height: %d\r\n", Mode.dmPelsHeight); }
+			if (Mode.dmFields & DM_BITSPERPEL) { TextFile.AddLine("Bits Per Pixel: %d\r\n", Mode.dmBitsPerPel); }
+			if (Mode.dmFields & DM_DISPLAYFREQUENCY) { TextFile.AddLine("Display Frequency: %d\r\n", Mode.dmDisplayFrequency); }
+			if (Mode.dmFields & DM_ORIENTATION) { TextFile.AddLine("Orientation: %d\r\n", Mode.dmOrientation); }
+			if (Mode.dmFields & DM_PAPERSIZE) { TextFile.AddLine("Paper Size: %d\r\n", Mode.dmPaperSize); }
+			if (Mode.dmFields & DM_PAPERLENGTH) { TextFile.AddLine("Paper Length: %d\r\n", Mode.dmPaperLength); }
+			if (Mode.dmFields & DM_PAPERWIDTH) { TextFile.AddLine("Paper Width: %d\r\n", Mode.dmPaperWidth); }
+			if (Mode.dmFields & DM_SCALE) { TextFile.AddLine("Scale: %d\r\n", Mode.dmScale); }
+			if (Mode.dmFields & DM_POSITION) { TextFile.AddLine("Position: %d, %d\r\n", Mode.dmPosition.x, Mode.dmPosition.y); }
+			if (Mode.dmFields & DM_NUP) { TextFile.AddLine("Nup: %d\r\n", Mode.dmNup); }
 			if (Mode.dmFields & DM_DISPLAYORIENTATION)
 			{
 				String OrientationString = "Display Orientation: ";
@@ -261,22 +261,22 @@ void Windows_Devices::GetDisplayReport(void)
 				if (Mode.dmDisplayFlags & DMDO_270) { OrientationString += "DMDO_270"; }
 				TextFile.AddLine(OrientationString + "\r\n");
 			}
-			if (Mode.dmFields & DM_COPIES) { TextFile.AddLine(FormatCStyle("Copies: %d\r\n", Mode.dmCopies)); }
-			if (Mode.dmFields & DM_DEFAULTSOURCE) { TextFile.AddLine(FormatCStyle("Default Source: %d\r\n", Mode.dmDefaultSource)); }
-			if (Mode.dmFields & DM_PRINTQUALITY) { TextFile.AddLine(FormatCStyle("Print Quality: %d\r\n", Mode.dmPrintQuality)); }
-			if (Mode.dmFields & DM_COLOR) { TextFile.AddLine(FormatCStyle("Color: %d\r\n", Mode.dmColor)); }
-			if (Mode.dmFields & DM_DUPLEX) { TextFile.AddLine(FormatCStyle("Duplex: %d\r\n", Mode.dmDuplex)); }
-			if (Mode.dmFields & DM_YRESOLUTION) { TextFile.AddLine(FormatCStyle("Y Resolution: %d\r\n", Mode.dmYResolution)); }
-			if (Mode.dmFields & DM_TTOPTION) { TextFile.AddLine(FormatCStyle("TT Option: %d\r\n", Mode.dmTTOption)); }
-			if (Mode.dmFields & DM_COLLATE) { TextFile.AddLine(FormatCStyle("Collate: %d\r\n", Mode.dmCollate)); }
-			if (Mode.dmFields & DM_FORMNAME) { TextFile.AddLine(FormatCStyle("Form Name: %ws\r\n", Mode.dmFormName)); }
-			if (Mode.dmFields & DM_LOGPIXELS) { TextFile.AddLine(FormatCStyle("Logical Pixels: %d\r\n", Mode.dmLogPixels)); }
-			if (Mode.dmFields & DM_ICMMETHOD) { TextFile.AddLine(FormatCStyle("ICM Method: %d\r\n", Mode.dmICMMethod)); }
-			if (Mode.dmFields & DM_ICMINTENT) { TextFile.AddLine(FormatCStyle("ICM Intent: %d\r\n", Mode.dmICMIntent)); }
-			if (Mode.dmFields & DM_MEDIATYPE) { TextFile.AddLine(FormatCStyle("Media Type: %d\r\n", Mode.dmMediaType)); }
-			if (Mode.dmFields & DM_DITHERTYPE) { TextFile.AddLine(FormatCStyle("Dither Type: %d\r\n", Mode.dmDitherType)); }
-			if (Mode.dmFields & DM_PANNINGWIDTH) { TextFile.AddLine(FormatCStyle("Panning Width: %d\r\n", Mode.dmPanningWidth)); }
-			if (Mode.dmFields & DM_PANNINGHEIGHT) { TextFile.AddLine(FormatCStyle("Panning Height: %d\r\n", Mode.dmPanningHeight)); }
+			if (Mode.dmFields & DM_COPIES) { TextFile.AddLine("Copies: %d\r\n", Mode.dmCopies); }
+			if (Mode.dmFields & DM_DEFAULTSOURCE) { TextFile.AddLine("Default Source: %d\r\n", Mode.dmDefaultSource); }
+			if (Mode.dmFields & DM_PRINTQUALITY) { TextFile.AddLine("Print Quality: %d\r\n", Mode.dmPrintQuality); }
+			if (Mode.dmFields & DM_COLOR) { TextFile.AddLine("Color: %d\r\n", Mode.dmColor); }
+			if (Mode.dmFields & DM_DUPLEX) { TextFile.AddLine("Duplex: %d\r\n", Mode.dmDuplex); }
+			if (Mode.dmFields & DM_YRESOLUTION) { TextFile.AddLine("Y Resolution: %d\r\n", Mode.dmYResolution); }
+			if (Mode.dmFields & DM_TTOPTION) { TextFile.AddLine("TT Option: %d\r\n", Mode.dmTTOption); }
+			if (Mode.dmFields & DM_COLLATE) { TextFile.AddLine("Collate: %d\r\n", Mode.dmCollate); }
+			if (Mode.dmFields & DM_FORMNAME) { TextFile.AddLine("Form Name: %ws\r\n", Mode.dmFormName); }
+			if (Mode.dmFields & DM_LOGPIXELS) { TextFile.AddLine("Logical Pixels: %d\r\n", Mode.dmLogPixels); }
+			if (Mode.dmFields & DM_ICMMETHOD) { TextFile.AddLine("ICM Method: %d\r\n", Mode.dmICMMethod); }
+			if (Mode.dmFields & DM_ICMINTENT) { TextFile.AddLine("ICM Intent: %d\r\n", Mode.dmICMIntent); }
+			if (Mode.dmFields & DM_MEDIATYPE) { TextFile.AddLine("Media Type: %d\r\n", Mode.dmMediaType); }
+			if (Mode.dmFields & DM_DITHERTYPE) { TextFile.AddLine("Dither Type: %d\r\n", Mode.dmDitherType); }
+			if (Mode.dmFields & DM_PANNINGWIDTH) { TextFile.AddLine("Panning Width: %d\r\n", Mode.dmPanningWidth); }
+			if (Mode.dmFields & DM_PANNINGHEIGHT) { TextFile.AddLine("Panning Height: %d\r\n", Mode.dmPanningHeight); }
 			if (Mode.dmFields & DM_DISPLAYFIXEDOUTPUT)
 			{
 				String FixedOutputString = "Display Fixed Output: ";

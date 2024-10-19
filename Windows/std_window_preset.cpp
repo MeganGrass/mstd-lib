@@ -20,8 +20,8 @@ void Standard_Window::PresetCommandLine(LPWSTR lpCmdLine)
 	for (auto& _Arg : _Commandline)
 	{
 		ToLower(_Arg);
-		if (_Arg == L"-borderless") { b_Borderless = true; }
-		if (_Arg == L"-fullscreen") { b_Fullscreen = true; }
+		if ((_Arg == L"-b") || (_Arg == L"-borderless")) { b_Borderless = true; }
+		if ((_Arg == L"-f") || (_Arg == L"-fullscreen")) { b_Fullscreen = true; }
 	}
 }
 
@@ -78,10 +78,10 @@ void Standard_Window::PresetWindowName(const StringW Name)
 void Standard_Window::PresetClassName(HINSTANCE hInstance, ULONG ResourceID)
 {
 	if (b_CreationComplete) { return; }
-	WCHAR ClassName[_MAX_PATH]{ 0 };
-	if (LoadStringW(hInstance, ResourceID, ClassName, sizeof(ClassName) / sizeof(WCHAR)))
+	std::vector<wchar_t> ClassName(65535);
+	if (LoadStringW(hInstance, ResourceID, ClassName.data(), static_cast<int>(ClassName.size())))
 	{
-		s_ClassName = ClassName;
+		s_ClassName = ClassName.data();
 	}
 }
 
@@ -89,10 +89,10 @@ void Standard_Window::PresetClassName(HINSTANCE hInstance, ULONG ResourceID)
 void Standard_Window::PresetWindowName(HINSTANCE hInstance, ULONG ResourceID)
 {
 	if (b_CreationComplete) { return; }
-	WCHAR WindowName[_MAX_PATH]{ 0 };
-	if (LoadStringW(hInstance, ResourceID, WindowName, sizeof(WindowName) / sizeof(WCHAR)))
+	std::vector<wchar_t> WindowName(65535);
+	if (LoadStringW(hInstance, ResourceID, WindowName.data(), static_cast<int>(WindowName.size())))
 	{
-		s_Name = WindowName;
+		s_Name = WindowName.data();
 	}
 }
 
@@ -113,12 +113,45 @@ void Standard_Window::PresetIcon(HINSTANCE hInstance, ULONG ResourceID)
 	if (!h_Icon) { Message(L"An error occurred when trying to load the window icon."); }
 }
 
+// Preset window icon
+void Standard_Window::PresetIcon(HINSTANCE hInstance, const StringW Filename)
+{
+	if (b_CreationComplete) { return; }
+	h_Icon = (HICON)LoadImage(hInstance, Filename.c_str(), IMAGE_ICON, 0, 0, LR_DEFAULTCOLOR | LR_LOADFROMFILE);
+	if (!h_Icon) { Message(L"An error occurred when trying to load the window icon."); }
+}
+
 // Preset Window Small Icon
 void Standard_Window::PresetIconSm(HINSTANCE hInstance, ULONG ResourceID)
 {
 	if (b_CreationComplete) { return; }
 	h_IconSm = LoadIcon(hInstance, MAKEINTRESOURCE(ResourceID));
 	if (!h_IconSm) { Message(L"An error occurred when trying to load the window small icon."); }
+}
+
+// Preset window small icon
+void Standard_Window::PresetIconSm(HINSTANCE hInstance, const StringW Filename)
+{
+	if (b_CreationComplete) { return; }
+	h_IconSm = (HICON)LoadImage(hInstance, Filename.c_str(), IMAGE_ICON, 0, 0, LR_DEFAULTCOLOR | LR_LOADFROMFILE);
+	if (!h_IconSm) { Message(L"An error occurred when trying to load the window small icon."); }
+}
+
+// Preset window cursor
+void Standard_Window::PresetCursor(HINSTANCE hInstance, ULONG ResourceID)
+{
+	if (b_CreationComplete) { return; }
+	h_Cursor = LoadCursor(hInstance, MAKEINTRESOURCE(ResourceID));
+	if (!h_Cursor) { Message(L"An error occurred when trying to load the window cursor."); }
+}
+
+// Preset window cursor
+void Standard_Window::PresetCursor(HINSTANCE hInstance, const StringW Filename)
+{
+	if (b_CreationComplete) { return; }
+	h_Cursor = (HCURSOR)LoadImage(hInstance, Filename.c_str(), IMAGE_CURSOR, 0, 0, LR_DEFAULTSIZE | LR_SHARED | LR_DEFAULTCOLOR | LR_LOADFROMFILE);
+	//h_Cursor = (HCURSOR)LoadImage(hInstance, Filename.c_str(), IMAGE_CURSOR, 0, 0, LR_DEFAULTCOLOR | LR_LOADFROMFILE);
+	if (!h_Cursor) { Message(L"An error occurred when trying to load the window cursor."); }
 }
 
 // Preset HMENU
@@ -131,20 +164,24 @@ void Standard_Window::PresetMenu(HINSTANCE hInstance, WORD ResourceID)
 }
 
 // Preset Tool Bar
-void Standard_Window::PresetToolBar(UINT nButtons, UINT IconWidth, UINT IconHeight)
+void Standard_Window::PresetToolBar(UINT IconWidth, UINT IconHeight, std::vector<TBBUTTON> Buttons, DWORD Style, DWORD StyleEx)
 {
-	if (b_CreationComplete) { return; }
-	m_ToolBarButtonCount = nButtons;
+	if (h_ToolBarImageList) { ImageList_Destroy(h_ToolBarImageList); }
+	if (!m_ToolbarButtons.empty()) { m_ToolbarButtons.clear(); }
 	m_ToolBarIconWidth = IconWidth;
 	m_ToolBarIconHeight = IconHeight;
-	h_ToolBarImageList = ImageList_Create(m_ToolBarIconWidth, m_ToolBarIconHeight, ILC_COLOR32 | ILC_MASK, m_ToolBarButtonCount, 0);
+	m_ToolbarButtons = Buttons;
+	m_ToolBarStyle = Style;
+	m_ToolBarStyleEx = StyleEx;
+	h_ToolBarImageList = ImageList_Create(m_ToolBarIconWidth, m_ToolBarIconHeight, ILC_COLOR32 | ILC_MASK, static_cast<int>(Buttons.size()), 0);
 }
 
-// Preset Tool Bar Icon
-// Create an Image List with PresetToolBar() before calling this function
+/*
+	Preset Tool Bar Icon
+	- Use PresetToolBar() before calling this function
+*/
 void Standard_Window::PresetAddToolBarIcon(HINSTANCE hInstance, ULONG ResourceID)
 {
-	if (b_CreationComplete) { return; }
 	if (h_ToolBarImageList)
 	{
 		HICON hIcon = (HICON)LoadImage(hInstance, MAKEINTRESOURCE(ResourceID), IMAGE_ICON, 0, 0, LR_DEFAULTCOLOR);
@@ -157,11 +194,30 @@ void Standard_Window::PresetAddToolBarIcon(HINSTANCE hInstance, ULONG ResourceID
 	else { Message(L"Create an Image List with PresetToolBar() before calling this function."); }
 }
 
+/*
+	Preset Tool Bar Icon
+	- Use PresetToolBar() before calling this function
+*/
+void Standard_Window::PresetAddToolBarIcon(HINSTANCE hInstance, const StringW Filename)
+{
+	if (h_ToolBarImageList)
+	{
+		HICON hIcon = (HICON)LoadImage(hInstance, Filename.c_str(), IMAGE_ICON, 0, 0, LR_DEFAULTCOLOR | LR_LOADFROMFILE);
+		if (hIcon)
+		{
+			ImageList_AddIcon(h_ToolBarImageList, hIcon);
+			DeleteObject(hIcon);
+		}
+	}
+	else { Message(L"Create an Image List with PresetToolBar() before calling this function."); }
+}
+
 // Preset status bar part count
-void Standard_Window::PresetStatusBar(INT nParts)
+void Standard_Window::PresetStatusBar(INT nParts, DWORD Style)
 {
 	if (b_CreationComplete) { return; }
 	if (nParts > 256) { nParts = 256; }
+	m_StatusBarStyle = Style;
 	m_StatusBarParts = nParts;
 }
 
@@ -169,6 +225,8 @@ void Standard_Window::PresetStatusBar(INT nParts)
 void Standard_Window::PresetOptions(WindowOptions e_Options)
 {
 	if (b_CreationComplete) { return; }
+	b_Borderless = std::to_underlying(e_Options) & std::to_underlying(WindowOptions::Borderless);
+	b_Fullscreen = std::to_underlying(e_Options) & std::to_underlying(WindowOptions::Fullscreen);
 	b_ToolBar = std::to_underlying(e_Options) & std::to_underlying(WindowOptions::ToolBar);
 	b_StatusBar = std::to_underlying(e_Options) & std::to_underlying(WindowOptions::StatusBar);
 	b_TextEditor = std::to_underlying(e_Options) & std::to_underlying(WindowOptions::TextEditor);

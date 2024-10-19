@@ -5,7 +5,6 @@
 *
 *
 *	TODO: 
-*		Add support for WM_DISPLAYCHANGE and WM_SYSCOMMAND
 *
 */
 
@@ -31,6 +30,8 @@ void Standard_Window::MsgActivate(WPARAM wParam, LPARAM lParam)
 		{
 			joySetCapture(hWnd, Joystick->ID, 0, 0);
 		}
+		DwmSetWindowAttribute(hWnd, DWMWA_BORDER_COLOR, &m_BorderColor, sizeof(COLORREF));
+		DwmSetWindowAttribute(hWnd, DWMWA_CAPTION_COLOR, &m_CaptionColor, sizeof(COLORREF));
 	}
 	else
 	{
@@ -43,6 +44,8 @@ void Standard_Window::MsgActivate(WPARAM wParam, LPARAM lParam)
 		{
 			joyReleaseCapture(Joystick->ID);
 		}
+		DwmSetWindowAttribute(hWnd, DWMWA_BORDER_COLOR, &m_BorderColorLostFocus, sizeof(COLORREF));
+		DwmSetWindowAttribute(hWnd, DWMWA_CAPTION_COLOR, &m_CaptionColorLostFocus, sizeof(COLORREF));
 	}
 }
 
@@ -96,6 +99,24 @@ void Standard_Window::MsgPositionChanged(WPARAM wParam, LPARAM lParam)
 			RightEdge += Width;
 		}
 		SendMessage(h_StatusBar, SB_SETPARTS, m_StatusBarParts, (LPARAM)Parts.data());
+	}
+}
+
+
+// WM_DISPLAYCHANGE
+void Standard_Window::MsgDisplayChange(WPARAM wParam, LPARAM lParam)
+{
+	if (IsFullscreen())
+	{
+		WINDOWPOS WindowPos{};
+		WindowPos.hwnd = hWnd;
+		WindowPos.hwndInsertAfter = nullptr;
+		WindowPos.x = 0;
+		WindowPos.y = 0;
+		WindowPos.cx = LOWORD(lParam);
+		WindowPos.cy = HIWORD(lParam);
+		WindowPos.flags = SWP_NOZORDER | SWP_NOREDRAW | SWP_NOACTIVATE | SWP_NOCOPYBITS | SWP_NOOWNERZORDER | SWP_NOSENDCHANGING | SWP_DEFERERASE | SWP_ASYNCWINDOWPOS;
+		SendMessage(hWnd, WM_WINDOWPOSCHANGED, 0, (LPARAM)&WindowPos);
 	}
 }
 
@@ -170,14 +191,17 @@ void Standard_Window::MsgDropFiles(WPARAM wParam, LPARAM lParam)
 
 	UINT Count = DragQueryFileW(hDrop, 0xFFFFFFFF, 0, 0);
 
+	s_DroppedFiles.clear();
+
 	for (UINT iFile = 0; iFile < Count; iFile++)
 	{
 		UINT StrLen = DragQueryFileW(hDrop, iFile, 0, 0);
 		std::vector<wchar_t> String(StrLen + sizeof(wchar_t));
 		DragQueryFileW(hDrop, iFile, String.data(), StrLen + sizeof(wchar_t));
-		DroppedFiles.push_back(String.data());
-		//Message(L"Dropped: %ws", DroppedFiles[iFile].c_str());
+		s_DroppedFiles.push_back(String.data());
+		//Message(L"Dropped: %ws", s_DroppedFiles[iFile].c_str());
 	}
+
 	DragFinish(hDrop);
 }
 

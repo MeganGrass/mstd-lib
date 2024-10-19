@@ -5,30 +5,13 @@
 *
 *
 *	TODO: 
-*		Completely redo creation of TextEditor
-*		Preserve text from status bar when resizing
 *
 */
 
 
 #include "std_window.h"
 
-// temp
-#ifndef IDC_TOOLBAR_OPEN
-#define IDC_TOOLBAR_OPEN IDC_STATIC
-#endif
-
-#ifndef IDC_TOOLBAR_CLOSE
-#define IDC_TOOLBAR_CLOSE IDC_STATIC
-#endif
-
-#ifndef IDC_TOOLBAR_SAVE
-#define IDC_TOOLBAR_SAVE IDC_STATIC
-#endif
-
-#ifndef IDC_TOOLBAR_NEW
-#define IDC_TOOLBAR_NEW IDC_STATIC
-#endif
+#pragma comment(lib, "Dwmapi.lib")
 
 
 /*
@@ -106,10 +89,12 @@ void Standard_Window::Create(int Width, int Height, HINSTANCE hInstance, int nCm
 	// Copy Instance
 	h_Instance = hInstance;
 
-	// Register Window Class
+	// Window Class
 	if (b_OpenGL) { m_ClassStyle |= CS_OWNDC; }
 	m_Class.style = m_ClassStyle;
+
 	m_Class.lpfnWndProc = WndProc;
+
 	m_Class.cbClsExtra = 0;
 
 	if (b_DialogBox) { m_Class.cbWndExtra = DLGWINDOWEXTRA; }
@@ -119,7 +104,7 @@ void Standard_Window::Create(int Width, int Height, HINSTANCE hInstance, int nCm
 
 	m_Class.hIcon = h_Icon;
 
-	m_Class.hCursor = (HCURSOR)LoadImage(0, IDC_ARROW, IMAGE_CURSOR, 0, 0, LR_DEFAULTSIZE | LR_SHARED);
+	m_Class.hCursor = h_Cursor;
 
 	if(b_ClassBrush) { m_Class.hbrBackground = CreateSolidBrush(m_Color); }
 	else { m_Class.hbrBackground = nullptr; }
@@ -133,29 +118,18 @@ void Standard_Window::Create(int Width, int Height, HINSTANCE hInstance, int nCm
 
 	if (!RegisterClassExW(&m_Class)) { GetErrorMessage(); }
 
-	// Width and Height
-	m_Width = Width;
-	m_Height = Height;
-
-	// Fullscreen
-	//if (b_Fullscreen)
-	//{
-	//	m_Width = GetSystemMetricsForDpi(SM_CXSCREEN, m_SysDPI);
-	//	m_Height = GetSystemMetricsForDpi(SM_CYSCREEN, m_SysDPI);
-	//}
-
 	// Adjust window size and position
 	RECT Rect{};
 	Rect.left = 0;
-	Rect.right = m_Width;
+	Rect.right = Width;
 	Rect.top = 0;
-	Rect.bottom = m_Height;
+	Rect.bottom = Height;
 
 	if (!AdjustWindowRectExForDpi(&Rect, m_Style, b_Menu, m_StyleEx, m_SysDPI)) { GetErrorMessage(); }
 
-	const int CxScreen = ((GetSystemMetricsForDpi(SM_CXSCREEN, m_SysDPI) - m_Width) / 2);
+	const int CxScreen = ((GetSystemMetricsForDpi(SM_CXSCREEN, m_SysDPI) - Width) / 2);
 	if (GetLastError() != ERROR_SUCCESS) { GetErrorMessage(); }
-	const int CyScreen = ((GetSystemMetricsForDpi(SM_CYSCREEN, m_SysDPI) - m_Height) / 2);
+	const int CyScreen = ((GetSystemMetricsForDpi(SM_CYSCREEN, m_SysDPI) - Height) / 2);
 	if (GetLastError() != ERROR_SUCCESS) { GetErrorMessage(); }
 
 	// Create Window
@@ -177,6 +151,14 @@ void Standard_Window::Create(int Width, int Height, HINSTANCE hInstance, int nCm
 	SetCommonInstance(h_Instance);
 	SetCommonOwner(hWnd);
 
+	// Desktop Window Manager
+	SetDarkMode(b_DarkMode);
+	SetRoundCorners(m_RoundCorners);
+	SetBorderColor(m_BorderColor);
+	SetCaptionColor(m_CaptionColor);
+	SetTextColor(m_TextColor);
+	SetBackdropType(m_BackdropType);
+
 	// Borderless
 	if (b_Borderless) { SetWindowLong(hWnd, GWL_STYLE, 0); }
 
@@ -184,7 +166,7 @@ void Standard_Window::Create(int Width, int Height, HINSTANCE hInstance, int nCm
 	RECT ToolBarRect{};
 	if (b_ToolBar)
 	{
-		CreateToolBar(hWnd);
+		CreateToolBar(m_ToolBarStyle, m_ToolBarStyleEx, h_ToolBarImageList, m_ToolbarButtons);
 		GetWindowRect(h_ToolBar, &ToolBarRect);
 	}
 
@@ -192,7 +174,7 @@ void Standard_Window::Create(int Width, int Height, HINSTANCE hInstance, int nCm
 	RECT StatusBarRect{};
 	if (b_StatusBar)
 	{
-		CreateStatusBar(hWnd);
+		CreateStatusBar(m_StatusBarStyle, m_StatusBarParts);
 		GetWindowRect(h_StatusBar, &StatusBarRect);
 	}
 
@@ -223,9 +205,9 @@ void Standard_Window::Create(int Width, int Height, HINSTANCE hInstance, int nCm
 
 
 /*
-	Create Parent Window
+	Create Child Window
 */
-HWND Standard_Window::CreateChild(int x, int y, int Width, int Height, HINSTANCE hInstance, int nCmdShow, WNDPROC WndProc)
+HWND Standard_Window::CreateChild(int x, int y, int Width, int Height, HINSTANCE hInstance, int nCmdShow, WNDPROC WndProc, DWORD Style, DWORD StyleEx, WindowOptions e_Options)
 {
 	// Error
 	if (!hWnd)
@@ -237,17 +219,27 @@ HWND Standard_Window::CreateChild(int x, int y, int Width, int Height, HINSTANCE
 	std::unique_ptr<Standard_Window> Window = std::make_unique<Standard_Window>();
 
 	Window->b_ChildWindow = true;
-	Window->b_Borderless = true;
-	Window->PresetWindowColor(255, 0, 255);
-	Window->PresetClassName(s_ClassName + std::to_wstring(v_ChildWindows.size()));
+	Window->b_Borderless = std::to_underlying(e_Options) & std::to_underlying(WindowOptions::Borderless);
+	Window->b_Fullscreen = std::to_underlying(e_Options) & std::to_underlying(WindowOptions::Fullscreen);
+	Window->b_DialogBox = std::to_underlying(e_Options) & std::to_underlying(WindowOptions::Dialog);
+	Window->b_OpenGL = std::to_underlying(e_Options) & std::to_underlying(WindowOptions::GL);
+	Window->b_DirectX = std::to_underlying(e_Options) & std::to_underlying(WindowOptions::DX);
 
-	// Parse Window Styles
+	Window->PresetStyle(Style);
+	Window->PresetStyleEx(StyleEx);
+	Window->PresetClassName(s_ClassName + L"_" + std::to_wstring(v_ChildWindows.size()));
+	Window->PresetWindowName(s_Name + +L"_" + std::to_wstring(v_ChildWindows.size()));
+	Window->PresetWindowColor(255, 255, 255);
+	Window->h_Icon = h_Icon;
+	Window->h_IconSm = h_IconSm;
+	Window->h_Cursor = h_Cursor;
+	Window->h_AccelTable = h_AccelTable;
+
 	Window->ParsePresets();
 
-	// Copy Instance
 	Window->h_Instance = hInstance;
 
-	// Register Window Class
+	// Window Class
 	if (Window->b_OpenGL) { Window->m_ClassStyle |= CS_OWNDC; }
 	Window->m_Class.style = Window->m_ClassStyle;
 	Window->m_Class.lpfnWndProc = WndProc;
@@ -256,7 +248,7 @@ HWND Standard_Window::CreateChild(int x, int y, int Width, int Height, HINSTANCE
 	else { Window->m_Class.cbWndExtra = 0; }
 	Window->m_Class.hInstance = hInstance;
 	Window->m_Class.hIcon = Window->h_Icon;
-	Window->m_Class.hCursor = (HCURSOR)LoadImage(0, IDC_ARROW, IMAGE_CURSOR, 0, 0, LR_DEFAULTSIZE | LR_SHARED);
+	Window->m_Class.hCursor = Window->h_Cursor;
 	if (Window->b_ClassBrush) { Window->m_Class.hbrBackground = CreateSolidBrush(Window->m_Color); }
 	else { Window->m_Class.hbrBackground = nullptr; }
 	if (Window->b_Menu) { Window->m_Class.lpszMenuName = MAKEINTRESOURCE(Window->m_MenuID); }
@@ -265,16 +257,12 @@ HWND Standard_Window::CreateChild(int x, int y, int Width, int Height, HINSTANCE
 	Window->m_Class.hIconSm = Window->h_IconSm;
 	if (!RegisterClassExW(&Window->m_Class)) { GetErrorMessage(); }
 
-	// Width and Height
-	Window->m_Width = Width;
-	Window->m_Height = Height;
-
 	// Adjust window size and position
 	RECT Rect{};
 	Rect.left = 0;
-	Rect.right = Window->m_Width;
+	Rect.right = Width;
 	Rect.top = 0;
-	Rect.bottom = Window->m_Height;
+	Rect.bottom = Height;
 
 	if (!AdjustWindowRectExForDpi(&Rect, Window->m_Style, Window->b_Menu, Window->m_StyleEx, Window->m_SysDPI)) { GetErrorMessage(); }
 
@@ -289,8 +277,8 @@ HWND Standard_Window::CreateChild(int x, int y, int Width, int Height, HINSTANCE
 	// Create Window
 	Window->hWnd = CreateWindowExW(
 		Window->m_StyleEx,
-		Window->s_ClassName.c_str(),	// NULL
-		NULL,
+		Window->s_ClassName.c_str(),
+		Window->s_Name.c_str(),
 		Window->m_Style,
 		x, CyScreen,
 		(Rect.right - Rect.left),
@@ -305,33 +293,34 @@ HWND Standard_Window::CreateChild(int x, int y, int Width, int Height, HINSTANCE
 	Window->SetCommonInstance(h_Instance);
 	Window->SetCommonOwner(hWnd);
 
-	// Borderless
+	// Desktop Window Manager
+	Window->SetDarkMode(GetDarkMode());
+	Window->SetRoundCorners(GetRoundCorners());
+	Window->SetBorderColor(GetBorderColor());
+	Window->SetCaptionColor(GetCaptionColor());
+	Window->SetTextColor(GetTextColor());
+	Window->SetBackdropType(GetBackdropType());
+
 	if (Window->b_Borderless) { SetWindowLong(Window->hWnd, GWL_STYLE, 0); }
 
-	// Show Window
 	ShowWindow(Window->hWnd, nCmdShow);
 
-	// Update Window
 	UpdateWindow(Window->hWnd);
 
-	// Setup Complete
 	Window->b_CreationComplete = true;
 
-	// Add to Child Windows
 	v_ChildWindows.push_back(std::move(Window));
 
-	// Set focus to the parent window
 	SetFocus(hWnd);
 
-	// Complete
 	return v_ChildWindows.back()->hWnd;
 }
 
 
 /*
-	Create Parent Window
+	Add Child Window
 */
-bool Standard_Window::AddChildWindow(HWND hWndChild, bool b_Borderless)
+bool Standard_Window::AddChildWindow(HWND hWndChild, bool b_SnapToChild)
 {
 	// Error
 	if (!hWnd)
@@ -349,20 +338,29 @@ bool Standard_Window::AddChildWindow(HWND hWndChild, bool b_Borderless)
 
 	std::unique_ptr<Standard_Window> Window = std::make_unique<Standard_Window>();
 
-	Window->b_ChildWindow = true;
-	Window->b_Borderless = b_Borderless;
-	Window->PresetWindowColor(255, 0, 255);
-	Window->PresetClassName(s_ClassName + std::to_wstring(v_ChildWindows.size()));
+	if (b_SnapToChild)
+	{
+		Window->b_Borderless = true;
+		ResizeToWindow(hWndChild, true);
+	}
 
-	// Parse Window Styles
+	Window->b_ChildWindow = true;
+
 	Window->ParsePresets();
 
-	// Create Window
 	Window->hWnd = hWndChild;
 
 	// Standard Windows Common Class
 	Window->SetCommonInstance(h_Instance);
 	Window->SetCommonOwner(hWnd);
+
+	// Desktop Window Manager
+	Window->SetDarkMode(GetDarkMode());
+	Window->SetRoundCorners(GetRoundCorners());
+	Window->SetBorderColor(GetBorderColor());
+	Window->SetCaptionColor(GetCaptionColor());
+	Window->SetTextColor(GetTextColor());
+	Window->SetBackdropType(GetBackdropType());
 
 	// Borderless
 	if (Window->b_Borderless) { SetWindowLong(Window->hWnd, GWL_STYLE, 0); }
@@ -404,31 +402,289 @@ bool Standard_Window::AddChildWindow(HWND hWndChild, bool b_Borderless)
 
 	SetWindowPos(hWndChild, 0, x, y, 0, 0, SWP_NOSIZE | SWP_NOZORDER | SWP_NOREDRAW | SWP_NOACTIVATE | SWP_NOCOPYBITS | SWP_NOOWNERZORDER | SWP_NOSENDCHANGING | SWP_DEFERERASE | SWP_ASYNCWINDOWPOS);
 
-	// Set Parent
 	SetParent(Window->hWnd, hWnd);
 
-	// Show Window
 	ShowWindow(Window->hWnd, SW_SHOW);
 
-	// Update Window
 	UpdateWindow(Window->hWnd);
 
-	// Setup Complete
 	Window->b_CreationComplete = true;
 
-	// Add to Child Windows
 	v_ChildWindows.push_back(std::move(Window));
 
-	// Set focus to the parent window
 	SetFocus(hWnd);
 
-	// Complete
 	return true;
 }
 
 
 /*
-	Resize to child window
+	Clear child windows
+*/
+void Standard_Window::ClearChildWindows(void)
+{
+	for (auto& Child : v_ChildWindows)
+	{
+		if (Child.get()->GetHandle())
+		{
+			DestroyWindow(Child.get()->GetHandle());
+		}
+		Child.reset();
+	}
+	v_ChildWindows.clear();
+}
+
+
+/*
+	Create tooltip
+*/
+HWND Standard_Window::CreateTooltip(HWND hWndParent, ULONG ResourceID, StringW Tooltip)
+{
+	// Error
+	if (!IsWindow(hWndParent))
+	{
+		Message(L"Create Tooltip Error: The parent window doesn't exist");
+		return nullptr;
+	}
+
+	// Error
+	if (Tooltip.empty())
+	{
+		Message(L"Create Tooltip Error: The tooltip text is empty");
+		return nullptr;
+	}
+
+	// Get the window of the control
+	HWND hWndControl = GetDlgItem(hWndParent, ResourceID);
+	if (!hWndControl) { GetErrorMessage(); }
+
+	// Create tooltip
+	HWND h_Tooltip = CreateWindowExW(
+		0,
+		TOOLTIPS_CLASS,
+		0,
+		WS_POPUP | TTS_ALWAYSTIP | TTS_BALLOON,
+		CW_USEDEFAULT, CW_USEDEFAULT,
+		CW_USEDEFAULT, CW_USEDEFAULT,
+		hWndParent,
+		0,
+		h_Instance,
+		0);
+	if (!hWnd) { GetErrorMessage(); }
+
+	// Associate the tooltip with the control
+	TOOLINFO ToolInfo = { 0 };
+	ToolInfo.cbSize = sizeof(ToolInfo);
+	ToolInfo.hwnd = hWndParent;
+	ToolInfo.uFlags = TTF_IDISHWND | TTF_SUBCLASS;
+	ToolInfo.uId = (UINT_PTR)hWndControl;
+	ToolInfo.lpszText = Tooltip.data();
+	SendMessage(h_Tooltip, TTM_ADDTOOL, 0, (LPARAM)&ToolInfo);
+
+	// Complete
+	return h_Tooltip;
+}
+
+
+/*
+	Create Tool Bar
+*/
+void Standard_Window::CreateToolBar(DWORD Style, DWORD StyleEx, HIMAGELIST ImageList, std::vector<TBBUTTON> Buttons)
+{
+	if ((!ImageList) || (Buttons.empty()))
+	{
+		return;
+	}
+
+	Style &= (TBSTYLE_ALTDRAG | TBSTYLE_CUSTOMERASE | TBSTYLE_FLAT | TBSTYLE_LIST | TBSTYLE_REGISTERDROP | TBSTYLE_TOOLTIPS | TBSTYLE_TRANSPARENT | TBSTYLE_WRAPABLE);
+	StyleEx &= (TBSTYLE_EX_DRAWDDARROWS | TBSTYLE_EX_HIDECLIPPEDBUTTONS | TBSTYLE_EX_DOUBLEBUFFER | TBSTYLE_EX_MIXEDBUTTONS | TBSTYLE_EX_MULTICOLUMN | TBSTYLE_EX_VERTICAL);
+
+	h_ToolBar = CreateWindowExW(
+		StyleEx,
+		TOOLBARCLASSNAMEW,
+		0,
+		WS_CHILD | WS_VISIBLE | Style,
+		0, 0,
+		0, 0,
+		hWnd,
+		0,
+		m_Class.hInstance,
+		0);
+
+	if (!h_ToolBar) { GetErrorMessage(); }
+
+	SendMessage(h_ToolBar, TB_BUTTONSTRUCTSIZE, MAKEWPARAM(sizeof(TBBUTTON), 0), 0);
+
+	SendMessage(h_ToolBar, TB_SETIMAGELIST, 0, (LPARAM)ImageList);
+
+	SendMessage(h_ToolBar, TB_ADDBUTTONS, MAKEWPARAM(Buttons.size(), 0), (LPARAM)Buttons.data());
+
+	SendMessage(h_ToolBar, TB_AUTOSIZE, 0, 0);
+
+	SendMessage(h_ToolBar, WM_SIZE, 0, 0);
+}
+
+
+/*
+	Create Status Bar
+*/
+void Standard_Window::CreateStatusBar(DWORD Style, INT PartCount)
+{
+	m_StatusBarParts = PartCount;
+
+	if ((!m_StatusBarParts) || (m_StatusBarParts < 0)) { return; }
+
+	if (m_StatusBarParts > 256) { m_StatusBarParts = 256; }
+
+	Style &= (SBARS_SIZEGRIP | SBARS_TOOLTIPS);
+
+	h_StatusBar = CreateWindowExW(
+		0,
+		STATUSCLASSNAMEW,
+		0,
+		WS_CHILD | WS_VISIBLE | Style,
+		0, 0,
+		0, 0,
+		hWnd,
+		0,
+		m_Class.hInstance,
+		0);
+
+	if (!h_StatusBar) { GetErrorMessage(); }
+
+	// Create Parts
+	RECT ParentRect { };
+	if (!GetClientRect(hWnd, &ParentRect)) { GetErrorMessage(); }
+
+	SendMessage(h_StatusBar, WM_SIZE, 0, MAKELPARAM(ParentRect.right, ParentRect.bottom));
+
+	std::vector<INT> Parts(m_StatusBarParts);
+
+	LONG Width = ParentRect.right / m_StatusBarParts;
+
+	INT RightEdge = Width;
+
+	for (auto& Part : Parts)
+	{
+		Part = RightEdge;
+		RightEdge += Width;
+	}
+
+	SendMessage(h_StatusBar, SB_SETPARTS, m_StatusBarParts, (LPARAM)Parts.data());
+
+}
+
+
+/*
+	Status Bar Message
+*/
+void Standard_Window::Status(int iPart, const String _Message, ...) const
+{
+	// Error
+	if ((!b_StatusBar) || (iPart > (m_StatusBarParts - 1))) { return; }
+
+	// Format
+	std::va_list _ArgList;
+	va_start(_ArgList, _Message);
+	int _StrLen = (std::vsnprintf(0, 0, _Message.c_str(), _ArgList) + sizeof(char));
+	std::vector<char> String(_StrLen);
+	std::vsnprintf(String.data(), _StrLen, _Message.c_str(), _ArgList);
+	va_end(_ArgList);
+
+	// Set Text
+	SendMessageA(h_StatusBar, SB_SETTEXTA, iPart, (LPARAM)String.data());
+}
+
+
+/*
+	Status Bar Message
+*/
+void Standard_Window::Status(int iPart, const StringW _Message, ...) const
+{
+	// Error
+	if ((!b_StatusBar) || (iPart > (m_StatusBarParts - 1))) { return; }
+
+	// Format
+	std::va_list _ArgList;
+	va_start(_ArgList, _Message);
+	int _StrLen = (std::vswprintf(0, 0, _Message.c_str(), _ArgList) + sizeof(wchar_t));
+	std::vector<wchar_t> String(_StrLen);
+	std::vswprintf(String.data(), _StrLen, _Message.c_str(), _ArgList);
+	va_end(_ArgList);
+
+	// Set Text
+	SendMessageW(h_StatusBar, SB_SETTEXTW, iPart, (LPARAM)String.data());
+}
+
+
+/*
+	Get status bar string
+*/
+StringW Standard_Window::GetStatus(int iPart) const
+{
+	if ((!b_StatusBar) || (iPart > (m_StatusBarParts - 1))) { return L""; }
+
+	std::size_t StrLen = static_cast<std::size_t>(SendMessageW(h_StatusBar, SB_GETTEXTLENGTHW, iPart, 0));
+
+	StringW Buffer(StrLen + 1, 0);
+
+	SendMessageW(h_StatusBar, SB_GETTEXTW, iPart, (LPARAM)Buffer.data());
+
+	return Buffer;
+}
+
+
+/*
+	Create Text Editor
+*/
+void Standard_Window::CreateTextEditor(HWND hWndParent)
+{
+	// Parent Window Rect
+	RECT Rect = { 0, 0, 0, 0 };
+	if(!GetClientRect(hWndParent, &Rect)) { GetErrorMessage(); }
+
+	// Style
+	DWORD Style = WS_CHILD | WS_VISIBLE | WS_VSCROLL | WS_HSCROLL | ES_LEFT | ES_MULTILINE | ES_AUTOVSCROLL | ES_AUTOHSCROLL;
+
+	// Window Position
+	if (b_ToolBar) { Rect.top += (m_ToolBarIconHeight + 12); }
+	if (b_StatusBar) { Rect.bottom -= 79; }
+
+	// Create
+	h_TextEditor = CreateWindowExW(
+		WS_EX_WINDOWEDGE | WS_EX_CLIENTEDGE,
+		WC_EDITW,
+		(PTSTR)0,
+		Style,
+		Rect.left, Rect.top,
+		Rect.right, Rect.bottom,
+		hWndParent,
+		0,
+		m_Class.hInstance,
+		0
+	);
+
+	if(!h_TextEditor) { GetErrorMessage(); }
+
+	// Format
+	h_TextEditorFont = CreateFont(32, 0, 0, 0,
+		FW_NORMAL,				// Weight
+		FALSE,					// Italic
+		FALSE,					// Underline
+		FALSE,					// Strikeout
+		DEFAULT_CHARSET,		// CHAR Set
+		OUT_OUTLINE_PRECIS,		// Output Precision
+		CLIP_DEFAULT_PRECIS,	// Clip Precision
+		CLEARTYPE_QUALITY,		// Quality
+		MAKEWPARAM(VARIABLE_PITCH, FF_MODERN),
+		TEXT("Courier New"));
+
+	SendMessage(h_TextEditor, WM_SETFONT, (WPARAM)h_TextEditorFont, TRUE);
+}
+
+
+/*
+	Resize to window
 */
 bool Standard_Window::ResizeToWindow(HWND hWndChild, bool b_Center)
 {
@@ -486,250 +742,159 @@ bool Standard_Window::ResizeToWindow(HWND hWndChild, bool b_Center)
 		SetWindowPos(hWnd, 0, CxScreen, CyScreen, 0, 0, SWP_NOSIZE | SWP_NOZORDER | SWP_NOREDRAW | SWP_NOACTIVATE | SWP_NOCOPYBITS | SWP_NOOWNERZORDER | SWP_NOSENDCHANGING | SWP_DEFERERASE | SWP_ASYNCWINDOWPOS);
 	}
 
-	// get client rect
-	RECT ParentRect{};
-	GetClientRect(hWnd, &ParentRect);
-	m_Width = (ParentRect.right - ParentRect.left);
-	m_Height = (ParentRect.bottom - ParentRect.top);
-
 	return true;
 }
 
 
 /*
-	Create tooltip
+	Set accelerator table
 */
-HWND Standard_Window::CreateTooltip(HWND hWndParent, ULONG ResourceID, StringW Tooltip)
+void Standard_Window::SetAcceleratorTable(HINSTANCE hInstance, ULONG ResourceID)
 {
-	// Error
-	if (!IsWindow(hWndParent))
-	{
-		Message(L"Create Tooltip Error: The parent window doesn't exist");
-		return nullptr;
-	}
+	h_AccelTable = LoadAccelerators(hInstance, MAKEINTRESOURCE(ResourceID));
 
-	// Error
-	if (Tooltip.empty())
-	{
-		Message(L"Create Tooltip Error: The tooltip text is empty");
-		return nullptr;
-	}
-
-	// Get the window of the tool
-	HWND hwndTool = GetDlgItem(hWndParent, ResourceID);
-	if (!hwndTool)
-	{
-		Message(L"Create Tooltip Error: The resource item doesn't exist");
-		return nullptr;
-	}
-
-	// Create the tooltip
-	HWND hwndTip = CreateWindowEx(NULL, TOOLTIPS_CLASS, NULL,
-		WS_POPUP | TTS_ALWAYSTIP | TTS_BALLOON,
-		CW_USEDEFAULT, CW_USEDEFAULT,
-		CW_USEDEFAULT, CW_USEDEFAULT,
-		hWndParent, NULL,
-		h_Instance, NULL);
-	if (!hwndTip)
-	{
-		Message(L"Create Tooltip Error: The tooltip window couldn't be created");
-		return nullptr;
-	}
-
-	// Associate the tooltip with the tool
-	TOOLINFO toolInfo = { 0 };
-	toolInfo.cbSize = sizeof(toolInfo);
-	toolInfo.hwnd = hWndParent;
-	toolInfo.uFlags = TTF_IDISHWND | TTF_SUBCLASS;
-	toolInfo.uId = (UINT_PTR)hwndTool;
-	toolInfo.lpszText = Tooltip.data();
-	SendMessage(hwndTip, TTM_ADDTOOL, 0, (LPARAM)&toolInfo);
-
-	// Complete
-	return hwndTip;
+	if (!h_AccelTable) { Message(L"An error occurred when trying to load the window accelerator table."); }
 }
 
 
 /*
-	Create Tool Bar
+	Is fullscreen?
 */
-void Standard_Window::CreateToolBar(HWND hWndParent)
+bool Standard_Window::IsFullscreen(void)
 {
-	// Error
-	if ((!h_ToolBarImageList) ||
-		(!m_ToolBarButtonCount) ||
-		(!m_ToolBarIconWidth) ||
-		(!m_ToolBarIconHeight)) { return; }
-
-	// Create
-	h_ToolBar = CreateWindowExW(
-		TBSTYLE_EX_DOUBLEBUFFER,
-		TOOLBARCLASSNAMEW,
-		0,
-		WS_CHILD | WS_VISIBLE | TBSTYLE_TOOLTIPS | TBSTYLE_FLAT,
-		0, 0,
-		0, 0,
-		hWndParent,
-		0,
-		m_Class.hInstance,
-		0);
-
-	if (!h_ToolBar) { GetErrorMessage(); }
-
-	// Parse Image List
-	SendMessage(h_ToolBar, TB_BUTTONSTRUCTSIZE, MAKEWPARAM(sizeof(TBBUTTON), 0), 0);
-
-	SendMessage(h_ToolBar, TB_SETIMAGELIST, 0, (LPARAM)h_ToolBarImageList);
-
-	std::vector<TBBUTTON> tbButtons(m_ToolBarButtonCount);
-	tbButtons[0] = { MAKELONG(0, 0), IDC_TOOLBAR_OPEN, TBSTATE_ENABLED, BTNS_AUTOSIZE | BTNS_SHOWTEXT, {}, 0, 0 };	// (INT_PTR)L"Open\0\0"
-	tbButtons[1] = { MAKELONG(1, 0), IDC_TOOLBAR_CLOSE, TBSTATE_ENABLED, BTNS_AUTOSIZE, {}, 0, 0 };
-	tbButtons[2] = { MAKELONG(2, 0), IDC_TOOLBAR_SAVE, TBSTATE_ENABLED, BTNS_AUTOSIZE, {}, 0, 0 };
-	tbButtons[3] = { MAKELONG(3, 0), IDC_TOOLBAR_NEW, TBSTATE_ENABLED, BTNS_AUTOSIZE, {}, 0, 0 };
-
-	SendMessage(h_ToolBar, TB_ADDBUTTONS, MAKEWPARAM(m_ToolBarButtonCount, 0), (LPARAM)tbButtons.data());
-
-	SendMessage(h_ToolBar, TB_AUTOSIZE, 0, 0);
-
-	SendMessage(h_ToolBar, WM_SIZE, 0, 0);
-
-}
-
-
-/*
-	Create Status Bar
-*/
-void Standard_Window::CreateStatusBar(HWND hWndParent)
-{
-	// Error
-	if ((!m_StatusBarParts) || (m_StatusBarParts < 0)) { return; }
-
-	// Create
-	h_StatusBar = CreateWindowExW(
-		0,
-		STATUSCLASSNAMEW,
-		0,
-		WS_CHILD | WS_VISIBLE,
-		0, 0,
-		0, 0,
-		hWndParent,
-		0,
-		m_Class.hInstance,
-		0);
-
-	if (!h_StatusBar) { GetErrorMessage(); }
-
-	// Create Parts
-	RECT ParentRect { };
-	if (!GetClientRect(hWndParent, &ParentRect)) { GetErrorMessage(); }
-
-	SendMessage(h_StatusBar, WM_SIZE, 0, MAKELPARAM(ParentRect.right, ParentRect.bottom));
-
-	std::vector<INT> Parts(m_StatusBarParts);
-
-	LONG Width = ParentRect.right / m_StatusBarParts;
-
-	INT RightEdge = Width;
-
-	for (auto& Part : Parts)
+	QUERY_USER_NOTIFICATION_STATE m_FullscreenState;
+	SHQueryUserNotificationState(&m_FullscreenState);
+	switch (m_FullscreenState)
 	{
-		Part = RightEdge;
-		RightEdge += Width;
+	case QUNS_BUSY:
+	case QUNS_RUNNING_D3D_FULL_SCREEN:
+	case QUNS_PRESENTATION_MODE:
+		return b_Fullscreen = true;
+	default:
+	case QUNS_NOT_PRESENT:
+	case QUNS_ACCEPTS_NOTIFICATIONS:
+	case QUNS_QUIET_TIME:
+	case QUNS_APP:
+		return b_Fullscreen = false;
 	}
-
-	SendMessage(h_StatusBar, SB_SETPARTS, m_StatusBarParts, (LPARAM)Parts.data());
-
-	SendMessage(h_StatusBar, SB_SETTEXTW, 0, (LPARAM)L"READY");
-
 }
 
 
 /*
-	Create Text Editor
+	Disallow peek
 */
-void Standard_Window::CreateTextEditor(HWND hWndParent)
+void Standard_Window::DisallowPeek(BOOL OnOff)
 {
-	// Parent Window Rect
-	RECT Rect = { 0, 0, 0, 0 };
-	if(!GetClientRect(hWndParent, &Rect)) { GetErrorMessage(); }
-
-	// Style
-	DWORD Style = WS_CHILD | WS_VISIBLE | WS_VSCROLL | WS_HSCROLL | ES_LEFT | ES_MULTILINE | ES_AUTOVSCROLL | ES_AUTOHSCROLL;
-
-	// Window Position
-	if (b_ToolBar) { Rect.top += (m_ToolBarIconHeight + 12); }
-	if (b_StatusBar) { Rect.bottom -= 79; }
-
-	// Create
-	h_TextEditor = CreateWindowExW(
-		WS_EX_WINDOWEDGE | WS_EX_CLIENTEDGE,
-		WC_EDITW,
-		(PTSTR)0,
-		Style,
-		Rect.left, Rect.top,
-		Rect.right, Rect.bottom,
-		hWndParent,
-		0,
-		m_Class.hInstance,
-		0
-	);
-
-	if(!h_TextEditor) { GetErrorMessage(); }
-
-	// Format
-	h_TextEditorFont = CreateFont(32, 0, 0, 0,
-		FW_NORMAL,				// Weight
-		FALSE,					// Italic
-		FALSE,					// Underline
-		FALSE,					// Strikeout
-		DEFAULT_CHARSET,		// CHAR Set
-		OUT_OUTLINE_PRECIS,		// Output Precision
-		CLIP_DEFAULT_PRECIS,	// Clip Precision
-		CLEARTYPE_QUALITY,		// Quality
-		MAKEWPARAM(VARIABLE_PITCH, FF_MODERN),
-		TEXT("Courier New"));
-
-	SendMessage(h_TextEditor, WM_SETFONT, (WPARAM)h_TextEditorFont, TRUE);
+	if (!hWnd)
+	{
+		Message(L"Peek Disallow Error: The parent window doesn't exist");
+		return;
+	}
+	b_DisallowPeek = OnOff;
+	DwmSetWindowAttribute(hWnd, DWMWA_DISALLOW_PEEK, &b_DisallowPeek, sizeof(BOOL));
 }
 
 
 /*
-	Status Bar Message
+	Exclude from Peek
 */
-void Standard_Window::Status(int iPart, const String _Message, ...)
+void Standard_Window::ExcludeFromPeek(BOOL OnOff)
 {
-	// Error
-	if ((!b_StatusBar) || (iPart > (m_StatusBarParts - 1))) { return; }
-
-	// Format
-	std::va_list _ArgList;
-	va_start(_ArgList, _Message);
-	int _StrLen = (std::vsnprintf(0, 0, _Message.c_str(), _ArgList) + sizeof(char));
-	std::vector<char> String(_StrLen);
-	std::vsnprintf(String.data(), _StrLen, _Message.c_str(), _ArgList);
-	va_end(_ArgList);
-
-	// Set Text
-	SendMessageA(h_StatusBar, SB_SETTEXTA, iPart, (LPARAM)String.data());
+	if (!hWnd)
+	{
+		Message(L"Peek Exclude Error: The parent window doesn't exist");
+		return;
+	}
+	b_ExcludeFromPeek = OnOff;
+	DwmSetWindowAttribute(hWnd, DWMWA_EXCLUDED_FROM_PEEK, &b_ExcludeFromPeek, sizeof(BOOL));
 }
 
 
 /*
-	Status Bar Message
+	Set dark mode
 */
-void Standard_Window::Status(int iPart, const StringW _Message, ...)
+void Standard_Window::SetDarkMode(BOOL OnOff)
 {
-	// Error
-	if ((!b_StatusBar) || (iPart > (m_StatusBarParts - 1))) { return; }
+	if (!hWnd)
+	{
+		Message(L"Dark Mode Error: The parent window doesn't exist");
+		return;
+	}
+	b_DarkMode = OnOff;
+	DwmSetWindowAttribute(hWnd, DWMWA_USE_IMMERSIVE_DARK_MODE, &b_DarkMode, sizeof(BOOL));
+}
 
-	// Format
-	std::va_list _ArgList;
-	va_start(_ArgList, _Message);
-	int _StrLen = (std::vswprintf(0, 0, _Message.c_str(), _ArgList) + sizeof(wchar_t));
-	std::vector<wchar_t> String(_StrLen);
-	std::vswprintf(String.data(), _StrLen, _Message.c_str(), _ArgList);
-	va_end(_ArgList);
 
-	// Set Text
-	SendMessageW(h_StatusBar, SB_SETTEXTW, iPart, (LPARAM)String.data());
+/*
+	Set round corners
+*/
+void Standard_Window::SetRoundCorners(DWM_WINDOW_CORNER_PREFERENCE Preference)
+{
+	if (!hWnd)
+	{
+		Message(L"Round Corner Preference Error: The parent window doesn't exist");
+		return;
+	}
+	m_RoundCorners = Preference;
+	DwmSetWindowAttribute(hWnd, DWMWA_WINDOW_CORNER_PREFERENCE, &m_RoundCorners, sizeof(DWM_WINDOW_CORNER_PREFERENCE));
+}
+
+
+/*
+	Set border color
+*/
+void Standard_Window::SetBorderColor(COLORREF Color)
+{
+	if (!hWnd)
+	{
+		Message(L"Window Border Color Error: The parent window doesn't exist");
+		return;
+	}
+	m_BorderColor = Color;
+	DwmSetWindowAttribute(hWnd, DWMWA_BORDER_COLOR, &m_BorderColor, sizeof(COLORREF));
+}
+
+
+/*
+	Set caption color
+*/
+void Standard_Window::SetCaptionColor(COLORREF Color)
+{
+	if (!hWnd)
+	{
+		Message(L"Window Caption Color Error: The parent window doesn't exist");
+		return;
+	}
+	m_CaptionColor = Color;
+	DwmSetWindowAttribute(hWnd, DWMWA_CAPTION_COLOR, &m_CaptionColor, sizeof(COLORREF));
+}
+
+
+/*
+	Set text color
+*/
+void Standard_Window::SetTextColor(COLORREF Color)
+{
+	if (!hWnd)
+	{
+		Message(L"Window Text Color Error: The parent window doesn't exist");
+		return;
+	}
+	m_TextColor = Color;
+	DwmSetWindowAttribute(hWnd, DWMWA_TEXT_COLOR, &m_TextColor, sizeof(COLORREF));
+}
+
+
+/*
+	Set backdrop type
+*/
+void Standard_Window::SetBackdropType(DWM_SYSTEMBACKDROP_TYPE Type)
+{
+	if (!hWnd)
+	{
+		Message(L"Window Backdrop Type Error: The parent window doesn't exist");
+		return;
+	}
+	m_BackdropType = Type;
+	DwmSetWindowAttribute(hWnd, DWMWA_SYSTEMBACKDROP_TYPE, &m_BackdropType, sizeof(DWM_SYSTEMBACKDROP_TYPE));
 }
