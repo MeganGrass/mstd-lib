@@ -55,9 +55,9 @@ void Standard_Windows_Common::GetErrorMessage(bool b_ExitProcess, const std::sou
 */
 std::filesystem::path Standard_Windows_Common::GetModuleStr(void)
 {
-	wchar_t _Filename[2048];
-	GetModuleFileNameW(0, _Filename, 2048);
-	return _Filename;
+	std::vector <wchar_t> _Filename(65535);
+	GetModuleFileNameW(0, _Filename.data(), static_cast<DWORD>(_Filename.size()));
+	return _Filename.data();
 }
 
 
@@ -66,9 +66,9 @@ std::filesystem::path Standard_Windows_Common::GetModuleStr(void)
 */
 std::filesystem::path Standard_Windows_Common::GetModuleDir(void)
 {
-	wchar_t _Filename[2048];
-	GetModuleFileNameW(0, _Filename, 2048);
-	return GetDirectory(_Filename);
+	std::vector <wchar_t> _Filename(65535);
+	GetModuleFileNameW(0, _Filename.data(), static_cast<DWORD>(_Filename.size()));
+	return GetDirectory(_Filename.data());
 }
 
 
@@ -78,7 +78,7 @@ std::filesystem::path Standard_Windows_Common::GetModuleDir(void)
 std::filesystem::path Standard_Windows_Common::GetUserDir(void)
 {
 	std::filesystem::path UserPath;
-	wchar_t* _Path = (wchar_t*)CoTaskMemAlloc(2048);
+	wchar_t* _Path = (wchar_t*)CoTaskMemAlloc(65535);
 	if (SHGetKnownFolderPath(FOLDERID_Profile, 0, 0, &_Path) == S_OK) { UserPath = GetDirectory(_Path); }
 	else { UserPath = L""; }
 	CoTaskMemFree(_Path);
@@ -92,7 +92,7 @@ std::filesystem::path Standard_Windows_Common::GetUserDir(void)
 std::filesystem::path Standard_Windows_Common::GetUserDocumentsDir(void)
 {
 	std::filesystem::path UserPath;
-	wchar_t* _Path = (wchar_t*)CoTaskMemAlloc(2048);
+	wchar_t* _Path = (wchar_t*)CoTaskMemAlloc(65535);
 	if (SHGetKnownFolderPath(FOLDERID_Documents, 0, 0, &_Path) == S_OK) { UserPath = GetDirectory(_Path); }
 	else { UserPath = L""; }
 	CoTaskMemFree(_Path);
@@ -101,12 +101,12 @@ std::filesystem::path Standard_Windows_Common::GetUserDocumentsDir(void)
 
 
 /*
-	Get the %USERPROFILE%\Saved Games directory
+	Get the %USERPROFILE% Saved Games directory
 */
 std::filesystem::path Standard_Windows_Common::GetUserSavedGamesDir(void)
 {
 	std::filesystem::path UserPath;
-	wchar_t* _Path = (wchar_t*)CoTaskMemAlloc(2048);
+	wchar_t* _Path = (wchar_t*)CoTaskMemAlloc(65535);
 	if (SHGetKnownFolderPath(FOLDERID_SavedGames, 0, 0, &_Path) == S_OK) { UserPath = GetDirectory(_Path); }
 	else { UserPath = L""; }
 	CoTaskMemFree(_Path);
@@ -227,7 +227,7 @@ std::optional<std::filesystem::path> Standard_Windows_Common::GetSaveFilename(St
 /*
 	Get Folder Dialog
 */
-[[nodiscard]] std::optional<std::filesystem::path> Standard_Windows_Common::GetFileDirectory(void)
+[[nodiscard]] std::optional<std::filesystem::path> Standard_Windows_Common::GetFileDirectory(void) const
 {
 	// CoCreate
 	IFileDialog* pFileDialog;
@@ -265,7 +265,7 @@ std::optional<std::filesystem::path> Standard_Windows_Common::GetSaveFilename(St
 /*
 	Message Box Question
 */
-bool Standard_Windows_Common::Question(const std::wstring _Question, ...)
+bool Standard_Windows_Common::Question(const std::wstring _Question, ...) const
 {
 	std::va_list _ArgList;
 	va_start(_ArgList, _Question);
@@ -307,6 +307,10 @@ void Standard_Windows_Common::Message(const std::string _Format, ...)
 	TaskDialog(hWndOwner, hInstance, L"Message", 0, WideStr.data(), TDCBF_OK_BUTTON, 0, 0);
 }
 
+
+/*
+	Message Box
+*/
 void Standard_Windows_Common::Message(const std::wstring _Format, ...)
 {
 	std::va_list _ArgList;

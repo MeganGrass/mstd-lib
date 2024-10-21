@@ -5,18 +5,6 @@
 *
 *
 *	TODO:
-* 
-*		Completely redo TextEditor or remove it
-* 
-*		Change toolbar to rebar?
-* 
-*		implement Width/Height fail-safes
-* 
-*		Better descriptions for functions
-* 
-*		Command console
-* 
-*		Users
 *
 */
 
@@ -25,14 +13,20 @@
 
 #include <resource.h>
 
-#include "std_system.h"
-
 #include "std_device.h"
+
+#include <versionhelpers.h>
 
 #include <dwmapi.h>
 
 
 typedef class Standard_Window StdWin;
+
+// IsWindows10OrGreater has been called?
+static bool b_StdWinIsWindows10OrGreater = false;
+
+// InitCommonControlsEx has been called?
+static bool b_StdWinInitCommonControlsEx = false;
 
 
 /*
@@ -223,6 +217,34 @@ public:
 		b_IsActive(false),
 		b_HasFocus(false)
 	{
+		if (!b_StdWinIsWindows10OrGreater)
+		{
+			b_StdWinIsWindows10OrGreater = true;
+			if (!IsWindows10OrGreater())
+			{
+				Message(L"Windows 10 or greater is required to run this application");
+				std::exit(EXIT_SUCCESS);
+			}
+		}
+
+		if (!b_StdWinInitCommonControlsEx)
+		{
+			b_StdWinInitCommonControlsEx = true;
+			INITCOMMONCONTROLSEX CommonControls{};
+			CommonControls.dwSize = sizeof(INITCOMMONCONTROLSEX);
+			CommonControls.dwICC =
+				ICC_WIN95_CLASSES |
+				ICC_DATE_CLASSES |
+				ICC_USEREX_CLASSES |
+				ICC_COOL_CLASSES |
+				ICC_INTERNET_CLASSES |
+				ICC_PAGESCROLLER_CLASS |
+				ICC_NATIVEFNTCTL_CLASS |
+				ICC_STANDARD_CLASSES |
+				ICC_LINK_CLASS;
+			if (!InitCommonControlsEx(&CommonControls)) { GetErrorMessage(); }
+		}
+
 		m_Class.cbSize = sizeof(WNDCLASSEXW);
 	}
 
@@ -326,8 +348,11 @@ public:
 	{}
 	Standard_Window& operator = (Standard_Window&& v) noexcept { return *this = Standard_Window(std::move(v)); }
 
-	// Preset command line parameters
-	void PresetCommandLine(LPWSTR lpCmdLine);
+	// Is window creation complete?
+	bool operator !() const { return !b_CreationComplete; }
+
+	// Parse command line parameters
+	void CommandLine(LPWSTR lpCmdLine);
 
 	// Preset no window borders, frames or title/caption bar
 	void PresetBorderless(bool Borderless);
@@ -347,7 +372,7 @@ public:
 	// Preset class name
 	void PresetClassName(const StringW ClassName);
 
-	// Preset window name
+	// Preset window (caption) name
 	void PresetWindowName(const StringW Name);
 
 	// Preset class name from resource string table (wide string)
@@ -407,6 +432,9 @@ public:
 	// Create parent window
 	void Create(int Width, int Height, HINSTANCE hInstance, int nCmdShow, WNDPROC WndProc);
 
+	// Creation complete?
+	bool CreationComplete(void) const { return b_CreationComplete; }
+
 	// Create child window
 	HWND CreateChild(int x, int y, int Width, int Height, HINSTANCE hInstance, int nCmdShow, WNDPROC WndProc, DWORD Style, DWORD StyleEx, WindowOptions e_Options = WindowOptions::None);
 
@@ -417,10 +445,16 @@ public:
 	void ClearChildWindows(void);
 
 	// Create Toolbar
-	void CreateToolBar(DWORD Style = (TBSTYLE_TOOLTIPS | TBSTYLE_FLAT), DWORD StyleEx = TBSTYLE_EX_DOUBLEBUFFER, HIMAGELIST ImageList = nullptr, std::vector<TBBUTTON> Buttons = {});
+	void CreateToolbar(DWORD Style = (TBSTYLE_TOOLTIPS | TBSTYLE_FLAT), DWORD StyleEx = TBSTYLE_EX_DOUBLEBUFFER, HIMAGELIST ImageList = nullptr, std::vector<TBBUTTON> Buttons = {});
 
 	// Create Status Bar
 	void CreateStatusBar(DWORD Style = SBARS_TOOLTIPS, INT PartCount = 1);
+
+	/*
+		Set status bar tooltip
+		- Tooltip will only appear if the string is too large to fit in the status bar part
+	*/
+	void SetStatusBarTooltip(int iPart, const StringW Tooltip) const;
 
 	// Status bar message
 	void Status(int iPart, const String _Message, ...) const;
@@ -429,7 +463,7 @@ public:
 	void Status(int iPart, const StringW _Message, ...) const;
 
 	// Get status bar string
-	StringW GetStatus(int iPart) const;
+	[[nodiscard]] StringW GetStatus(int iPart) const;
 
 	// Status bar message
 	void StatusPercent(int iPart, UINT iIndex, UINT iTotal) { Status(iPart, L"%0.0f%%", (((double)iIndex / (double)iTotal) * 100)); }
@@ -444,79 +478,79 @@ public:
 	void SetAcceleratorTable(HINSTANCE hInstance, ULONG ResourceID);
 
 	// Get accelerator table
-	HACCEL GetAcceleratorTable(void) const { return h_AccelTable; }
+	[[nodiscard]] HACCEL GetAcceleratorTable(void) const { return h_AccelTable; }
 
 	// Get window handle
-	HWND GetHandle(void) const { return hWnd; }
+	[[nodiscard]] HWND GetHandle(void) const { return hWnd; }
 
 	// Get instance handle
-	HINSTANCE GetInstance(void) const { return h_Instance; }
+	[[nodiscard]] HINSTANCE GetInstance(void) const { return h_Instance; }
 
 	// Get window color
-	COLORREF GetColor(void) const { return m_Color; }
+	[[nodiscard]] COLORREF GetColor(void) const { return m_Color; }
 
 	// Get window color brush
-	HBRUSH GetBrush(void) const { return h_Brush; }
+	[[nodiscard]] HBRUSH GetBrush(void) const { return h_Brush; }
 
 	// Get class brush
-	HBRUSH GetClassBrush(void) const { return m_Class.hbrBackground; }
+	[[nodiscard]] HBRUSH GetClassBrush(void) const { return m_Class.hbrBackground; }
 
 	// Get menu handle
-	HMENU GetMenu(void) const { return h_Menu; }
+	[[nodiscard]] HMENU GetMenu(void) const { return h_Menu; }
 
 	// Get dropped files
-	StrVecW GetDroppedFiles(void) const { return s_DroppedFiles; }
+	[[nodiscard]] StrVecW GetDroppedFiles(void) const { return s_DroppedFiles; }
 
 	// Clear the dropped file list
 	void ClearDroppedFiles(void) { s_DroppedFiles.clear(); }
 
 	// Get child window count
-	std::size_t GetChildWindowCount(void) const { return v_ChildWindows.size(); }
+	[[nodiscard]] std::size_t GetChildWindowCount(void) const { return v_ChildWindows.size(); }
 
 	// Get child window
-	Standard_Window* GetChildWindow(UINT Index) { return v_ChildWindows[Index].get(); }
+	[[nodiscard]] Standard_Window* GetChildWindow(UINT Index);
 
 	// Is borderless?
-	bool IsBorderless(void) const { return b_Borderless; }
+	[[nodiscard]] bool IsBorderless(void) const { return b_Borderless; }
 
 	// Is fullscreen?
-	bool IsFullscreen(void);
+	[[nodiscard]] bool IsFullscreen(void);
 
 	// Is window active?
-	bool IsActive(void) const { return b_IsActive; }
+	[[nodiscard]] bool IsActive(void) const { return b_IsActive; }
 
 	// Has window focus?
-	bool HasFocus(void) const { return b_HasFocus; }
+	[[nodiscard]] bool HasFocus(void) const { return b_HasFocus; }
 
 	// Get window DPI scale factor
-	FLOAT GetScaleFactor(void) const { return static_cast<FLOAT>(m_WindowDPI) / USER_DEFAULT_SCREEN_DPI; }
+	[[nodiscard]] FLOAT GetScaleFactor(void) const { return static_cast<FLOAT>(m_WindowDPI) / USER_DEFAULT_SCREEN_DPI; }
 
 	// Get window DPI scale factor by percentage
-	UINT GetScaleFactorByPercentage(void) const { return std::to_underlying(m_ScaleFactor); }
+	[[nodiscard]] UINT GetScaleFactorByPercentage(void) const { return std::to_underlying(m_ScaleFactor); }
 
 	// Disallow peek preview for the window when the mouse hovers over the window's thumbnail in the taskbar
 	void DisallowPeek(BOOL OnOff);
 
 	// Get disallow peek preview
-	BOOL GetDisallowPeek(void) const { return b_DisallowPeek; }
+	[[nodiscard]] BOOL GetDisallowPeek(void) const { return b_DisallowPeek; }
 
 	// Prevent window from fading to glass sheet when peek is invoked
 	void ExcludeFromPeek(BOOL OnOff);
 
 	// Get exclude from peek
-	BOOL GetExcludeFromPeek(void) const { return b_ExcludeFromPeek; }
+	[[nodiscard]] BOOL GetExcludeFromPeek(void) const { return b_ExcludeFromPeek; }
 
 	// Set dark mode
 	void SetDarkMode(BOOL OnOff);
 
 	// Get dark mode
-	BOOL GetDarkMode(void) const { return b_DarkMode; }
+	[[nodiscard]] BOOL GetDarkMode(void) const { return b_DarkMode; }
 
 	// Set round corner preference
 	void SetRoundCorners(DWM_WINDOW_CORNER_PREFERENCE Preference);
 
 	// Get round corner preference
-	DWM_WINDOW_CORNER_PREFERENCE GetRoundCorners(void) const { return m_RoundCorners; }
+	[[nodiscard]] DWM_WINDOW_CORNER_PREFERENCE GetRoundCorners(void) const { return m_RoundCorners; }
 
 	/*
 		Set border color
@@ -529,13 +563,13 @@ public:
 	void SetBorderColor(COLORREF Color);
 
 	// Get border color
-	COLORREF GetBorderColor(void) const { return m_BorderColor; }
+	[[nodiscard]] COLORREF GetBorderColor(void) const { return m_BorderColor; }
 
 	// Set border color on lost focus
 	void SetBorderColorOnLostFocus(COLORREF Color) { m_BorderColorLostFocus = Color; }
 
 	// Get border color on lost focus
-	COLORREF GetBorderColorOnLostFocus(void) const { return m_BorderColorLostFocus; }
+	[[nodiscard]] COLORREF GetBorderColorOnLostFocus(void) const { return m_BorderColorLostFocus; }
 
 	/*
 		Set caption color
@@ -546,13 +580,13 @@ public:
 	void SetCaptionColor(COLORREF Color);
 
 	// Get caption color
-	COLORREF GetCaptionColor(void) const { return m_CaptionColor; }
+	[[nodiscard]] COLORREF GetCaptionColor(void) const { return m_CaptionColor; }
 
 	// Set caption color on lost focus
 	void SetCaptionColorOnLostFocus(COLORREF Color) { m_CaptionColorLostFocus = Color; }
 
 	// Get caption color on lost focus
-	COLORREF GetCaptionColorOnLostFocus(void) const { return m_CaptionColorLostFocus; }
+	[[nodiscard]] COLORREF GetCaptionColorOnLostFocus(void) const { return m_CaptionColorLostFocus; }
 
 	/*
 		Set text color
@@ -563,25 +597,45 @@ public:
 	void SetTextColor(COLORREF Color);
 
 	// Get text color
-	COLORREF GetTextColor(void) const { return m_TextColor; }
+	[[nodiscard]] COLORREF GetTextColor(void) const { return m_TextColor; }
 
 	// Set backdrop type
 	void SetBackdropType(DWM_SYSTEMBACKDROP_TYPE Type);
 
 	// Get backdrop type
-	DWM_SYSTEMBACKDROP_TYPE GetBackdropType(void) const { return m_BackdropType; }
+	[[nodiscard]] DWM_SYSTEMBACKDROP_TYPE GetBackdropType(void) const { return m_BackdropType; }
 
-	// Windows Process Messages
+	// WM_ACTIVATE
 	void MsgActivate(WPARAM wParam, LPARAM lParam);
+
+	// WM_SETFOCUS
 	void MsgSetFocus(WPARAM wParam, LPARAM lParam);
+
+	// WM_KILLFOCUS
 	void MsgKillFocus(WPARAM wParam, LPARAM lParam);
+
+	// WM_WINDOWPOSCHANGED
 	void MsgPositionChanged(WPARAM wParam, LPARAM lParam);
+
+	// WM_DISPLAYCHANGE
 	void MsgDisplayChange(WPARAM wParam, LPARAM lParam);
+
+	// WM_INPUT_DEVICE_CHANGE
 	void MsgInputDeviceChange(WPARAM wParam, LPARAM lParam);
+
+	// WM_INPUT
 	void MsgInput(WPARAM wParam, LPARAM lParam);
+
+	// WM_MOUSEWHEEL
 	void MsgMouseWheel(WPARAM wParam, LPARAM lParam);
+
+	// WM_MOUSEHWHEEL
 	void MsgMouseHWheel(WPARAM wParam, LPARAM lParam);
+
+	// WM_DROPFILES
 	void MsgDropFiles(WPARAM wParam, LPARAM lParam);
-	void MsgDpiChanged(WPARAM wParam, LPARAM lParam);
+
+	// WM_DPICHANGED
+	void MsgDpiChanged(WPARAM wParam, LPARAM lParam) const;
 
 };

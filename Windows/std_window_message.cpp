@@ -16,7 +16,73 @@
 #pragma comment(lib, "Shcore.lib")
 
 
-// WM_ACTIVATE
+/*
+	Standard Window Message Handler
+*/
+LRESULT CALLBACK StandardWindowProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam, UINT_PTR uIdSubclass, DWORD_PTR dwRefData)
+{
+	StdWin* Window = (StdWin*)dwRefData;
+
+	if (!Window) { return DefSubclassProc(hWnd, uMsg, wParam, lParam); }
+
+	switch (uMsg)
+	{
+	case WM_MOVE:
+		break;
+	case WM_SIZE:
+		break;
+	case WM_ACTIVATE:
+		Window->MsgActivate(wParam, lParam);
+		break;
+	case WM_SETFOCUS:
+		Window->MsgSetFocus(wParam, lParam);
+		break;
+	case WM_KILLFOCUS:
+		Window->MsgKillFocus(wParam, lParam);
+		break;
+	case WM_WINDOWPOSCHANGING:
+		break;
+	case WM_WINDOWPOSCHANGED:
+		Window->MsgPositionChanged(wParam, lParam);
+		break;
+	case WM_DISPLAYCHANGE:
+		Window->MsgDisplayChange(wParam, lParam);
+		break;
+	case WM_INPUT_DEVICE_CHANGE:
+		Window->MsgInputDeviceChange(wParam, lParam);
+		break;
+	case WM_INPUT:
+		Window->MsgInput(wParam, lParam);
+		if (GET_RAWINPUT_CODE_WPARAM(wParam) == RIM_INPUT) { return DefSubclassProc(hWnd, uMsg, wParam, lParam); }
+		break;
+	case WM_MOUSEWHEEL:
+		Window->MsgMouseWheel(wParam, lParam);
+		break;
+	case WM_MOUSEHWHEEL:
+		Window->MsgMouseHWheel(wParam, lParam);
+		break;
+	case WM_DROPFILES:
+		Window->MsgDropFiles(wParam, lParam);
+		break;
+	case WM_DPICHANGED:
+		Window->MsgDpiChanged(wParam, lParam);
+		break;
+	case WM_PAINT:
+	{
+		PAINTSTRUCT ps;
+		HDC hdc = BeginPaint(hWnd, &ps);
+		FillRect(hdc, &ps.rcPaint, Window->GetBrush());
+		EndPaint(hWnd, &ps);
+	}
+	}
+
+	return DefSubclassProc(hWnd, uMsg, wParam, lParam);
+}
+
+
+/*
+	WM_ACTIVATE
+*/
 void Standard_Window::MsgActivate(WPARAM wParam, LPARAM lParam)
 {
 	if ((wParam & WA_ACTIVE) || (wParam & WA_CLICKACTIVE))
@@ -50,21 +116,27 @@ void Standard_Window::MsgActivate(WPARAM wParam, LPARAM lParam)
 }
 
 
-// WM_SETFOCUS
+/*
+	WM_SETFOCUS
+*/
 void Standard_Window::MsgSetFocus(WPARAM wParam, LPARAM lParam)
 {
 	b_HasFocus = true;
 }
 
 
-// WM_KILLFOCUS
+/*
+	WM_KILLFOCUS
+*/
 void Standard_Window::MsgKillFocus(WPARAM wParam, LPARAM lParam)
 {
 	b_HasFocus = false;
 }
 
 
-// WM_WINDOWPOSCHANGED
+/*
+	WM_WINDOWPOSCHANGED
+*/
 void Standard_Window::MsgPositionChanged(WPARAM wParam, LPARAM lParam)
 {
 
@@ -103,7 +175,9 @@ void Standard_Window::MsgPositionChanged(WPARAM wParam, LPARAM lParam)
 }
 
 
-// WM_DISPLAYCHANGE
+/*
+	WM_DISPLAYCHANGE
+*/
 void Standard_Window::MsgDisplayChange(WPARAM wParam, LPARAM lParam)
 {
 	if (IsFullscreen())
@@ -121,7 +195,9 @@ void Standard_Window::MsgDisplayChange(WPARAM wParam, LPARAM lParam)
 }
 
 
-// WM_INPUT_DEVICE_CHANGE
+/*
+	WM_INPUT_DEVICE_CHANGE
+*/
 void Standard_Window::MsgInputDeviceChange(WPARAM wParam, LPARAM lParam)
 {
 	if(wParam == GIDC_ARRIVAL) { WinDevices->AddDevice((HANDLE)lParam); }
@@ -129,7 +205,9 @@ void Standard_Window::MsgInputDeviceChange(WPARAM wParam, LPARAM lParam)
 }
 
 
-// WM_INPUT
+/*
+	WM_INPUT
+*/
 void Standard_Window::MsgInput(WPARAM wParam, LPARAM lParam)
 {
 	// no focus, no input processing
@@ -162,7 +240,9 @@ void Standard_Window::MsgInput(WPARAM wParam, LPARAM lParam)
 }
 
 
-// WM_MOUSEWHEEL
+/*
+	WM_MOUSEWHEEL
+*/
 void Standard_Window::MsgMouseWheel(WPARAM wParam, LPARAM lParam)
 {
 	for (auto& Mouse : WinDevices->Mice)
@@ -172,7 +252,9 @@ void Standard_Window::MsgMouseWheel(WPARAM wParam, LPARAM lParam)
 }
 
 
-// WM_MOUSEHWHEEL
+/*
+	WM_MOUSEHWHEEL
+*/
 void Standard_Window::MsgMouseHWheel(WPARAM wParam, LPARAM lParam)
 {
 	for (auto& Mouse : WinDevices->Mice)
@@ -182,7 +264,9 @@ void Standard_Window::MsgMouseHWheel(WPARAM wParam, LPARAM lParam)
 }
 
 
-// WM_DROPFILES
+/*
+	WM_DROPFILES
+*/
 void Standard_Window::MsgDropFiles(WPARAM wParam, LPARAM lParam)
 {
 	HDROP hDrop = (HDROP)wParam;
@@ -206,8 +290,10 @@ void Standard_Window::MsgDropFiles(WPARAM wParam, LPARAM lParam)
 }
 
 
-// WM_DPICHANGED
-void Standard_Window::MsgDpiChanged(WPARAM wParam, LPARAM lParam)
+/*
+	WM_DPICHANGED
+*/
+void Standard_Window::MsgDpiChanged(WPARAM wParam, LPARAM lParam) const
 {
 	RECT* Rect = (RECT*)lParam;
 	WINDOWPOS WindowPos{};

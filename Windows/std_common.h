@@ -167,13 +167,13 @@ public:
 	/*
 		Get Folder Dialog
 	*/
-	[[nodiscard]] std::optional<std::filesystem::path> GetFileDirectory(void);
+	[[nodiscard]] std::optional<std::filesystem::path> GetFileDirectory(void) const;
 
 
 	/*
 		Message Box Question
 	*/
-	[[nodiscard]] bool Question(const std::wstring _Question, ...);
+	[[nodiscard]] bool Question(const std::wstring _Question, ...) const;
 
 
 	/*
@@ -181,6 +181,10 @@ public:
 	*/
 	virtual void Message(const std::string _Format, ...) override;
 
+
+	/*
+		Message Box
+	*/
 	virtual void Message(const std::wstring _Format, ...) override;
 
 

@@ -15,6 +15,13 @@
 
 
 /*
+	Standard Window Message Handler
+	- dwRefData is pointer to the Standard_Window object
+*/
+extern LRESULT CALLBACK StandardWindowProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam, UINT_PTR uIdSubclass, DWORD_PTR dwRefData);
+
+
+/*
 	Parse Window Creation and Style Options
 */
 void Standard_Window::ParsePresets(void)
@@ -147,15 +154,22 @@ void Standard_Window::Create(int Width, int Height, HINSTANCE hInstance, int nCm
 		nullptr);
 	if (!hWnd) { GetErrorMessage(); }
 
+	// Standard Window Message Handler
+	SetWindowSubclass(hWnd, StandardWindowProc, 0, (DWORD_PTR)this);
+
 	// Standard Windows Common Class
 	SetCommonInstance(h_Instance);
 	SetCommonOwner(hWnd);
 
 	// Desktop Window Manager
+	DisallowPeek(b_DisallowPeek);
+	ExcludeFromPeek(b_ExcludeFromPeek);
 	SetDarkMode(b_DarkMode);
 	SetRoundCorners(m_RoundCorners);
 	SetBorderColor(m_BorderColor);
+	SetBorderColorOnLostFocus(m_BorderColorLostFocus);
 	SetCaptionColor(m_CaptionColor);
+	SetBorderColorOnLostFocus(m_CaptionColor);
 	SetTextColor(m_TextColor);
 	SetBackdropType(m_BackdropType);
 
@@ -166,7 +180,7 @@ void Standard_Window::Create(int Width, int Height, HINSTANCE hInstance, int nCm
 	RECT ToolBarRect{};
 	if (b_ToolBar)
 	{
-		CreateToolBar(m_ToolBarStyle, m_ToolBarStyleEx, h_ToolBarImageList, m_ToolbarButtons);
+		CreateToolbar(m_ToolBarStyle, m_ToolBarStyleEx, h_ToolBarImageList, m_ToolbarButtons);
 		GetWindowRect(h_ToolBar, &ToolBarRect);
 	}
 
@@ -297,7 +311,9 @@ HWND Standard_Window::CreateChild(int x, int y, int Width, int Height, HINSTANCE
 	Window->SetDarkMode(GetDarkMode());
 	Window->SetRoundCorners(GetRoundCorners());
 	Window->SetBorderColor(GetBorderColor());
+	Window->SetBorderColorOnLostFocus(GetBorderColorOnLostFocus());
 	Window->SetCaptionColor(GetCaptionColor());
+	Window->SetCaptionColorOnLostFocus(GetCaptionColorOnLostFocus());
 	Window->SetTextColor(GetTextColor());
 	Window->SetBackdropType(GetBackdropType());
 
@@ -419,6 +435,16 @@ bool Standard_Window::AddChildWindow(HWND hWndChild, bool b_SnapToChild)
 
 
 /*
+	Get child window
+*/
+Standard_Window* Standard_Window::GetChildWindow(UINT Index)
+{
+	if (Index > (v_ChildWindows.size() - 1)) { return nullptr; }
+	return v_ChildWindows.at(Index).get();
+}
+
+
+/*
 	Clear child windows
 */
 void Standard_Window::ClearChildWindows(void)
@@ -487,9 +513,9 @@ HWND Standard_Window::CreateTooltip(HWND hWndParent, ULONG ResourceID, StringW T
 
 
 /*
-	Create Tool Bar
+	Create Toolbar
 */
-void Standard_Window::CreateToolBar(DWORD Style, DWORD StyleEx, HIMAGELIST ImageList, std::vector<TBBUTTON> Buttons)
+void Standard_Window::CreateToolbar(DWORD Style, DWORD StyleEx, HIMAGELIST ImageList, std::vector<TBBUTTON> Buttons)
 {
 	if ((!ImageList) || (Buttons.empty()))
 	{
@@ -572,6 +598,17 @@ void Standard_Window::CreateStatusBar(DWORD Style, INT PartCount)
 
 	SendMessage(h_StatusBar, SB_SETPARTS, m_StatusBarParts, (LPARAM)Parts.data());
 
+}
+
+
+/*
+	Set status bar tooltip
+*/
+void Standard_Window::SetStatusBarTooltip(int iPart, const StringW Tooltip) const
+{
+	if ((!b_StatusBar) || (iPart > (m_StatusBarParts - 1))) { return; }
+
+	SendMessageW(h_StatusBar, SB_SETTIPTEXTW, iPart, (LPARAM)Tooltip.c_str());
 }
 
 
@@ -684,7 +721,7 @@ void Standard_Window::CreateTextEditor(HWND hWndParent)
 
 
 /*
-	Resize to window
+	Resize (snap) to window
 */
 bool Standard_Window::ResizeToWindow(HWND hWndChild, bool b_Center)
 {
@@ -747,17 +784,6 @@ bool Standard_Window::ResizeToWindow(HWND hWndChild, bool b_Center)
 
 
 /*
-	Set accelerator table
-*/
-void Standard_Window::SetAcceleratorTable(HINSTANCE hInstance, ULONG ResourceID)
-{
-	h_AccelTable = LoadAccelerators(hInstance, MAKEINTRESOURCE(ResourceID));
-
-	if (!h_AccelTable) { Message(L"An error occurred when trying to load the window accelerator table."); }
-}
-
-
-/*
 	Is fullscreen?
 */
 bool Standard_Window::IsFullscreen(void)
@@ -777,124 +803,4 @@ bool Standard_Window::IsFullscreen(void)
 	case QUNS_APP:
 		return b_Fullscreen = false;
 	}
-}
-
-
-/*
-	Disallow peek
-*/
-void Standard_Window::DisallowPeek(BOOL OnOff)
-{
-	if (!hWnd)
-	{
-		Message(L"Peek Disallow Error: The parent window doesn't exist");
-		return;
-	}
-	b_DisallowPeek = OnOff;
-	DwmSetWindowAttribute(hWnd, DWMWA_DISALLOW_PEEK, &b_DisallowPeek, sizeof(BOOL));
-}
-
-
-/*
-	Exclude from Peek
-*/
-void Standard_Window::ExcludeFromPeek(BOOL OnOff)
-{
-	if (!hWnd)
-	{
-		Message(L"Peek Exclude Error: The parent window doesn't exist");
-		return;
-	}
-	b_ExcludeFromPeek = OnOff;
-	DwmSetWindowAttribute(hWnd, DWMWA_EXCLUDED_FROM_PEEK, &b_ExcludeFromPeek, sizeof(BOOL));
-}
-
-
-/*
-	Set dark mode
-*/
-void Standard_Window::SetDarkMode(BOOL OnOff)
-{
-	if (!hWnd)
-	{
-		Message(L"Dark Mode Error: The parent window doesn't exist");
-		return;
-	}
-	b_DarkMode = OnOff;
-	DwmSetWindowAttribute(hWnd, DWMWA_USE_IMMERSIVE_DARK_MODE, &b_DarkMode, sizeof(BOOL));
-}
-
-
-/*
-	Set round corners
-*/
-void Standard_Window::SetRoundCorners(DWM_WINDOW_CORNER_PREFERENCE Preference)
-{
-	if (!hWnd)
-	{
-		Message(L"Round Corner Preference Error: The parent window doesn't exist");
-		return;
-	}
-	m_RoundCorners = Preference;
-	DwmSetWindowAttribute(hWnd, DWMWA_WINDOW_CORNER_PREFERENCE, &m_RoundCorners, sizeof(DWM_WINDOW_CORNER_PREFERENCE));
-}
-
-
-/*
-	Set border color
-*/
-void Standard_Window::SetBorderColor(COLORREF Color)
-{
-	if (!hWnd)
-	{
-		Message(L"Window Border Color Error: The parent window doesn't exist");
-		return;
-	}
-	m_BorderColor = Color;
-	DwmSetWindowAttribute(hWnd, DWMWA_BORDER_COLOR, &m_BorderColor, sizeof(COLORREF));
-}
-
-
-/*
-	Set caption color
-*/
-void Standard_Window::SetCaptionColor(COLORREF Color)
-{
-	if (!hWnd)
-	{
-		Message(L"Window Caption Color Error: The parent window doesn't exist");
-		return;
-	}
-	m_CaptionColor = Color;
-	DwmSetWindowAttribute(hWnd, DWMWA_CAPTION_COLOR, &m_CaptionColor, sizeof(COLORREF));
-}
-
-
-/*
-	Set text color
-*/
-void Standard_Window::SetTextColor(COLORREF Color)
-{
-	if (!hWnd)
-	{
-		Message(L"Window Text Color Error: The parent window doesn't exist");
-		return;
-	}
-	m_TextColor = Color;
-	DwmSetWindowAttribute(hWnd, DWMWA_TEXT_COLOR, &m_TextColor, sizeof(COLORREF));
-}
-
-
-/*
-	Set backdrop type
-*/
-void Standard_Window::SetBackdropType(DWM_SYSTEMBACKDROP_TYPE Type)
-{
-	if (!hWnd)
-	{
-		Message(L"Window Backdrop Type Error: The parent window doesn't exist");
-		return;
-	}
-	m_BackdropType = Type;
-	DwmSetWindowAttribute(hWnd, DWMWA_SYSTEMBACKDROP_TYPE, &m_BackdropType, sizeof(DWM_SYSTEMBACKDROP_TYPE));
 }
