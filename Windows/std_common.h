@@ -11,7 +11,11 @@
 
 #pragma once
 
-#include "../std_text.h"
+#include "std_exception.h"
+
+#include "std_filesystem.h"
+
+#include "std_string.h"
 
 #include <thread>
 

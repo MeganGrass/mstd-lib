@@ -180,9 +180,11 @@ void Windows_Devices::RemoveDevice(HANDLE hDevice)
 }
 
 
+#ifdef _DEBUG
 /*
 	Get text report for display devices
-*/
+//
+#include "../std_text.h"
 void Windows_Devices::GetDisplayReport(void)
 {
 	// C:\Users\%USER%\Documents
@@ -311,7 +313,8 @@ void Windows_Devices::GetDisplayReport(void)
 	for (std::size_t n = 0; n < Displays.size(); n++) { ReportStr += FormatCStyle(L"DisplayReport%d.txt\r\n", n); }
 	Message(L"Display Report files created in %ws\r\n\r\n%ws", OriginalPath.wstring().c_str(), ReportStr.c_str());
 
-}
+}*/
+#endif
 
 
 /*

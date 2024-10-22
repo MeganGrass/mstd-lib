@@ -326,7 +326,9 @@ public:
 	/*
 		Get text report for display devices
 	*/
+#ifdef _DEBUG
 	void GetDisplayReport(void);
+#endif
 
 
 	/*

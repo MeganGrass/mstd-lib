@@ -86,7 +86,7 @@ void Standard_Window::Create(int Width, int Height, HINSTANCE hInstance, int nCm
 	// Error
 	if (hWnd)
 	{
-		Message(L"Create Window Error: The parent window already exist");
+		Message(L"Create Window Error: The parent window already exists");
 		return;
 	}
 
@@ -169,7 +169,7 @@ void Standard_Window::Create(int Width, int Height, HINSTANCE hInstance, int nCm
 	SetBorderColor(m_BorderColor);
 	SetBorderColorOnLostFocus(m_BorderColorLostFocus);
 	SetCaptionColor(m_CaptionColor);
-	SetBorderColorOnLostFocus(m_CaptionColor);
+	SetCaptionColorOnLostFocus(m_CaptionColorLostFocus);
 	SetTextColor(m_TextColor);
 	SetBackdropType(m_BackdropType);
 
@@ -374,7 +374,9 @@ bool Standard_Window::AddChildWindow(HWND hWndChild, bool b_SnapToChild)
 	Window->SetDarkMode(GetDarkMode());
 	Window->SetRoundCorners(GetRoundCorners());
 	Window->SetBorderColor(GetBorderColor());
+	Window->SetBorderColorOnLostFocus(GetBorderColorOnLostFocus());
 	Window->SetCaptionColor(GetCaptionColor());
+	Window->SetCaptionColorOnLostFocus(GetCaptionColorOnLostFocus());
 	Window->SetTextColor(GetTextColor());
 	Window->SetBackdropType(GetBackdropType());
 
