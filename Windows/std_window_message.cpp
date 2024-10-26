@@ -11,8 +11,6 @@
 
 #include "std_window.h"
 
-#include <shellscalingapi.h>
-
 #pragma comment(lib, "Shcore.lib")
 
 
@@ -71,7 +69,7 @@ LRESULT CALLBACK StandardWindowProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM 
 	{
 		PAINTSTRUCT ps;
 		HDC hdc = BeginPaint(hWnd, &ps);
-		FillRect(hdc, &ps.rcPaint, Window->GetBrush());
+		if (Window->GetBrush()) { FillRect(hdc, &ps.rcPaint, Window->GetBrush()); }
 		EndPaint(hWnd, &ps);
 	}
 	}
@@ -98,6 +96,7 @@ void Standard_Window::MsgActivate(WPARAM wParam, LPARAM lParam)
 		}
 		DwmSetWindowAttribute(hWnd, DWMWA_BORDER_COLOR, &m_BorderColor, sizeof(COLORREF));
 		DwmSetWindowAttribute(hWnd, DWMWA_CAPTION_COLOR, &m_CaptionColor, sizeof(COLORREF));
+		DwmSetWindowAttribute(hWnd, DWMWA_TEXT_COLOR, &m_TextColor, sizeof(COLORREF));
 	}
 	else
 	{
@@ -112,6 +111,7 @@ void Standard_Window::MsgActivate(WPARAM wParam, LPARAM lParam)
 		}
 		DwmSetWindowAttribute(hWnd, DWMWA_BORDER_COLOR, &m_BorderColorLostFocus, sizeof(COLORREF));
 		DwmSetWindowAttribute(hWnd, DWMWA_CAPTION_COLOR, &m_CaptionColorLostFocus, sizeof(COLORREF));
+		DwmSetWindowAttribute(hWnd, DWMWA_TEXT_COLOR, &m_TextColorLostFocus, sizeof(COLORREF));
 	}
 }
 
@@ -139,26 +139,24 @@ void Standard_Window::MsgKillFocus(WPARAM wParam, LPARAM lParam)
 */
 void Standard_Window::MsgPositionChanged(WPARAM wParam, LPARAM lParam)
 {
-
 	WINDOWPOS* WindowPos = (WINDOWPOS*)lParam;
 
-	if ((WindowPos->flags & SWP_NOSIZE) && (WindowPos->flags & SWP_NOMOVE)) { return; }
+	// if ((WindowPos->flags & SWP_NOSIZE) && (WindowPos->flags & SWP_NOMOVE)) { return; }
 
-	// Window DPI/Scaling
-	GetScaleFactorForMonitor(MonitorFromWindow(hWnd, MONITOR_DEFAULTTONEAREST), &m_ScaleFactor);
-	m_WindowDPI = GetDpiForWindow(hWnd);
+	RECT Rect{ WindowPos->x, WindowPos->y, (WindowPos->cx - WindowPos->x), (WindowPos->cy - WindowPos->y) };
 
-	// Parent Window
-	SetWindowPos(hWnd, 0, WindowPos->x, WindowPos->y, WindowPos->cx, WindowPos->cy, SWP_NOZORDER | SWP_NOREDRAW | SWP_NOACTIVATE | SWP_NOCOPYBITS | SWP_NOOWNERZORDER | SWP_NOSENDCHANGING | SWP_DEFERERASE | SWP_ASYNCWINDOWPOS);	// WindowPos->flags);
+	if (!AdjustWindowRectExForDpi(&Rect, GetWindowLong(hWnd, GWL_STYLE), GetMenu(hWnd) ? TRUE : FALSE, GetWindowLong(hWnd, GWL_EXSTYLE), m_WindowDPI = GetDpiForWindow(hWnd))) { GetErrorMessage(); }
 
-	// Tool Bar
+	SetWindowPos(hWnd, 0, Rect.left, Rect.top, Rect.right, Rect.bottom, WindowPos->flags);	// SWP_NOZORDER | SWP_NOREDRAW | SWP_NOACTIVATE | SWP_NOCOPYBITS | SWP_NOOWNERZORDER | SWP_NOSENDCHANGING | SWP_DEFERERASE | SWP_ASYNCWINDOWPOS);
+
+	if (GetScaleFactorForMonitor(MonitorFromWindow(hWnd, MONITOR_DEFAULTTONEAREST), &m_ScaleFactor) != S_OK) { GetErrorMessage(); }
+
 	if (h_ToolBar)
 	{
 		SendMessage(h_ToolBar, TB_AUTOSIZE, 0, 0);
 		SendMessage(h_ToolBar, WM_SIZE, 0, 0);
 	}
 
-	// Status Bar
 	if (h_StatusBar)
 	{
 		SendMessage(h_StatusBar, WM_SIZE, 0, MAKELPARAM(WindowPos->cx, WindowPos->cy));
@@ -293,8 +291,9 @@ void Standard_Window::MsgDropFiles(WPARAM wParam, LPARAM lParam)
 /*
 	WM_DPICHANGED
 */
-void Standard_Window::MsgDpiChanged(WPARAM wParam, LPARAM lParam) const
+void Standard_Window::MsgDpiChanged(WPARAM wParam, LPARAM lParam)
 {
+	m_SysDPI = GetDpiForSystem();
 	RECT* Rect = (RECT*)lParam;
 	WINDOWPOS WindowPos{};
 	WindowPos.hwnd = hWnd;

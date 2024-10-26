@@ -19,6 +19,8 @@
 
 #include <dwmapi.h>
 
+#include <shellscalingapi.h>
+
 
 typedef class Standard_Window StdWin;
 
@@ -41,8 +43,9 @@ enum class WindowOptions : int
 	Dialog = 1 << 3,					// Window will be a dialog box
 	GL = 1 << 4,						// Window will have OpenGL rendering
 	DX = 1 << 5,						// Window will have Direct-X rendering
+	TrueFullscreen = 1 << 29,			// Window will be sized to the screen on creation
 	Borderless = 1 << 30,				// Window will be borderless
-	Fullscreen = 1 << 31,				// Window will be fullscreen on creation
+	Fullscreen = 1 << 31,				// SW_MAXIMIZE will be used for ShowWindow
 	None = 0							// Simple window will be created
 };
 
@@ -71,13 +74,10 @@ private:
 	UINT m_ClassStyle;									// Class Style
 	StringW s_ClassName;								// Class Name
 
-	// Color
+	// Brush
+	HBRUSH h_Brush;										// Brush
 	COLORREF m_Color;									// Client Area Color
 	bool b_ClassBrush;									// m_Class.hbrBackground will use m_Color? nullptr otherwise
-	HBRUSH h_Brush;										// Brush
-
-	// Accelerator Table
-	HACCEL h_AccelTable;								// Accelerator Table Handle
 
 	// Icon
 	HICON h_Icon;										// Icon
@@ -89,6 +89,9 @@ private:
 	// Menu
 	HMENU h_Menu;										// Menu Handle
 	UINT m_MenuID;										// Menu Resource ID
+
+	// Accelerator Table
+	HACCEL h_AccelTable;								// Accelerator Table Handle
 
 	// Drag and Drop
 	POINT m_DropPoint;									// Drag and Drop Position
@@ -109,6 +112,7 @@ private:
 	COLORREF m_CaptionColor;							// Caption Color
 	COLORREF m_CaptionColorLostFocus;					// Caption Color on Lost Focus
 	COLORREF m_TextColor;								// Text Color
+	COLORREF m_TextColorLostFocus;						// Text Color on Lost Focus
 	DWM_SYSTEMBACKDROP_TYPE m_BackdropType;				// Backdrop Type
 
 	// Toolbar
@@ -130,14 +134,11 @@ private:
 	HFONT h_TextEditorFont;								// Text Editor Font
 
 	// Window Creation Options
-	bool b_CreationComplete;							// Window creation is complete?
-	bool b_Borderless;									// Window has no borders, frames or title/caption bar?
-	bool b_Fullscreen;									// Window is fullscreen?
-	bool b_Help;										// Window has help icon?
-	bool b_Menu;										// Window has menu?
-	bool b_ToolBar;										// Window has toolbar?
-	bool b_StatusBar;									// Window has status bar?
-	bool b_TextEditor;									// Window has text editor?
+	bool b_TrueFullscreen;								// Window will be sized to the screen on creation?
+	bool b_Borderless;									// Window will have no borders, frames or title/caption bar on creation?
+	bool b_Toolbar;										// Window will have toolbar on creation?
+	bool b_StatusBar;									// Window will have status bar on creation?
+	bool b_TextEditor;									// Window will have text editor on creation?
 	bool b_DialogBox;									// Window is a dialog box?
 	bool b_ChildWindow;									// Window is a child window?
 	bool b_OpenGL;										// Window has OpenGL rendering?
@@ -146,15 +147,13 @@ private:
 	// Status
 	bool b_IsActive;									// Window is active?
 	bool b_HasFocus;									// Window has focus?
+	bool b_Fullscreen;									// Window is fullscreen? Otherwise, SW_MAXIMIZE will be used for ShowWindow on creation?
 
 	// Child Windows
 	std::vector<std::unique_ptr<Standard_Window>> v_ChildWindows;
 
 	// Parse Window Creation and Style Options
-	void ParsePresets(void);
-
-	// Create Text Editor
-	void CreateTextEditor(HWND hWndParent);
+	void ParsePresets(WindowOptions e_Options);
 
 public:
 
@@ -168,15 +167,15 @@ public:
 		m_Class{},
 		m_ClassStyle(0),
 		s_ClassName(L"untitled"),
+		h_Brush(nullptr),
 		m_Color(RGB(255, 255, 255)),
 		b_ClassBrush(false),
-		h_Brush(nullptr),
-		h_AccelTable(nullptr),
 		h_Icon(LoadIcon(0, IDI_APPLICATION)),
 		h_IconSm(LoadIcon(0, IDI_APPLICATION)),
 		h_Cursor(LoadCursor(0, IDC_ARROW)),
 		h_Menu(nullptr),
 		m_MenuID(0),
+		h_AccelTable(nullptr),
 		m_DropPoint{},
 		m_SysDPI(GetDpiForSystem()),
 		m_WindowDPI(GetDpiForSystem()),
@@ -190,6 +189,7 @@ public:
 		m_CaptionColor(RGB(32, 32, 32)),
 		m_CaptionColorLostFocus(RGB(32, 32, 32)),
 		m_TextColor(RGB(255, 255, 255)),
+		m_TextColorLostFocus(RGB(255, 255, 255)),
 		m_BackdropType(DWM_SYSTEMBACKDROP_TYPE::DWMSBT_MAINWINDOW),
 		h_ToolBar(nullptr),
 		m_ToolBarStyle(0),
@@ -202,12 +202,9 @@ public:
 		m_StatusBarParts(0),
 		h_TextEditor(nullptr),
 		h_TextEditorFont(nullptr),
-		b_CreationComplete(false),
+		b_TrueFullscreen(false),
 		b_Borderless(false),
-		b_Fullscreen(false),
-		b_Help(false),
-		b_Menu(false),
-		b_ToolBar(false),
+		b_Toolbar(false),
 		b_StatusBar(false),
 		b_TextEditor(false),
 		b_DialogBox(false),
@@ -215,7 +212,8 @@ public:
 		b_OpenGL(false),
 		b_DirectX(false),
 		b_IsActive(false),
-		b_HasFocus(false)
+		b_HasFocus(false),
+		b_Fullscreen(false)
 	{
 		if (!b_StdWinIsWindows10OrGreater)
 		{
@@ -251,16 +249,21 @@ public:
 	// Deconstruction
 	virtual ~Standard_Window(void) noexcept
 	{
-		ShowWindow(hWnd, SW_HIDE);
-
-		s_DroppedFiles.clear();
+		if (hWnd) { ShowWindow(hWnd, SW_HIDE); }
 
 		ClearChildWindows();
 
-		if (h_Cursor) { DestroyCursor(h_Cursor); }
-		
 		if (h_Brush) { DeleteObject(h_Brush); }
-		if (m_Class.hbrBackground) { DeleteObject(m_Class.hbrBackground); }
+
+		if (h_Icon) { DestroyIcon(h_Icon); }
+
+		if (h_IconSm) { DestroyIcon(h_IconSm); }
+
+		if (h_Cursor) { DestroyCursor(h_Cursor); }
+
+		if (h_Menu) { DestroyMenu(h_Menu); }
+
+		if (h_AccelTable) { DestroyAcceleratorTable(h_AccelTable); }
 
 		if (h_ToolBar)
 		{
@@ -275,15 +278,11 @@ public:
 
 		if (h_TextEditorFont) { DeleteObject(h_TextEditorFont); }
 
-		if (h_Icon) { DestroyIcon(h_Icon); }
-
-		if (h_IconSm) { DestroyIcon(h_IconSm); }
-
-		if (h_AccelTable) { DestroyAcceleratorTable(h_AccelTable); }
-
 		if (hWnd) { DestroyWindow(hWnd); }
 
 		if (m_Class.hInstance) { UnregisterClassW(m_Class.lpszClassName, m_Class.hInstance); }
+
+		s_DroppedFiles.clear();
 	}
 
 	// Move
@@ -296,15 +295,15 @@ public:
 		m_Class(std::exchange(v.m_Class, WNDCLASSEX())),
 		m_ClassStyle(std::exchange(v.m_ClassStyle, 0)),
 		s_ClassName(std::exchange(v.s_ClassName, L"")),
+		h_Brush(std::exchange(v.h_Brush, nullptr)),
 		m_Color(std::exchange(v.m_Color, RGB(255, 255, 255))),
 		b_ClassBrush(std::exchange(v.b_ClassBrush, false)),
-		h_Brush(std::exchange(v.h_Brush, nullptr)),
-		h_AccelTable(std::exchange(v.h_AccelTable, nullptr)),
 		h_Icon(std::exchange(v.h_Icon, nullptr)),
 		h_IconSm(std::exchange(v.h_IconSm, nullptr)),
 		h_Cursor(std::exchange(v.h_Cursor, nullptr)),
 		h_Menu(std::exchange(v.h_Menu, nullptr)),
 		m_MenuID(std::exchange(v.m_MenuID, 0)),
+		h_AccelTable(std::exchange(v.h_AccelTable, nullptr)),
 		m_DropPoint(std::exchange(v.m_DropPoint, POINT{})),
 		m_SysDPI(std::exchange(v.m_SysDPI, 0)),
 		m_WindowDPI(std::exchange(v.m_WindowDPI, 0)),
@@ -318,6 +317,7 @@ public:
 		m_CaptionColor(std::exchange(v.m_CaptionColor, RGB(32, 32, 32))),
 		m_CaptionColorLostFocus(std::exchange(v.m_CaptionColorLostFocus, RGB(32, 32, 32))),
 		m_TextColor(std::exchange(v.m_TextColor, RGB(255, 255, 255))),
+		m_TextColorLostFocus(std::exchange(v.m_TextColorLostFocus, RGB(255, 255, 255))),
 		m_BackdropType(std::exchange(v.m_BackdropType, DWM_SYSTEMBACKDROP_TYPE::DWMSBT_MAINWINDOW)),
 		h_ToolBar(std::exchange(v.h_ToolBar, nullptr)),
 		m_ToolBarStyle(std::exchange(v.m_ToolBarStyle, 0)),
@@ -331,12 +331,9 @@ public:
 		m_StatusBarParts(std::exchange(v.m_StatusBarParts, 0)),
 		h_TextEditor(std::exchange(v.h_TextEditor, nullptr)),
 		h_TextEditorFont(std::exchange(v.h_TextEditorFont, nullptr)),
-		b_CreationComplete(std::exchange(v.b_CreationComplete, false)),
+		b_TrueFullscreen(std::exchange(v.b_TrueFullscreen, false)),
 		b_Borderless(std::exchange(v.b_Borderless, false)),
-		b_Fullscreen(std::exchange(v.b_Fullscreen, false)),
-		b_Help(std::exchange(v.b_Help, false)),
-		b_Menu(std::exchange(v.b_Menu, false)),
-		b_ToolBar(std::exchange(v.b_ToolBar, false)),
+		b_Toolbar(std::exchange(v.b_Toolbar, false)),
 		b_StatusBar(std::exchange(v.b_StatusBar, false)),
 		b_TextEditor(std::exchange(v.b_TextEditor, false)),
 		b_DialogBox(std::exchange(v.b_DialogBox, false)),
@@ -344,298 +341,485 @@ public:
 		b_OpenGL(std::exchange(v.b_OpenGL, false)),
 		b_DirectX(std::exchange(v.b_DirectX, false)),
 		b_IsActive(std::exchange(v.b_IsActive, false)),
-		b_HasFocus(std::exchange(v.b_HasFocus, false))
+		b_HasFocus(std::exchange(v.b_HasFocus, false)),
+		b_Fullscreen(std::exchange(v.b_Fullscreen, false))
 	{}
 	Standard_Window& operator = (Standard_Window&& v) noexcept { return *this = Standard_Window(std::move(v)); }
 
-	// Is window creation complete?
-	bool operator !() const { return !b_CreationComplete; }
+	/*
+		Does the window exist?
+	*/
+	[[nodiscard]] operator bool() const { return hWnd; }
 
-	// Parse command line parameters
-	void CommandLine(LPWSTR lpCmdLine);
+	/*
+		Is the window active?
+	*/
+	[[nodiscard]] bool IsActive(void) const { return b_IsActive; }
 
-	// Preset no window borders, frames or title/caption bar
-	void PresetBorderless(bool Borderless);
+	/*
+		Does the window have focus?
+	*/
+	[[nodiscard]] bool HasFocus(void) const { return b_HasFocus; }
 
-	// Preset fullscreen window
-	void PresetFullscreen(bool Fullscreen);
+	/*
+		Is the window fullscreen?
+	*/
+	[[nodiscard]] bool IsFullscreen(void);
 
-	// Preset window style
+	/*
+		Drag and drop files available to be parsed?
+	*/
+	[[nodiscard]] bool DroppedFiles(void) { return s_DroppedFiles.empty() ? false : true; }
+
+	/*
+		Preset window style
+		- intended to be called before Create()
+	*/
 	void PresetStyle(DWORD Style);
 
-	// Preset window extended style
+	/*
+		Preset window extended style
+		- intended to be called before Create()
+	*/
 	void PresetStyleEx(DWORD StyleEx);
 
-	// Preset class style
+	/*
+		Preset class style
+		- intended to be called before Create()
+	*/
 	void PresetClassStyle(UINT ClassStyle);
 
-	// Preset class name
+	/*
+		Preset class name
+		- intended to be called before Create()
+	*/
 	void PresetClassName(const StringW ClassName);
 
-	// Preset window (caption) name
-	void PresetWindowName(const StringW Name);
-
-	// Preset class name from resource string table (wide string)
+	/*
+		Preset class name from resource string
+		- intended to be called before Create()
+	*/
 	void PresetClassName(HINSTANCE hInstance, ULONG ResourceID);
 
-	// Preset window name from resource string table (wide string)
-	void PresetWindowName(HINSTANCE hInstance, ULONG ResourceID);
-
-	// Preset window client rect color
-	void PresetWindowColor(BYTE Red, BYTE Green, BYTE Blue, bool SetAsClassBrush = false);
-
-	// Preset window icon
-	void PresetIcon(HINSTANCE hInstance, ULONG ResourceID);
-
-	// Preset window icon
-	void PresetIcon(HINSTANCE hInstance, const StringW Filename);
-
-	// Preset window small icon
-	void PresetIconSm(HINSTANCE hInstance, ULONG ResourceID);
-
-	// Preset window small icon
-	void PresetIconSm(HINSTANCE hInstance, const StringW Filename);
-
-	// Preset window cursor
-	void PresetCursor(HINSTANCE hInstance, ULONG ResourceID);
-
-	// Preset window cursor
-	void PresetCursor(HINSTANCE hInstance, const StringW Filename);
-
-	// Preset HMENU
-	void PresetMenu(HINSTANCE hInstance, WORD ResourceID);
+	/*
+		Create parent window
+	*/
+	void Create(int Width, int Height, HINSTANCE hInstance, int nCmdShow, WNDPROC WndProc, WindowOptions e_Options = WindowOptions::None);
 
 	/*
-		Preset toolbar
-		- Use PresetAddToolBarIcon() after calling this function
+		Create child window
 	*/
-	void PresetToolBar(UINT IconWidth, UINT IconHeight, std::vector<TBBUTTON> Buttons, DWORD Style = (TBSTYLE_TOOLTIPS | TBSTYLE_FLAT), DWORD StyleEx = TBSTYLE_EX_DOUBLEBUFFER);
-
-	/*
-		Preset toolbar icon
-		- Use PresetToolBar() before calling this function
-	*/
-	void PresetAddToolBarIcon(HINSTANCE hInstance, ULONG ResourceID);
-
-	/*
-		Preset toolbar icon
-		- Use PresetToolBar() before calling this function
-	*/
-	void PresetAddToolBarIcon(HINSTANCE hInstance, const StringW Filename);
-
-	// Preset status bar part count
-	void PresetStatusBar(INT nParts, DWORD Style = SBARS_TOOLTIPS);
-
-	// Preset creation options that can override Style and Extended Style
-	void PresetOptions(WindowOptions e_Options);
-
-	// Create parent window
-	void Create(int Width, int Height, HINSTANCE hInstance, int nCmdShow, WNDPROC WndProc);
-
-	// Creation complete?
-	bool CreationComplete(void) const { return b_CreationComplete; }
-
-	// Create child window
 	HWND CreateChild(int x, int y, int Width, int Height, HINSTANCE hInstance, int nCmdShow, WNDPROC WndProc, DWORD Style, DWORD StyleEx, WindowOptions e_Options = WindowOptions::None);
 
-	// Add child window
+	/*
+		Add child window
+	*/
 	bool AddChildWindow(HWND hWndChild, bool b_SnapToChild);
 
-	// Clear child windows
+	/*
+		Empty the child window list
+	*/
 	void ClearChildWindows(void);
 
-	// Create Toolbar
+	/*
+		Create tooltip
+	*/
+	HWND CreateTooltip(HWND hWndParent, ULONG ResourceID, StringW Tooltip);
+
+	/*
+		Set toolbar
+		- use AddToolBarIcon() after calling this function
+	*/
+	void SetToolBar(UINT IconWidth, UINT IconHeight, std::vector<TBBUTTON> Buttons, DWORD Style = (TBSTYLE_TOOLTIPS | TBSTYLE_FLAT), DWORD StyleEx = TBSTYLE_EX_DOUBLEBUFFER);
+
+	/*
+		Preset toolbar icon
+		- use SetToolBar() before calling this function
+	*/
+	void AddToolBarIcon(HINSTANCE hInstance, ULONG ResourceID);
+
+	/*
+		Preset toolbar icon
+		- use SetToolBar() before calling this function
+	*/
+	void AddToolBarIcon(HINSTANCE hInstance, const StringW Filename);
+
+	/*
+		Create Toolbar
+	*/
 	void CreateToolbar(DWORD Style = (TBSTYLE_TOOLTIPS | TBSTYLE_FLAT), DWORD StyleEx = TBSTYLE_EX_DOUBLEBUFFER, HIMAGELIST ImageList = nullptr, std::vector<TBBUTTON> Buttons = {});
 
-	// Create Status Bar
-	void CreateStatusBar(DWORD Style = SBARS_TOOLTIPS, INT PartCount = 1);
+	/*
+		Set status bar style and part count
+		- if called after Create(), CreateStatusBar() must be called prior to this function
+		- if called after Create(), Style is ignored
+	*/
+	void SetStatusBar(INT nParts, DWORD Style = SBARS_TOOLTIPS);
+
+	/*
+		Create Status Bar
+	*/
+	void CreateStatusBar(INT PartCount = 1, DWORD Style = SBARS_TOOLTIPS);
 
 	/*
 		Set status bar tooltip
-		- Tooltip will only appear if the string is too large to fit in the status bar part
+		- tooltip will only appear if the string is too large to fit in the status bar part
 	*/
 	void SetStatusBarTooltip(int iPart, const StringW Tooltip) const;
 
-	// Status bar message
+	/*
+		Set status bar string
+	*/
 	void Status(int iPart, const String _Message, ...) const;
 
-	// Status bar message
+	/*
+		Set status bar string
+	*/
 	void Status(int iPart, const StringW _Message, ...) const;
 
-	// Get status bar string
+	/*
+		Get status bar string
+	*/
 	[[nodiscard]] StringW GetStatus(int iPart) const;
 
-	// Status bar message
-	void StatusPercent(int iPart, UINT iIndex, UINT iTotal) { Status(iPart, L"%0.0f%%", (((double)iIndex / (double)iTotal) * 100)); }
+	/*
+		Status bar percentage message
+	*/
+	void SetStatusPercent(int iPart, UINT iIndex, UINT iTotal) const { Status(iPart, L"%0.0f%%", (((double)iIndex / (double)iTotal) * 100)); }
 
-	// Create tooltip
-	HWND CreateTooltip(HWND hWndParent, ULONG ResourceID, StringW Tooltip);
+	/*
+		Resize
+	*/
+	bool Resize(RECT* Rect, bool b_Center = true);
 
-	// Resize to window
-	bool ResizeToWindow(HWND hWndChild, bool b_Center = true);
+	/*
+		Get window handle
+	*/
+	[[nodiscard]] HWND Get(void) const { return hWnd; }
 
-	// Set accelerator table
-	void SetAcceleratorTable(HINSTANCE hInstance, ULONG ResourceID);
-
-	// Get accelerator table
-	[[nodiscard]] HACCEL GetAcceleratorTable(void) const { return h_AccelTable; }
-
-	// Get window handle
-	[[nodiscard]] HWND GetHandle(void) const { return hWnd; }
-
-	// Get instance handle
+	/*
+		Get instance handle
+	*/
 	[[nodiscard]] HINSTANCE GetInstance(void) const { return h_Instance; }
 
-	// Get window color
+	/*
+		Get window style
+	*/
+	[[nodiscard]] DWORD GetStyle(void) { return m_Style = GetWindowLong(hWnd, GWL_STYLE); }
+
+	/*
+		Get window extended style
+	*/
+	[[nodiscard]] DWORD GetStyleEx(void) { return m_StyleEx = GetWindowLong(hWnd, GWL_EXSTYLE); }
+
+	/*
+		Set window name (caption string)
+	*/
+	void SetCaptionName(const StringW Name);
+
+	/*
+		Set window name (caption string) from resource string
+	*/
+	void SetCaptionName(HINSTANCE hInstance, ULONG ResourceID);
+
+	/*
+		Get window name (caption string)
+	*/
+	[[nodiscard]] StringW GetCaptionName(void) const { return s_Name; }
+
+	/*
+		Get class name
+	*/
+	[[nodiscard]] StringW GetClassname(void) const { return s_ClassName; }
+
+	/*
+		Set window client rect color
+		- can be called before or after Create(), but should be called at least once before
+	*/
+	void SetColor(BYTE Red, BYTE Green, BYTE Blue, bool SetAsClassBrush = false);
+
+	/*
+		Get window client rect color
+	*/
 	[[nodiscard]] COLORREF GetColor(void) const { return m_Color; }
 
-	// Get window color brush
+	/*
+		Get brush
+	*/
 	[[nodiscard]] HBRUSH GetBrush(void) const { return h_Brush; }
 
-	// Get class brush
+	/*
+		Get class brush
+	*/
 	[[nodiscard]] HBRUSH GetClassBrush(void) const { return m_Class.hbrBackground; }
 
-	// Get menu handle
-	[[nodiscard]] HMENU GetMenu(void) const { return h_Menu; }
+	/*
+		Set icon
+	*/
+	void SetIcon(HINSTANCE hInstance, ULONG ResourceID);
 
-	// Get dropped files
-	[[nodiscard]] StrVecW GetDroppedFiles(void) const { return s_DroppedFiles; }
+	/*
+		Set icon
+	*/
+	void SetIcon(HINSTANCE hInstance, const StringW Filename);
 
-	// Clear the dropped file list
-	void ClearDroppedFiles(void) { s_DroppedFiles.clear(); }
+	/*
+		Set small icon
+	*/
+	void SetIconSmall(HINSTANCE hInstance, ULONG ResourceID);
 
-	// Get child window count
-	[[nodiscard]] std::size_t GetChildWindowCount(void) const { return v_ChildWindows.size(); }
+	/*
+		Set small icon
+	*/
+	void SetIconSmall(HINSTANCE hInstance, const StringW Filename);
 
-	// Get child window
-	[[nodiscard]] Standard_Window* GetChildWindow(UINT Index);
+	/*
+		Set window cursor
+	*/
+	void SetCursor(HINSTANCE hInstance, ULONG ResourceID);
 
-	// Is borderless?
-	[[nodiscard]] bool IsBorderless(void) const { return b_Borderless; }
+	/*
+		Set window cursor
+	*/
+	void SetCursor(HINSTANCE hInstance, const StringW Filename);
 
-	// Is fullscreen?
-	[[nodiscard]] bool IsFullscreen(void);
+	/*
+		Set menu
+	*/
+	void SetMenu(HINSTANCE hInstance, WORD ResourceID);
 
-	// Is window active?
-	[[nodiscard]] bool IsActive(void) const { return b_IsActive; }
+	/*
+		Get menu handle
+	*/
+	[[nodiscard]] HMENU GetMenuHandle(void) { return h_Menu = GetMenu(hWnd); }
 
-	// Has window focus?
-	[[nodiscard]] bool HasFocus(void) const { return b_HasFocus; }
+	/*
+		Set accelerator table
+	*/
+	void SetAcceleratorTable(HINSTANCE hInstance, ULONG ResourceID);
 
-	// Get window DPI scale factor
-	[[nodiscard]] FLOAT GetScaleFactor(void) const { return static_cast<FLOAT>(m_WindowDPI) / USER_DEFAULT_SCREEN_DPI; }
+	/*
+		Get accelerator table
+	*/
+	[[nodiscard]] HACCEL GetAcceleratorTable(void) const { return h_AccelTable; }
 
-	// Get window DPI scale factor by percentage
-	[[nodiscard]] UINT GetScaleFactorByPercentage(void) const { return std::to_underlying(m_ScaleFactor); }
+	/*
+		Get DPI
+	*/
+	[[nodiscard]] UINT GetDPI(void) { return m_WindowDPI = GetDpiForWindow(hWnd); }
 
-	// Disallow peek preview for the window when the mouse hovers over the window's thumbnail in the taskbar
-	void DisallowPeek(BOOL OnOff);
+	/*
+		Get system DPI
+	*/
+	[[nodiscard]] UINT GetSystemDPI(void) { return m_SysDPI = GetDpiForSystem(); }
 
-	// Get disallow peek preview
+	/*
+		Get window DPI scale factor
+	*/
+	[[nodiscard]] FLOAT GetDpiScaleFactor(void) { return static_cast<FLOAT>(m_WindowDPI = GetDpiForWindow(hWnd)) / USER_DEFAULT_SCREEN_DPI; }
+
+	/*
+		Get device scale factor
+	*/
+	[[nodiscard]] DEVICE_SCALE_FACTOR GetDeviceScaleFactor(void);
+
+	/*
+		Get device scale factor by percentage
+	*/
+	[[nodiscard]] UINT GetDeviceScaleFactorPercentage(void) const { return std::to_underlying(m_ScaleFactor); }
+
+	/*
+		Disallow peek preview for the window when the mouse hovers over the window's thumbnail in the taskbar
+	*/
+	void SetDisallowPeek(BOOL OnOff);
+
+	/*
+		Get disallow peek preview
+	*/
 	[[nodiscard]] BOOL GetDisallowPeek(void) const { return b_DisallowPeek; }
 
-	// Prevent window from fading to glass sheet when peek is invoked
-	void ExcludeFromPeek(BOOL OnOff);
+	/*
+		Prevent window from fading to glass sheet when peek is invoked
+	*/
+	void SetExcludeFromPeek(BOOL OnOff);
 
-	// Get exclude from peek
+	/*
+		Get exclude from peek
+	*/
 	[[nodiscard]] BOOL GetExcludeFromPeek(void) const { return b_ExcludeFromPeek; }
 
-	// Set dark mode
+	/*
+		Set dark mode
+	*/
 	void SetDarkMode(BOOL OnOff);
 
-	// Get dark mode
+	/*
+		Get dark mode
+	*/
 	[[nodiscard]] BOOL GetDarkMode(void) const { return b_DarkMode; }
 
-	// Set round corner preference
+	/*
+		Set round corner preference
+	*/
 	void SetRoundCorners(DWM_WINDOW_CORNER_PREFERENCE Preference);
 
-	// Get round corner preference
+	/*
+		Get round corner preference
+	*/
 	[[nodiscard]] DWM_WINDOW_CORNER_PREFERENCE GetRoundCorners(void) const { return m_RoundCorners; }
 
 	/*
 		Set border color
 
-		From Microsoft:
-			Specifying DWMWA_COLOR_NONE (value 0xFFFFFFFE) for the color will suppress the drawing of the window border. This makes it possible to have a rounded window with no border
+		- From Microsoft:
+			- Specifying DWMWA_COLOR_NONE (value 0xFFFFFFFE) for the color will suppress the drawing of the window border. This makes it possible to have a rounded window with no border
 
-			Specifying DWMWA_COLOR_DEFAULT (value 0xFFFFFFFF) for the color will reset the window back to using the system's default behavior for the border color
+			- Specifying DWMWA_COLOR_DEFAULT (value 0xFFFFFFFF) for the color will reset the window back to using the system's default behavior for the border color
 	*/
 	void SetBorderColor(COLORREF Color);
 
-	// Get border color
+	/*
+		Get border color
+	*/
 	[[nodiscard]] COLORREF GetBorderColor(void) const { return m_BorderColor; }
 
-	// Set border color on lost focus
+	/*
+		Set border color on lost focus
+	*/
 	void SetBorderColorOnLostFocus(COLORREF Color) { m_BorderColorLostFocus = Color; }
 
-	// Get border color on lost focus
+	/*
+		Get border color on lost focus
+	*/
 	[[nodiscard]] COLORREF GetBorderColorOnLostFocus(void) const { return m_BorderColorLostFocus; }
 
 	/*
 		Set caption color
 
-		From Microsoft:
-			Specifying DWMWA_COLOR_DEFAULT (value 0xFFFFFFFF) for the color will reset the window back to using the system's default behavior for the caption color
+		- From Microsoft: Specifying DWMWA_COLOR_DEFAULT (value 0xFFFFFFFF) for the color will reset the window back to using the system's default behavior for the caption color
 	*/
 	void SetCaptionColor(COLORREF Color);
 
-	// Get caption color
+	/*
+		Get caption color
+	*/
 	[[nodiscard]] COLORREF GetCaptionColor(void) const { return m_CaptionColor; }
 
-	// Set caption color on lost focus
+	/*
+		Set caption color on lost focus
+	*/
 	void SetCaptionColorOnLostFocus(COLORREF Color) { m_CaptionColorLostFocus = Color; }
 
-	// Get caption color on lost focus
+	/*
+		Get caption color on lost focus
+	*/
 	[[nodiscard]] COLORREF GetCaptionColorOnLostFocus(void) const { return m_CaptionColorLostFocus; }
 
 	/*
 		Set text color
 
-		From Microsoft:
-			Specifying DWMWA_COLOR_DEFAULT (value 0xFFFFFFFF) for the color will reset the window back to using the system's default behavior for the caption text color
+		- From Microsoft: Specifying DWMWA_COLOR_DEFAULT (value 0xFFFFFFFF) for the color will reset the window back to using the system's default behavior for the caption text color
 	*/
 	void SetTextColor(COLORREF Color);
 
-	// Get text color
+	/*
+		Get text color
+	*/
 	[[nodiscard]] COLORREF GetTextColor(void) const { return m_TextColor; }
 
-	// Set backdrop type
+	/*
+		Set text color on lost focus
+	*/
+	void SetTextColorOnLostFocus(COLORREF Color) { m_TextColorLostFocus = Color; }
+
+	/*
+		Get text color on lost focus
+	*/
+	[[nodiscard]] COLORREF GetTextColorOnLostFocus(void) const { return m_TextColorLostFocus; }
+
+	/*
+		Set backdrop type
+	*/
 	void SetBackdropType(DWM_SYSTEMBACKDROP_TYPE Type);
 
-	// Get backdrop type
+	/*
+		Get backdrop type
+	*/
 	[[nodiscard]] DWM_SYSTEMBACKDROP_TYPE GetBackdropType(void) const { return m_BackdropType; }
 
-	// WM_ACTIVATE
+	/*
+		Get dropped files
+	*/
+	[[nodiscard]] StrVecW GetDroppedFiles(void) const { return s_DroppedFiles; }
+
+	/*
+		Clear the dropped file list
+	*/
+	void ClearDroppedFiles(void) { s_DroppedFiles.clear(); }
+
+	/*
+		Get child window count
+	*/
+	[[nodiscard]] std::size_t GetChildWindowCount(void) const { return v_ChildWindows.size(); }
+
+	/*
+		Get child window
+	*/
+	[[nodiscard]] Standard_Window* GetChildWindow(UINT Index);
+
+	/*
+		Intended for use with WM_ACTIVATE
+	*/
 	void MsgActivate(WPARAM wParam, LPARAM lParam);
 
-	// WM_SETFOCUS
+	/*
+		Intended for use with WM_SETFOCUS
+	*/
 	void MsgSetFocus(WPARAM wParam, LPARAM lParam);
 
-	// WM_KILLFOCUS
+	/*
+		Intended for use with WM_KILLFOCUS
+	*/
 	void MsgKillFocus(WPARAM wParam, LPARAM lParam);
 
-	// WM_WINDOWPOSCHANGED
+	/*
+		Intended for use with WM_WINDOWPOSCHANGED
+	*/
 	void MsgPositionChanged(WPARAM wParam, LPARAM lParam);
 
-	// WM_DISPLAYCHANGE
+	/*
+		Intended for use with WM_DISPLAYCHANGE
+	*/
 	void MsgDisplayChange(WPARAM wParam, LPARAM lParam);
 
-	// WM_INPUT_DEVICE_CHANGE
+	/*
+		Intended for use with WM_INPUT_DEVICE_CHANGE
+	*/
 	void MsgInputDeviceChange(WPARAM wParam, LPARAM lParam);
 
-	// WM_INPUT
+	/*
+		Intended for use with WM_INPUT
+	*/
 	void MsgInput(WPARAM wParam, LPARAM lParam);
 
-	// WM_MOUSEWHEEL
+	/*
+		Intended for use with WM_MOUSEWHEEL
+	*/
 	void MsgMouseWheel(WPARAM wParam, LPARAM lParam);
 
-	// WM_MOUSEHWHEEL
+	/*
+		Intended for use with WM_MOUSEHWHEEL
+	*/
 	void MsgMouseHWheel(WPARAM wParam, LPARAM lParam);
 
-	// WM_DROPFILES
+	/*
+		Intended for use with WM_DROPFILES
+	*/
 	void MsgDropFiles(WPARAM wParam, LPARAM lParam);
 
-	// WM_DPICHANGED
-	void MsgDpiChanged(WPARAM wParam, LPARAM lParam) const;
+	/*
+		Intended for use with WM_DPICHANGED
+	*/
+	void MsgDpiChanged(WPARAM wParam, LPARAM lParam);
 
 };
