@@ -4,11 +4,12 @@
 *	January 01, 2024
 *
 *
-*	TODO: 
-* 
+*	TODO:
+*
 *		Add joystick support to AddDevice
 *		Add joystick support to RemoveDevice
 *		Maybe add support for RI_MOUSE_WHEEL and RI_MOUSE_HWHEEL
+*		Add HIDClass support
 *
 */
 
@@ -16,12 +17,6 @@
 #include "std_device.h"
 
 #pragma comment(lib, "Winmm.lib")
-
-
-/*
-	Mice, keyboards, HID, joysticks and displays
-*/
-std::unique_ptr<StdWinDevice> WinDevices = std::make_unique<StdWinDevice>();
 
 
 /*
@@ -70,113 +65,6 @@ void Windows_Devices::Initialize(void)
 
 	// Monitors
 	InitDisplayDevices();
-}
-
-
-/*
-	Add device using handle from WM_INPUT_DEVICE_CHANGE
-*/
-void Windows_Devices::AddDevice(HANDLE hDevice)
-{
-	// Input Device
-	RAWINPUTDEVICE InputDevice{};
-
-	// Name
-	UINT Size = _MAX_PATH * 2;
-	wchar_t DeviceName[_MAX_PATH * 2]{};
-	GetRawInputDeviceInfoW(hDevice, RIDI_DEVICENAME, &DeviceName, &Size);
-	if (GetLastError() != ERROR_SUCCESS) { GetErrorMessage(); }
-
-	// Info
-	Size = sizeof(RID_DEVICE_INFO);
-	RID_DEVICE_INFO Info{};
-	Info.cbSize = sizeof(RID_DEVICE_INFO);
-	GetRawInputDeviceInfoW(hDevice, RIDI_DEVICEINFO, &Info, &Size);
-	if (GetLastError() != ERROR_SUCCESS) { GetErrorMessage(); }
-
-	// Type
-	switch (Info.dwType)
-	{
-	case RIM_TYPEMOUSE:
-	{
-		Windows_Mouse* _Mouse = new Windows_Mouse;
-		_Mouse->Name = DeviceName;
-		_Mouse->Handle = hDevice;
-		std::memcpy(&_Mouse->Info, &Info.mouse, sizeof(RID_DEVICE_INFO_MOUSE));
-		Mice.push_back(_Mouse);
-	}
-	InputDevice.usUsagePage = 0x01;
-	InputDevice.usUsage = 0x02;
-	InputDevice.dwFlags = 0;
-	InputDevice.hwndTarget = 0;
-	break;
-	case RIM_TYPEKEYBOARD:
-	{
-		Windows_Keyboard* _Keyboard = new Windows_Keyboard;
-		_Keyboard->Name = DeviceName;
-		_Keyboard->Handle = hDevice;
-		std::memcpy(&_Keyboard->Info, &Info.keyboard, sizeof(RID_DEVICE_INFO_KEYBOARD));
-		Keyboards.push_back(_Keyboard);
-	}
-	InputDevice.usUsagePage = 0x01;
-	InputDevice.usUsage = 0x06;
-	InputDevice.dwFlags = 0;
-	InputDevice.hwndTarget = 0;
-	break;
-	case RIM_TYPEHID:
-	{
-		Windows_HID* _HID = new Windows_HID;
-		_HID->Name = DeviceName;
-		_HID->Handle = hDevice;
-		std::memcpy(&_HID->Info, &Info.hid, sizeof(RID_DEVICE_INFO_HID));
-		HID.push_back(_HID);
-	}
-	InputDevice.usUsagePage = Info.hid.usUsagePage;
-	InputDevice.usUsage = Info.hid.usUsage;
-	InputDevice.dwFlags = 0;
-	InputDevice.hwndTarget = 0;
-	break;
-	}
-
-	// Register
-	if (!RegisterRawInputDevices(&InputDevice, 1, sizeof(RAWINPUTDEVICE))) { GetErrorMessage(); }
-}
-
-
-/*
-	Remove device using handle from WM_INPUT_DEVICE_CHANGE
-*/
-void Windows_Devices::RemoveDevice(HANDLE hDevice)
-{
-	// Mouse
-	for (auto& Mouse : Mice)
-	{
-		if (Mouse->Handle == hDevice)
-		{
-			Mice.erase(std::remove(Mice.begin(), Mice.end(), Mouse), Mice.end());
-			return;
-		}
-	}
-
-	// Keyboard
-	for (auto& Keyboard : Keyboards)
-	{
-		if (Keyboard->Handle == hDevice)
-		{
-			Keyboards.erase(std::remove(Keyboards.begin(), Keyboards.end(), Keyboard), Keyboards.end());
-			return;
-		}
-	}
-
-	// HID
-	for (auto& _HID : HID)
-	{
-		if (_HID->Handle == hDevice)
-		{
-			HID.erase(std::remove(HID.begin(), HID.end(), _HID), HID.end());
-			return;
-		}
-	}
 }
 
 
@@ -318,11 +206,10 @@ void Windows_Devices::GetDisplayReport(void)
 
 
 /*
-	Handle input from WM_INPUT
+	Update joystick state
 */
-void Windows_Devices::InputJoyStick(void)
+void Windows_Devices::UpdateJoysticks(void)
 {
-	// Joysticks
 	for (auto& Joystick : Joysticks)
 	{
 		joyGetPosEx(Joystick->ID, &Joystick->Info);
@@ -331,21 +218,178 @@ void Windows_Devices::InputJoyStick(void)
 
 
 /*
-	Handle input from WM_INPUT
+	Intended for use with WM_INPUT_DEVICE_CHANGE
 */
-void Windows_Devices::Input(HWND hWnd, RAWINPUT* pInput)
+void Windows_Devices::AddDevice(HANDLE hDevice)
 {
-	// Error
-	//if ((!hWnd) || (!pInput)) { return; }
+	// Input Device
+	RAWINPUTDEVICE InputDevice{};
 
+	// Name
+	UINT Size = _MAX_PATH * 2;
+	wchar_t DeviceName[_MAX_PATH * 2]{};
+	GetRawInputDeviceInfoW(hDevice, RIDI_DEVICENAME, &DeviceName, &Size);
+	if (GetLastError() != ERROR_SUCCESS) { GetErrorMessage(); }
+
+	// Info
+	Size = sizeof(RID_DEVICE_INFO);
+	RID_DEVICE_INFO Info{};
+	Info.cbSize = sizeof(RID_DEVICE_INFO);
+	GetRawInputDeviceInfoW(hDevice, RIDI_DEVICEINFO, &Info, &Size);
+	if (GetLastError() != ERROR_SUCCESS) { GetErrorMessage(); }
+
+	// Type
+	switch (Info.dwType)
+	{
+	case RIM_TYPEMOUSE:
+	{
+		Windows_Mouse* _Mouse = new Windows_Mouse;
+		_Mouse->Name = DeviceName;
+		_Mouse->Handle = hDevice;
+		std::memcpy(&_Mouse->Info, &Info.mouse, sizeof(RID_DEVICE_INFO_MOUSE));
+		Mice.push_back(_Mouse);
+	}
+	InputDevice.usUsagePage = 0x01;
+	InputDevice.usUsage = 0x02;
+	InputDevice.dwFlags = 0;
+	InputDevice.hwndTarget = 0;
+	break;
+	case RIM_TYPEKEYBOARD:
+	{
+		Windows_Keyboard* _Keyboard = new Windows_Keyboard;
+		_Keyboard->Name = DeviceName;
+		_Keyboard->Handle = hDevice;
+		std::memcpy(&_Keyboard->Info, &Info.keyboard, sizeof(RID_DEVICE_INFO_KEYBOARD));
+		Keyboards.push_back(_Keyboard);
+	}
+	InputDevice.usUsagePage = 0x01;
+	InputDevice.usUsage = 0x06;
+	InputDevice.dwFlags = 0;
+	InputDevice.hwndTarget = 0;
+	break;
+	case RIM_TYPEHID:
+	{
+		Windows_HID* _HID = new Windows_HID;
+		_HID->Name = DeviceName;
+		_HID->Handle = hDevice;
+		std::memcpy(&_HID->Info, &Info.hid, sizeof(RID_DEVICE_INFO_HID));
+		HID.push_back(_HID);
+	}
+	InputDevice.usUsagePage = Info.hid.usUsagePage;
+	InputDevice.usUsage = Info.hid.usUsage;
+	InputDevice.dwFlags = 0;
+	InputDevice.hwndTarget = 0;
+	break;
+	}
+
+	// Register
+	if (!RegisterRawInputDevices(&InputDevice, 1, sizeof(RAWINPUTDEVICE))) { GetErrorMessage(); }
+}
+
+
+/*
+	Intended for use with WM_INPUT_DEVICE_CHANGE
+*/
+void Windows_Devices::RemoveDevice(HANDLE hDevice)
+{
 	// Mouse
-	if (pInput->header.dwType == RIM_TYPEMOUSE)
+	for (auto& Mouse : Mice)
+	{
+		if (Mouse->Handle == hDevice)
+		{
+			Mice.erase(std::remove(Mice.begin(), Mice.end(), Mouse), Mice.end());
+			return;
+		}
+	}
+
+	// Keyboard
+	for (auto& Keyboard : Keyboards)
+	{
+		if (Keyboard->Handle == hDevice)
+		{
+			Keyboards.erase(std::remove(Keyboards.begin(), Keyboards.end(), Keyboard), Keyboards.end());
+			return;
+		}
+	}
+
+	// HID
+	for (auto& _HID : HID)
+	{
+		if (_HID->Handle == hDevice)
+		{
+			HID.erase(std::remove(HID.begin(), HID.end(), _HID), HID.end());
+			return;
+		}
+	}
+}
+
+
+/*
+	Intended for use with WM_ACTIVATE
+*/
+void Windows_Devices::MsgActivate(HWND hWnd, WPARAM wParam)
+{
+	if ((wParam & WA_ACTIVE) || (wParam & WA_CLICKACTIVE))
+	{
+		TRACKMOUSEEVENT Event{};
+		Event.cbSize = sizeof(TRACKMOUSEEVENT);
+		Event.dwFlags = TME_LEAVE;
+		Event.hwndTrack = hWnd;
+		TrackMouseEvent(&Event);
+		for (auto& Joystick : Joysticks)
+		{
+			joySetCapture(hWnd, Joystick->ID, 0, 0);
+		}
+	}
+	else
 	{
 		for (auto& Mouse : Mice)
 		{
-			if (Mouse->Handle == pInput->header.hDevice)
+			Mouse->ClearInput();
+		}
+		for (auto& Joystick : Joysticks)
+		{
+			joyReleaseCapture(Joystick->ID);
+		}
+	}
+}
+
+
+/*
+	Intended for use with WM_INPUT_DEVICE_CHANGE
+*/
+void Windows_Devices::MsgInputDeviceChange(WPARAM wParam, LPARAM lParam)
+{
+	if (wParam == GIDC_ARRIVAL) { AddDevice((HANDLE)lParam); }
+	else if (wParam & GIDC_REMOVAL) { RemoveDevice((HANDLE)lParam); }
+}
+
+
+/*
+	Intended for use with WM_INPUT
+*/
+void Windows_Devices::MsgInput(HWND hWnd, WPARAM wParam, LPARAM lParam)
+{
+	UINT Size = 0;
+	if (GetRawInputData((HRAWINPUT)lParam, RID_INPUT, 0, &Size, sizeof(RAWINPUTHEADER)) == -1) { GetErrorMessage(); }
+	if (!Size) { return; }
+
+	std::vector<BYTE> Buffer(Size);
+	if (GetRawInputData((HRAWINPUT)lParam, RID_INPUT, Buffer.data(), &Size, sizeof(RAWINPUTHEADER)) == -1) { GetErrorMessage(); }
+
+	RAWINPUT* Input = (RAWINPUT*)Buffer.data();
+
+	// No handler for HID...
+	if (Input->header.dwType == RIM_TYPEHID) { return; }
+
+	// Mouse
+	if (Input->header.dwType == RIM_TYPEMOUSE)
+	{
+		for (auto& Mouse : Mice)
+		{
+			if (Mouse->Handle == Input->header.hDevice)
 			{
-				std::memcpy(&Mouse->Input, &pInput->data.mouse, sizeof(RAWMOUSE));
+				std::memcpy(&Mouse->Input, &Input->data.mouse, sizeof(RAWMOUSE));
 
 				// Buffer
 				RECT Rect{};
@@ -375,20 +419,22 @@ void Windows_Devices::Input(HWND hWnd, RAWINPUT* pInput)
 				}
 
 				// Buttons
-				if (Mouse->Input.usButtonFlags & RI_MOUSE_BUTTON_1_DOWN) { Mouse->ButtonL = TRUE; }
-				else if (Mouse->Input.usButtonFlags & RI_MOUSE_BUTTON_1_UP) { Mouse->ButtonL = FALSE; }
+				Mouse->ButtonL = Mouse->Input.usButtonFlags & RI_MOUSE_BUTTON_1_DOWN ? TRUE : FALSE;
+				Mouse->ButtonLUp = Mouse->Input.usButtonFlags & RI_MOUSE_BUTTON_1_UP ? TRUE : FALSE;
+				Mouse->ButtonR = Mouse->Input.usButtonFlags & RI_MOUSE_BUTTON_2_DOWN ? TRUE : FALSE;
+				Mouse->ButtonRUp = Mouse->Input.usButtonFlags & RI_MOUSE_BUTTON_2_UP ? TRUE : FALSE;
+				Mouse->ButtonM = Mouse->Input.usButtonFlags & RI_MOUSE_BUTTON_3_DOWN ? TRUE : FALSE;
+				Mouse->ButtonMUp = Mouse->Input.usButtonFlags & RI_MOUSE_BUTTON_3_UP ? TRUE : FALSE;
+				Mouse->Button4 = Mouse->Input.usButtonFlags & RI_MOUSE_BUTTON_4_DOWN ? TRUE : FALSE;
+				Mouse->Button4Up = Mouse->Input.usButtonFlags & RI_MOUSE_BUTTON_4_UP ? TRUE : FALSE;
+				Mouse->Button5 = Mouse->Input.usButtonFlags & RI_MOUSE_BUTTON_5_DOWN ? TRUE : FALSE;
+				Mouse->Button5Up = Mouse->Input.usButtonFlags & RI_MOUSE_BUTTON_5_UP ? TRUE : FALSE;
 
-				if (Mouse->Input.usButtonFlags & RI_MOUSE_BUTTON_2_DOWN) { Mouse->ButtonR = TRUE; }
-				else if (Mouse->Input.usButtonFlags & RI_MOUSE_BUTTON_2_UP) { Mouse->ButtonR = FALSE; }
-
-				if (Mouse->Input.usButtonFlags & RI_MOUSE_BUTTON_3_DOWN) { Mouse->ButtonM = TRUE; }
-				else if (Mouse->Input.usButtonFlags & RI_MOUSE_BUTTON_3_UP) { Mouse->ButtonM = FALSE; }
-
-				if (Mouse->Input.usButtonFlags & RI_MOUSE_BUTTON_4_DOWN) { Mouse->Button4 = TRUE; }
-				else if (Mouse->Input.usButtonFlags & RI_MOUSE_BUTTON_4_UP) { Mouse->Button4 = FALSE; }
-
-				if (Mouse->Input.usButtonFlags & RI_MOUSE_BUTTON_5_DOWN) { Mouse->Button5 = TRUE; }
-				else if (Mouse->Input.usButtonFlags & RI_MOUSE_BUTTON_5_UP) { Mouse->Button5 = FALSE; }
+				if (Mouse->ButtonLUp && b_MouseLeft) { b_MouseLeft = FALSE; }
+				if (Mouse->ButtonRUp && b_MouseRight) { b_MouseRight = FALSE; }
+				if (Mouse->ButtonMUp && b_MouseMiddle) { b_MouseMiddle = FALSE; }
+				if (Mouse->Button4Up && b_MouseButton4) { b_MouseButton4 = FALSE; }
+				if (Mouse->Button5Up && b_MouseButton5) { b_MouseButton5 = FALSE; }
 
 
 				// Hovering and relative to client position
@@ -397,8 +443,7 @@ void Windows_Devices::Input(HWND hWnd, RAWINPUT* pInput)
 					Mouse->IsHovering = PtInRect(&Rect, Mouse->RelPos);
 				}
 
-				if (Mouse->IsHovering) { Mouse->HovPos = Mouse->RelPos; }
-				else { Mouse->HovPos = { 0 }; }
+				Mouse->IsHovering ? Mouse->HovPos = Mouse->RelPos : Mouse->HovPos = { 0 };
 
 				// Complete
 				return;
@@ -407,22 +452,19 @@ void Windows_Devices::Input(HWND hWnd, RAWINPUT* pInput)
 	}
 
 	// Keyboard
-	if (pInput->header.dwType == RIM_TYPEKEYBOARD)
+	if (Input->header.dwType == RIM_TYPEKEYBOARD)
 	{
 		for (auto& Keyboard : Keyboards)
 		{
-			if (pInput->header.hDevice == Keyboard->Handle)
+			if (Input->header.hDevice == Keyboard->Handle)
 			{
-				std::memcpy(&Keyboard->Input, &pInput->data.keyboard, sizeof(RAWKEYBOARD));
+				std::memcpy(&Keyboard->Input, &Input->data.keyboard, sizeof(RAWKEYBOARD));
 
-				if (Keyboard->Input.Flags & RI_KEY_BREAK) { Keyboard->State[Keyboard->Input.VKey] = FALSE; }
-				else { Keyboard->State[Keyboard->Input.VKey] = TRUE; }
+				Keyboard->State[Keyboard->Input.VKey] = Keyboard->Input.Flags & RI_KEY_BREAK ? FALSE : TRUE;
 
-				if (Keyboard->Input.Flags & RI_KEY_E0) { Keyboard->E0[Keyboard->Input.VKey] = TRUE; }
-				else { Keyboard->E0[Keyboard->Input.VKey] = FALSE; }
+				Keyboard->E0[Keyboard->Input.VKey] = Keyboard->Input.Flags & RI_KEY_E0 ? TRUE : FALSE;
 
-				if (Keyboard->Input.Flags & RI_KEY_E1) { Keyboard->E1[Keyboard->Input.VKey] = TRUE; }
-				else { Keyboard->E1[Keyboard->Input.VKey] = FALSE; }
+				Keyboard->E1[Keyboard->Input.VKey] = Keyboard->Input.Flags & RI_KEY_E1 ? TRUE : FALSE;
 
 				return;
 			}
@@ -433,9 +475,22 @@ void Windows_Devices::Input(HWND hWnd, RAWINPUT* pInput)
 
 
 /*
-	Handle input from WM_MOUSEWHEEL
+	Intended for use with WM_INPUT
 */
-void Windows_Devices::MouseWheel(WPARAM wParam)
+void Windows_Devices::MsgInputJoyStick(void)
+{
+	// Joysticks
+	for (auto& Joystick : Joysticks)
+	{
+		joyGetPosEx(Joystick->ID, &Joystick->Info);
+	}
+}
+
+
+/*
+	Intended for use with WM_MOUSEWHEEL
+*/
+void Windows_Devices::MsgMouseWheel(WPARAM wParam)
 {
 	for (auto& Mouse : Mice)
 	{
@@ -445,12 +500,211 @@ void Windows_Devices::MouseWheel(WPARAM wParam)
 
 
 /*
-	Handle input from WM_MOUSEHWHEEL
+	Intended for use with WM_MOUSEHWHEEL
 */
-void Windows_Devices::MouseHWheel(WPARAM wParam)
+void Windows_Devices::MsgMouseHWheel(WPARAM wParam)
 {
 	for (auto& Mouse : Mice)
 	{
 		Mouse->DeltaX = static_cast<FLOAT>(GET_WHEEL_DELTA_WPARAM(wParam) / WHEEL_DELTA);
 	}
+}
+
+
+/*
+	Is the mouse hovering over the client area?
+*/
+BOOL Windows_Devices::IsHovering(void) const
+{
+	for (auto& Mouse : Mice)
+	{
+		if (Mouse->IsHovering) { return TRUE; }
+	}
+	return FALSE;
+}
+
+
+/*
+	Is the mouse hovering over a position in the client area?
+*/
+BOOL Windows_Devices::IsHoveringPos(RECT Position) const
+{
+	for (auto& Mouse : Mice)
+	{
+		if ((Mouse->HovPos.x == 0) && (Mouse->HovPos.y == 0)) { continue; }
+		if (PtInRect(&Position, Mouse->HovPos)) { return TRUE; }
+	}
+	return FALSE;
+}
+
+
+/*
+	Get hovering position in the client area
+*/
+POINT Windows_Devices::GetHoveringPosition(void) const
+{
+	for (auto& Mouse : Mice)
+	{
+		if (Mouse->IsHovering) { return Mouse->HovPos; }
+	}
+	return { 0 };
+}
+
+
+/*
+	Get mouse relative position to the client area
+*/
+POINT Windows_Devices::GetRelativePosition(void) const
+{
+	for (auto& Mouse : Mice)
+	{
+		if ((Mouse->RelPos.x == 0) && (Mouse->RelPos.y == 0)) { continue; }
+		return Mouse->RelPos;
+	}
+	return { 0 };
+}
+
+
+/*
+	Get mouse relative position to the previous frame
+*/
+POINT Windows_Devices::GetRelativeToPrevious(void) const
+{
+	for (auto& Mouse : Mice)
+	{
+		if ((Mouse->RelPrev.x == 0) && (Mouse->RelPrev.y == 0)) { continue; }
+		return Mouse->RelPrev;
+	}
+	return { 0 };
+}
+
+
+/*
+	Get state of mouse left button
+*/
+BOOL Windows_Devices::GetMouseLeft(void)
+{
+	if (b_MouseLeft) { return TRUE; }
+	for (auto& Mouse : Mice)
+	{
+		if (Mouse->ButtonL) { return b_MouseLeft = TRUE; }
+	}
+	return b_MouseLeft = FALSE;
+}
+
+
+/*
+	Get state of mouse right button
+*/
+BOOL Windows_Devices::GetMouseRight(void)
+{
+	if (b_MouseRight) { return TRUE; }
+	for (auto& Mouse : Mice)
+	{
+		if (Mouse->ButtonR) { return b_MouseRight = TRUE; }
+	}
+	return b_MouseRight = FALSE;
+}
+
+
+/*
+	Get state of mouse right button
+*/
+BOOL Windows_Devices::GetMouseMiddle(void)
+{
+	if (b_MouseMiddle) { return TRUE; }
+	for (auto& Mouse : Mice)
+	{
+		if (Mouse->ButtonM) { return b_MouseMiddle = TRUE; }
+	}
+	return b_MouseMiddle = FALSE;
+}
+
+
+/*
+	Get state of mouse button 4
+*/
+BOOL Windows_Devices::GetMouseButton4(void)
+{
+	if (b_MouseButton4) { return TRUE; }
+	for (auto& Mouse : Mice)
+	{
+		if (Mouse->Button4) { return b_MouseButton4 = TRUE; }
+	}
+	return b_MouseButton4 = FALSE;
+}
+
+
+/*
+	Get state of mouse button 5
+*/
+BOOL Windows_Devices::GetMouseButton5(void)
+{
+	if (b_MouseButton5) { return TRUE; }
+	for (auto& Mouse : Mice)
+	{
+		if (Mouse->Button5) { return b_MouseButton5 = TRUE; }
+	}
+	return b_MouseButton5 = FALSE;
+}
+
+
+/*
+	Get mouse vertical scroll wheel delta
+*/
+FLOAT Windows_Devices::GetMouseDeltaZ(void) const
+{
+	for (auto& Mouse : Mice)
+	{
+		if (Mouse->DeltaZ == 0.0f) { continue; }
+		return Mouse->DeltaZ;
+	}
+	return 0.0f;
+}
+
+
+/*
+	Get mouse horizontal scroll wheel delta
+*/
+FLOAT Windows_Devices::GetMouseDeltaX(void) const
+{
+	for (auto& Mouse : Mice)
+	{
+		if (Mouse->DeltaX == 0.0f) { continue; }
+		return Mouse->DeltaX;
+	}
+	return 0.0f;
+}
+
+
+/*
+	Get keyboard state
+*/
+BOOL Windows_Devices::GetKeyState(BYTE Key, BOOL* E0, BOOL* E1)
+{
+	for (auto& Keyboard : Keyboards)
+	{
+		if (Keyboard->GetState(Key, E0, E1))
+		{
+			return TRUE;
+		}
+	}
+	if (E0) *E0 = FALSE;
+	if (E1) *E1 = FALSE;
+	return FALSE;
+}
+
+
+/*
+	Get down state of keyboard key
+*/
+BOOL Windows_Devices::GetKeyDown(BYTE Key, BOOL* E0, BOOL* E1)
+{
+	BOOL State = GetKeyState(Key, E0, E1);
+
+	if (State && b_LockedKeyboardState[Key]) { return FALSE; }
+
+	State ? b_LockedKeyboardState[Key] = TRUE : b_LockedKeyboardState[Key] = FALSE;
+
+	return State;
 }

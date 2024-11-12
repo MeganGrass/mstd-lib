@@ -11,9 +11,11 @@
 
 #pragma once
 
-#include <resource.h>
-
+#if MSTD_DEVICE
 #include "std_device.h"
+#else
+#include "std_common.h"
+#endif
 
 #include <versionhelpers.h>
 
@@ -23,12 +25,16 @@
 
 
 typedef class Standard_Window StdWin;
+typedef class Windows_Devices StdWinDevices;
 
 // IsWindows10OrGreater has been called?
 static bool b_StdWinIsWindows10OrGreater = false;
 
 // InitCommonControlsEx has been called?
 static bool b_StdWinInitCommonControlsEx = false;
+
+// Windows Devices have been initialized?
+static bool b_StdWinDevicesInitialized = false;
 
 
 /*
@@ -149,6 +155,11 @@ private:
 	bool b_HasFocus;									// Window has focus?
 	bool b_Fullscreen;									// Window is fullscreen? Otherwise, SW_MAXIMIZE will be used for ShowWindow on creation?
 
+#if MSTD_DEVICE
+	// Windows Devices
+	std::shared_ptr<Windows_Devices> m_Devices;
+#endif
+
 	// Child Windows
 	std::vector<std::unique_ptr<Standard_Window>> v_ChildWindows;
 
@@ -242,6 +253,14 @@ public:
 				ICC_LINK_CLASS;
 			if (!InitCommonControlsEx(&CommonControls)) { GetErrorMessage(); }
 		}
+
+#if MSTD_DEVICE
+		if (!b_StdWinDevicesInitialized)
+		{
+			b_StdWinDevicesInitialized = true;
+			m_Devices = std::make_shared<Windows_Devices>();
+		}
+#endif
 
 		m_Class.cbSize = sizeof(WNDCLASSEXW);
 	}
@@ -369,7 +388,14 @@ public:
 	/*
 		Drag and drop files available to be parsed?
 	*/
-	[[nodiscard]] bool DroppedFiles(void) { return s_DroppedFiles.empty() ? false : true; }
+	[[nodiscard]] bool DroppedFiles(void) { return !s_DroppedFiles.empty(); }
+
+#if MSTD_DEVICE
+	/*
+		Windows Devices
+	*/
+	[[nodiscard]] std::shared_ptr<Windows_Devices> Device(void) const { return m_Devices; }
+#endif
 
 	/*
 		Preset window style
@@ -413,8 +439,10 @@ public:
 
 	/*
 		Add child window
+		- if b_SnapToChild is true, the parent window will resize to fit the child window
+		- if Size is not nullptr, the child window will be resized to the specified rect before the parent is snapped
 	*/
-	bool AddChildWindow(HWND hWndChild, bool b_SnapToChild);
+	bool AddChildWindow(HWND hWndChild, int x, int y, bool b_SnapToChild, RECT* Size = nullptr);
 
 	/*
 		Empty the child window list
@@ -486,6 +514,12 @@ public:
 		Status bar percentage message
 	*/
 	void SetStatusPercent(int iPart, UINT iIndex, UINT iTotal) const { Status(iPart, L"%0.0f%%", (((double)iIndex / (double)iTotal) * 100)); }
+
+	/*
+		Get rect
+		- returns the client area rect, adjusted properly for the window's toolbar and status bar
+	*/
+	[[nodiscard]] RECT GetRect(void) const;
 
 	/*
 		Resize
@@ -791,26 +825,6 @@ public:
 		Intended for use with WM_DISPLAYCHANGE
 	*/
 	void MsgDisplayChange(WPARAM wParam, LPARAM lParam);
-
-	/*
-		Intended for use with WM_INPUT_DEVICE_CHANGE
-	*/
-	void MsgInputDeviceChange(WPARAM wParam, LPARAM lParam);
-
-	/*
-		Intended for use with WM_INPUT
-	*/
-	void MsgInput(WPARAM wParam, LPARAM lParam);
-
-	/*
-		Intended for use with WM_MOUSEWHEEL
-	*/
-	void MsgMouseWheel(WPARAM wParam, LPARAM lParam);
-
-	/*
-		Intended for use with WM_MOUSEHWHEEL
-	*/
-	void MsgMouseHWheel(WPARAM wParam, LPARAM lParam);
 
 	/*
 		Intended for use with WM_DROPFILES

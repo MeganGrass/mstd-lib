@@ -23,6 +23,10 @@ LRESULT CALLBACK StandardWindowProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM 
 
 	if (!Window) { return DefSubclassProc(hWnd, uMsg, wParam, lParam); }
 
+#if MSTD_DEVICE
+	Window->Device()->UpdateJoysticks();
+#endif
+
 	switch (uMsg)
 	{
 	case WM_MOVE:
@@ -46,19 +50,20 @@ LRESULT CALLBACK StandardWindowProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM 
 	case WM_DISPLAYCHANGE:
 		Window->MsgDisplayChange(wParam, lParam);
 		break;
+#if MSTD_DEVICE
 	case WM_INPUT_DEVICE_CHANGE:
-		Window->MsgInputDeviceChange(wParam, lParam);
+		Window->Device()->MsgInputDeviceChange(wParam, lParam);
 		break;
 	case WM_INPUT:
-		Window->MsgInput(wParam, lParam);
-		if (GET_RAWINPUT_CODE_WPARAM(wParam) == RIM_INPUT) { return DefSubclassProc(hWnd, uMsg, wParam, lParam); }
+		if ((Window->HasFocus()) && (GET_RAWINPUT_CODE_WPARAM(wParam) == RIM_INPUT)) { Window->Device()->MsgInput(hWnd, wParam, lParam); }
 		break;
 	case WM_MOUSEWHEEL:
-		Window->MsgMouseWheel(wParam, lParam);
+		Window->Device()->MsgMouseWheel(wParam);
 		break;
 	case WM_MOUSEHWHEEL:
-		Window->MsgMouseHWheel(wParam, lParam);
+		Window->Device()->MsgMouseHWheel(wParam);
 		break;
+#endif
 	case WM_DROPFILES:
 		Window->MsgDropFiles(wParam, lParam);
 		break;
@@ -86,14 +91,6 @@ void Standard_Window::MsgActivate(WPARAM wParam, LPARAM lParam)
 	if ((wParam & WA_ACTIVE) || (wParam & WA_CLICKACTIVE))
 	{
 		b_IsActive = true;
-		for (auto& Mouse : WinDevices->Mice)
-		{
-			TrackMouseEvent(&Mouse->Event);
-		}
-		for (auto& Joystick : WinDevices->Joysticks)
-		{
-			joySetCapture(hWnd, Joystick->ID, 0, 0);
-		}
 		DwmSetWindowAttribute(hWnd, DWMWA_BORDER_COLOR, &m_BorderColor, sizeof(COLORREF));
 		DwmSetWindowAttribute(hWnd, DWMWA_CAPTION_COLOR, &m_CaptionColor, sizeof(COLORREF));
 		DwmSetWindowAttribute(hWnd, DWMWA_TEXT_COLOR, &m_TextColor, sizeof(COLORREF));
@@ -101,18 +98,13 @@ void Standard_Window::MsgActivate(WPARAM wParam, LPARAM lParam)
 	else
 	{
 		b_IsActive = false;
-		for (auto& Mouse : WinDevices->Mice)
-		{
-			Mouse->ClearInput();
-		}
-		for (auto& Joystick : WinDevices->Joysticks)
-		{
-			joyReleaseCapture(Joystick->ID);
-		}
 		DwmSetWindowAttribute(hWnd, DWMWA_BORDER_COLOR, &m_BorderColorLostFocus, sizeof(COLORREF));
 		DwmSetWindowAttribute(hWnd, DWMWA_CAPTION_COLOR, &m_CaptionColorLostFocus, sizeof(COLORREF));
 		DwmSetWindowAttribute(hWnd, DWMWA_TEXT_COLOR, &m_TextColorLostFocus, sizeof(COLORREF));
 	}
+#if MSTD_DEVICE
+	m_Devices.get()->MsgActivate(hWnd, wParam);
+#endif
 }
 
 
@@ -189,75 +181,6 @@ void Standard_Window::MsgDisplayChange(WPARAM wParam, LPARAM lParam)
 		WindowPos.cy = HIWORD(lParam);
 		WindowPos.flags = SWP_NOZORDER | SWP_NOREDRAW | SWP_NOACTIVATE | SWP_NOCOPYBITS | SWP_NOOWNERZORDER | SWP_NOSENDCHANGING | SWP_DEFERERASE | SWP_ASYNCWINDOWPOS;
 		SendMessage(hWnd, WM_WINDOWPOSCHANGED, 0, (LPARAM)&WindowPos);
-	}
-}
-
-
-/*
-	WM_INPUT_DEVICE_CHANGE
-*/
-void Standard_Window::MsgInputDeviceChange(WPARAM wParam, LPARAM lParam)
-{
-	if(wParam == GIDC_ARRIVAL) { WinDevices->AddDevice((HANDLE)lParam); }
-	else if (wParam & GIDC_REMOVAL) { WinDevices->RemoveDevice((HANDLE)lParam); }
-}
-
-
-/*
-	WM_INPUT
-*/
-void Standard_Window::MsgInput(WPARAM wParam, LPARAM lParam)
-{
-	// no focus, no input processing
-	if ((!b_HasFocus) || (GET_RAWINPUT_CODE_WPARAM(wParam) != RIM_INPUT)) { return; }
-
-	// Joysticks
-	WinDevices->InputJoyStick();
-
-	// Header
-	UINT Size = 0;
-	if (GetRawInputData((HRAWINPUT)lParam, RID_INPUT, 0, &Size, sizeof(RAWINPUTHEADER)) == -1) { GetErrorMessage(); }
-
-	if (!Size) { return; }
-
-	// Input
-	std::vector<BYTE> Buffer(Size);
-	if (GetRawInputData((HRAWINPUT)lParam, RID_INPUT, Buffer.data(), &Size, sizeof(RAWINPUTHEADER)) == -1) { GetErrorMessage(); }
-
-	RAWINPUT* Input = (RAWINPUT*)Buffer.data();
-
-	// No handler for HID...
-	if (Input->header.dwType == RIM_TYPEHID) { return; }
-
-	// Mice and Keyboards
-	WinDevices->Input(hWnd, Input);
-	//Status(0, "%d, %d  %d, %d", WinDevices->Mice[0]->RelPrev.x, WinDevices->Mice[0]->RelPrev.y, WinDevices->Mice[0]->RelPos.x, WinDevices->Mice[0]->RelPos.y);
-	//Status(1, "%d, %d", WinDevices->Mice[0]->HovPos.x, WinDevices->Mice[0]->HovPos.y);
-	//Status(2, "%d, %d, %d, %d, %d", WinDevices->Mice[0]->ButtonL, WinDevices->Mice[0]->ButtonM, WinDevices->Mice[0]->ButtonR, WinDevices->Mice[0]->Button4, WinDevices->Mice[0]->Button5);
-
-}
-
-
-/*
-	WM_MOUSEWHEEL
-*/
-void Standard_Window::MsgMouseWheel(WPARAM wParam, LPARAM lParam)
-{
-	for (auto& Mouse : WinDevices->Mice)
-	{
-		Mouse->DeltaZ = static_cast<FLOAT>(GET_WHEEL_DELTA_WPARAM(wParam) / WHEEL_DELTA);
-	}
-}
-
-
-/*
-	WM_MOUSEHWHEEL
-*/
-void Standard_Window::MsgMouseHWheel(WPARAM wParam, LPARAM lParam)
-{
-	for (auto& Mouse : WinDevices->Mice)
-	{
-		Mouse->DeltaX = static_cast<FLOAT>(GET_WHEEL_DELTA_WPARAM(wParam) / WHEEL_DELTA);
 	}
 }
 

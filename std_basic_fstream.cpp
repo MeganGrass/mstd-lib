@@ -13,7 +13,7 @@
 
 
 /*
-
+	Get the file stream as an unsigned char vector
 */
 [[nodiscard]] std::vector<std::uint8_t> Standard_Basic_FStream::buffer(void) try
 {

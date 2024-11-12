@@ -217,7 +217,7 @@ void Standard_Window::Create(int Width, int Height, HINSTANCE hInstance, int nCm
 	}
 
 	// Show Window
-	b_Fullscreen ? ShowWindow(hWnd, SW_MAXIMIZE) : ShowWindow(hWnd, nCmdShow);
+	b_Fullscreen ? ShowWindow(hWnd, SW_SHOWMAXIMIZED) : ShowWindow(hWnd, nCmdShow);
 
 	// Update Window
 	UpdateWindow(hWnd);
@@ -253,6 +253,10 @@ HWND Standard_Window::CreateChild(int x, int y, int Width, int Height, HINSTANCE
 	Window->m_SysDPI = m_SysDPI;
 	Window->m_WindowDPI = m_WindowDPI;
 	Window->m_ScaleFactor = m_ScaleFactor;
+
+#if MSTD_DEVICE
+	Window->m_Devices = m_Devices;
+#endif
 
 	WindowOptions FilteredOptions = WindowOptions::None;
 	std::to_underlying(e_Options)& std::to_underlying(WindowOptions::Borderless) ? FilteredOptions | WindowOptions::Borderless : FilteredOptions;
@@ -341,7 +345,7 @@ HWND Standard_Window::CreateChild(int x, int y, int Width, int Height, HINSTANCE
 /*
 	Add Child Window
 */
-bool Standard_Window::AddChildWindow(HWND hWndChild, bool b_SnapToChild)
+bool Standard_Window::AddChildWindow(HWND hWndChild, int x, int y, bool b_SnapToChild, RECT* Size)
 {
 	// Error
 	if (!hWnd)
@@ -364,7 +368,14 @@ bool Standard_Window::AddChildWindow(HWND hWndChild, bool b_SnapToChild)
 		Window->b_Borderless = true;
 
 		RECT Rect{};
-		GetClientRect(hWndChild, &Rect);
+		if (Size)
+		{
+			Rect = *Size;
+		}
+		else
+		{
+			GetClientRect(hWndChild, &Rect);
+		}
 
 		SetWindowLong(hWndChild, GWL_STYLE, 0);
 		SetWindowLong(hWndChild, GWL_EXSTYLE, 0);
@@ -381,6 +392,10 @@ bool Standard_Window::AddChildWindow(HWND hWndChild, bool b_SnapToChild)
 	Window->m_SysDPI = m_SysDPI;
 	Window->m_WindowDPI = m_WindowDPI;
 	Window->m_ScaleFactor = m_ScaleFactor;
+
+#if MSTD_DEVICE
+	Window->m_Devices = m_Devices;
+#endif
 
 	Window->ParsePresets(WindowOptions::None);
 
@@ -406,13 +421,22 @@ bool Standard_Window::AddChildWindow(HWND hWndChild, bool b_SnapToChild)
 	RECT Rect{};
 	GetClientRect(hWnd, &Rect);
 
-	int x = (rand() % Rect.right);
-	int y = (rand() % Rect.bottom);
+	//int x = (rand() % Rect.right);
+	//int y = (rand() % Rect.bottom);
 
 	if (b_SnapToChild)
 	{
 		x = 0;
 		y = 0;
+	}
+	else
+	{
+		if (h_ToolBar)
+		{
+			RECT ToolBarRect{};
+			GetWindowRect(h_ToolBar, &ToolBarRect);
+			y += (ToolBarRect.bottom - ToolBarRect.top);
+		}
 	}
 
 	SetWindowPos(hWndChild, 0, x, y, 0, 0, SWP_NOSIZE | SWP_NOZORDER | SWP_NOREDRAW | SWP_NOACTIVATE | SWP_NOCOPYBITS | SWP_NOOWNERZORDER | SWP_NOSENDCHANGING | SWP_DEFERERASE | SWP_ASYNCWINDOWPOS);
@@ -670,6 +694,33 @@ StringW Standard_Window::GetStatus(int iPart) const
 	SendMessageW(h_StatusBar, SB_GETTEXTW, iPart, (LPARAM)Buffer.data());
 
 	return Buffer;
+}
+
+
+/*
+	Get rect
+*/
+RECT Standard_Window::GetRect(void) const
+{
+	RECT Rect{};
+	GetClientRect(hWnd, &Rect);
+
+	if (h_ToolBar)
+	{
+		RECT ToolBarRect{};
+		GetWindowRect(h_ToolBar, &ToolBarRect);
+		Rect.top += (ToolBarRect.bottom - ToolBarRect.top);
+		Rect.bottom += (ToolBarRect.bottom - ToolBarRect.top);
+	}
+
+	if (h_StatusBar)
+	{
+		RECT StatusBarRect{};
+		GetWindowRect(h_StatusBar, &StatusBarRect);
+		Rect.bottom -= (StatusBarRect.bottom - StatusBarRect.top);
+	}
+
+	return Rect;
 }
 
 

@@ -318,7 +318,7 @@ public:
 
 
 	/*
-		
+		Get the file stream as an unsigned char vector
 	*/
 	[[nodiscard]] std::vector<std::uint8_t> buffer(void);
 

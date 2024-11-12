@@ -73,12 +73,6 @@ protected:
 	void SetCommonOwner(HWND _hWndOwner) { hWndOwner = _hWndOwner; }
 
 
-	/*
-		Message from GetLastError() function
-	*/
-	void GetErrorMessage(bool b_ExitProcess = true, const std::source_location Location = std::source_location::current());
-
-
 public:
 
 	explicit Standard_Windows_Common(void) :
@@ -124,6 +118,12 @@ public:
 	using Standard_String::GetCommandlineW;
 	using Standard_String::ToUpper;
 	using Standard_String::ToLower;
+
+
+	/*
+		Message from GetLastError() function
+	*/
+	void GetErrorMessage(bool b_ExitProcess = true, const std::source_location Location = std::source_location::current());
 
 
 	/*
@@ -234,7 +234,7 @@ public:
 	/*
 		Wait for the generic fps timer to expire with WaitForSingleObject()
 	*/
-	void SleepTimer(void)
+	void SleepTimer(void) const
 	{
 		SetWaitableTimerEx(h_Timer, &m_DueTime, 0, 0, 0, 0, 0);
 		WaitForSingleObject(h_Timer, m_TimerMilliFPS);

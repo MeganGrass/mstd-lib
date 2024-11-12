@@ -108,6 +108,9 @@ public:
 
     /*
         Add a job to the queue
+		-- multiple functions can be simultaneously added to the thread pool at once
+		-- Example: auto Future = ThreadPoolEnqueue([]() { foo(); bar(); });
+		-- Example: auto Future = Foo->ThreadPoolEnqueue([this]() { a = 1; foo->bar(); });
     */
     template<typename _Fty, typename... Args, typename _Ret = std::invoke_result_t<_Fty, Args...>>
     auto ThreadPoolEnqueue(_Fty&& _Func, Args&&... _Args) -> std::future<_Ret>
