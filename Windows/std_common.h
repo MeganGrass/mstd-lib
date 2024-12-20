@@ -57,6 +57,8 @@ private:
 
 	// Convert the chrono frames per second to a double
 	[[nodiscard]] double ChronoFPS() const { return 500.0f / static_cast<double>(m_ChronoFPS); }
+
+	static HRESULT CALLBACK MessageModalCallbackProc(HWND hwnd, UINT uNotification, WPARAM wParam, LPARAM lParam, LONG_PTR dwRefData);
 	
 protected:
 
@@ -118,6 +120,18 @@ public:
 	using Standard_String::GetCommandlineW;
 	using Standard_String::ToUpper;
 	using Standard_String::ToLower;
+
+
+	/*
+		Get instance handle
+	*/
+	[[nodiscard]] virtual HINSTANCE GetInstance(void) const { return hInstance; }
+
+
+	/*
+		Get window handle
+	*/
+	[[nodiscard]] virtual HWND GetWindow(void) const { return hWndOwner; }
 
 
 	/*
@@ -190,6 +204,14 @@ public:
 		Message Box
 	*/
 	virtual void Message(const std::wstring _Format, ...) override;
+
+
+	/*
+		Message Modal
+		 - hyperlinks are supported in Content:
+			<a href=\"https://example.com\">https://example.com</a>
+	*/
+	void MessageModal(const std::wstring& Title, const std::wstring& MainInstruction, const std::wstring _Content, ...) const;
 
 
 	/*

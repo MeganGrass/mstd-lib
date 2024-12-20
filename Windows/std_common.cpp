@@ -304,7 +304,7 @@ void Standard_Windows_Common::Message(const std::string _Format, ...)
 
 	std::wstring WideStr = std::wstring(String.begin(), String.end());
 
-	TaskDialog(hWndOwner, hInstance, L"Message", 0, WideStr.data(), TDCBF_OK_BUTTON, 0, 0);
+	MessageModal(L"Message", L"", WideStr.data());
 }
 
 
@@ -320,5 +320,38 @@ void Standard_Windows_Common::Message(const std::wstring _Format, ...)
 	std::vswprintf(String.data(), _StrLen, _Format.c_str(), _ArgList);
 	va_end(_ArgList);
 
-	TaskDialog(hWndOwner, hInstance, L"Message", 0, String.data(), TDCBF_OK_BUTTON, 0, 0);
+	MessageModal(L"Message", L"", String.data());
+}
+
+
+/*
+	Message Modal
+*/
+HRESULT CALLBACK Standard_Windows_Common::MessageModalCallbackProc(HWND hWnd, UINT uNotification, WPARAM wParam, LPARAM lParam, LONG_PTR dwRefData)
+{
+	if (uNotification == TDN_HYPERLINK_CLICKED)
+	{
+		ShellExecuteW(nullptr, L"open", (LPCWSTR)lParam, nullptr, nullptr, SW_SHOWNORMAL);
+	}
+	return S_OK;
+}
+void Standard_Windows_Common::MessageModal(const std::wstring& Title, const std::wstring& MainInstruction, const std::wstring _Content, ...) const
+{
+	std::va_list _ArgList;
+	va_start(_ArgList, _Content);
+	int _StrLen = (std::vswprintf(0, 0, _Content.c_str(), _ArgList) + sizeof(wchar_t));
+	std::vector<wchar_t> Content(_StrLen);
+	std::vswprintf(Content.data(), _StrLen, _Content.c_str(), _ArgList);
+	va_end(_ArgList);
+
+	TASKDIALOGCONFIG DialogConfig = { sizeof(TASKDIALOGCONFIG) };
+	DialogConfig.hwndParent = hWndOwner;
+	DialogConfig.hInstance = hInstance;
+	DialogConfig.dwFlags = TDF_ENABLE_HYPERLINKS;
+	DialogConfig.pszWindowTitle = Title.c_str();
+	DialogConfig.pszMainInstruction = MainInstruction.c_str();
+	DialogConfig.pszContent = Content.data();
+	DialogConfig.pfCallback = MessageModalCallbackProc;
+
+	TaskDialogIndirect(&DialogConfig, nullptr, nullptr, nullptr);
 }

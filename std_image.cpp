@@ -248,54 +248,99 @@ void Standard_Image::SetPixel(uint32_t X, uint32_t Y, DWORD Color)
 
 
 /*
+	Get bitmap info
+*/
+PBITMAPINFO Standard_Image::GetBitmapInfo(void) const
+{
+	// biSizeImage
+	std::uint32_t biSizeImage = Width * Height * (Depth / 8);
+	std::uint32_t Padding = (4 - (Width * Depth) % 4) % 4;
+	biSizeImage += Padding * Height;
+
+	// Header
+	BITMAPINFOHEADER InfoHeader{};
+	InfoHeader.biSize = sizeof(BITMAPINFOHEADER);
+	InfoHeader.biWidth = Width;
+	InfoHeader.biHeight = Height;
+	InfoHeader.biPlanes = 1;
+	InfoHeader.biBitCount = Depth;
+	InfoHeader.biCompression = BI_RGB;
+	InfoHeader.biSizeImage = biSizeImage;
+	InfoHeader.biXPelsPerMeter = 0;
+	InfoHeader.biYPelsPerMeter = 0;
+	InfoHeader.biClrUsed = static_cast<DWORD>(Palette.size());
+	InfoHeader.biClrImportant = 0;
+
+	// Info
+	PBITMAPINFO Info = (PBITMAPINFO)new char[sizeof(BITMAPINFOHEADER) + Palette.size() * sizeof(RGBQUAD)];
+	Info->bmiHeader = InfoHeader;
+	for (std::size_t i = 0; i < Palette.size(); i++)
+	{
+		Info->bmiColors[i] = Palette.data()[i];
+	}
+
+	// Complete
+	return Info;
+}
+
+
+/*
 	Save as Bitmap
 */
 bool Standard_Image::SaveAsBitmap(std::filesystem::path Path)
 {
-	StdFile m_Input{ Path, FileAccessMode::Write_Ex, true, true };
-
+	StdFile m_Input { Path, FileAccessMode::Write_Ex, true, true };
 	if (!m_Input)
 	{
 		Str->Message("Standard Image: Error, could not create %s", Path.filename().c_str());
 		return false;
 	}
 
-	BITMAPFILEHEADER FileHeader{};
-	BITMAPINFOHEADER InfoHeader{};
-
-	// Calculate bfSize and biSizeImage
-	uint32_t Size = Width * Height * (Depth / 8);
-	uint32_t Padding = (4 - (Width * Depth) % 4) % 4;
-	Size += Padding * Height;
+	// Info Header
+	PBITMAPINFO Info = GetBitmapInfo();
 
 	// File Header
+	BITMAPFILEHEADER FileHeader{};
 	FileHeader.bfType = 0x4D42;
 	FileHeader.bfOffBits = sizeof(BITMAPFILEHEADER) + sizeof(BITMAPINFOHEADER) + static_cast<DWORD>(Palette.size());
-	FileHeader.bfSize = FileHeader.bfOffBits + Size;
+	FileHeader.bfSize = FileHeader.bfOffBits + Info->bmiHeader.biSizeImage;
 	FileHeader.bfReserved1 = 0;
 	FileHeader.bfReserved2 = 0;
-
-	// Info Header
-	InfoHeader.biSize = sizeof(BITMAPINFOHEADER);
-	InfoHeader.biWidth = Width;
-	InfoHeader.biHeight = Height;
-	InfoHeader.biPlanes = 1;
-	InfoHeader.biBitCount = Depth;
-	InfoHeader.biCompression = 0;
-	InfoHeader.biSizeImage = Size;
-	InfoHeader.biXPelsPerMeter = 0;
-	InfoHeader.biYPelsPerMeter = 0;
-	InfoHeader.biClrUsed = 0;
-	InfoHeader.biClrImportant = 0;
 	
 	// Write Data
 	m_Input.Write(0, &FileHeader, sizeof(BITMAPFILEHEADER));
-	m_Input.Write(sizeof(BITMAPFILEHEADER), &InfoHeader, sizeof(BITMAPINFOHEADER));
+	m_Input.Write(sizeof(BITMAPFILEHEADER), &Info->bmiHeader, sizeof(BITMAPINFOHEADER));
 	m_Input.Write(sizeof(BITMAPFILEHEADER) + sizeof(BITMAPINFOHEADER), Palette.data(), Palette.size());
 	m_Input.Write(sizeof(BITMAPFILEHEADER) + sizeof(BITMAPINFOHEADER) + Palette.size(), Pixels.data(), Pixels.size());
 
 	// Complete
-	m_Input.Close();
-
 	return true;
 }
+
+
+#ifdef _WINDOWS
+/*
+	Bit blit
+*/
+void Standard_Image::BitBlit(HWND hWnd, HDC hdcDst, int X, int Y, int DstWidth, int DstHeight, int SrcX, int SrcY, DWORD dwRop) const
+{
+	PBITMAPINFO Info = GetBitmapInfo();
+
+	HDC hDC = NULL;
+	hdcDst ? hDC = hdcDst : hDC = GetDC(hWnd);
+
+	HDC hMemDC = CreateCompatibleDC(hDC);
+	HBITMAP hBitmap = CreateCompatibleBitmap(hDC, Width, Height);
+	SetDIBits(hMemDC, hBitmap, 0, Height, Pixels.data(), Info, DIB_RGB_COLORS);
+	HBITMAP hOldBitmap = (HBITMAP)SelectObject(hMemDC, hBitmap);
+
+	BitBlt(hDC, X, Y, DstWidth, DstHeight, hMemDC, SrcX, SrcY, dwRop);
+
+	SelectObject(hMemDC, hOldBitmap);
+	DeleteObject(hBitmap);
+	DeleteDC(hMemDC);
+	if (!hdcDst) ReleaseDC(hWnd, hDC);
+
+	delete[] reinterpret_cast<char*>(Info);
+}
+#endif

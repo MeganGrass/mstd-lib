@@ -11,10 +11,7 @@
 
 #pragma once
 
-#include "std_vertex.h"
-
-
-typedef class Standard_Matrix StdMat;
+#include "vertex.h"
 
 
 /*
@@ -52,11 +49,24 @@ public:
 		m01(0.0f), m11(1.0f), m21(0.0f), m31(0.0f),
 		m02(0.0f), m12(0.0f), m22(1.0f), m32(0.0f),
 		m03(tX), m13(tY), m23(tZ), m33(1.0f) {}
-	explicit Standard_Matrix(Standard_Vertex tVertex) noexcept :
+	explicit Standard_Matrix(vec3 tVertex) noexcept :
 		m00(1.0f), m10(0.0f), m20(0.0f), m30(0.0f),
 		m01(0.0f), m11(1.0f), m21(0.0f), m31(0.0f),
 		m02(0.0f), m12(0.0f), m22(1.0f), m32(0.0f),
 		m03(tVertex.x), m13(tVertex.y), m23(tVertex.z), m33(1.0f) {}
+	explicit Standard_Matrix(vec3 Translation, vec3 Rotation, vec3 Scale) noexcept
+	{
+		Standard_Matrix Matrix;
+		Matrix.Scale(Scale);
+		Matrix.Rotate(Rotation);
+		Matrix.Translate(Translation);
+		*this = Matrix;
+	}
+
+	/*
+		Deconstruction
+	*/
+	~Standard_Matrix() noexcept = default;
 
 	/*
 		Copy
@@ -66,7 +76,17 @@ public:
 		m01(m.m01), m11(m.m11), m21(m.m21), m31(m.m31),
 		m02(m.m02), m12(m.m12), m22(m.m22), m32(m.m32),
 		m03(m.m03), m13(m.m13), m23(m.m23), m33(m.m33) {}
-	Standard_Matrix& operator = (const Standard_Matrix& m) noexcept { return *this = Standard_Matrix(m); }
+	Standard_Matrix& operator = (const Standard_Matrix& m) noexcept
+	{
+		if (this != &m)
+		{
+			m00 = m.m00; m10 = m.m10; m20 = m.m20; m30 = m.m30;
+			m01 = m.m01; m11 = m.m11; m21 = m.m21; m31 = m.m31;
+			m02 = m.m02; m12 = m.m12; m22 = m.m22; m32 = m.m32;
+			m03 = m.m03; m13 = m.m13; m23 = m.m23; m33 = m.m33;
+		}
+		return *this;
+	}
 
 	/*
 		Move
@@ -78,10 +98,13 @@ public:
 		m03(std::exchange(m.m03, 0.0f)), m13(std::exchange(m.m13, 0.0f)), m23(std::exchange(m.m23, 0.0f)), m33(std::exchange(m.m33, 0.0f)) {}
 	Standard_Matrix& operator = (Standard_Matrix&& m) noexcept
 	{
-		std::swap(m00, m.m00); std::swap(m10, m.m10); std::swap(m20, m.m20); std::swap(m30, m.m30);
-		std::swap(m01, m.m01); std::swap(m11, m.m11); std::swap(m21, m.m21); std::swap(m31, m.m31);
-		std::swap(m02, m.m02); std::swap(m12, m.m12); std::swap(m22, m.m22); std::swap(m32, m.m32);
-		std::swap(m03, m.m03); std::swap(m13, m.m13); std::swap(m23, m.m23); std::swap(m33, m.m33);
+		if (this != &m)
+		{
+			m00 = std::exchange(m.m00, 0.0f); m10 = std::exchange(m.m10, 0.0f); m20 = std::exchange(m.m20, 0.0f); m30 = std::exchange(m.m30, 0.0f);
+			m01 = std::exchange(m.m01, 0.0f); m11 = std::exchange(m.m11, 0.0f); m21 = std::exchange(m.m21, 0.0f); m31 = std::exchange(m.m31, 0.0f);
+			m02 = std::exchange(m.m02, 0.0f); m12 = std::exchange(m.m12, 0.0f); m22 = std::exchange(m.m22, 0.0f); m32 = std::exchange(m.m32, 0.0f);
+			m03 = std::exchange(m.m03, 0.0f); m13 = std::exchange(m.m13, 0.0f); m23 = std::exchange(m.m23, 0.0f); m33 = std::exchange(m.m33, 0.0f);
+		}
 		return *this;
 	}
 
@@ -90,29 +113,29 @@ public:
 	*/
 	Standard_Matrix operator - (void) const noexcept
 	{
-		Standard_Matrix result;
+		Standard_Matrix Matrix;
 
-		result.m00 = -m00;
-		result.m01 = -m01;
-		result.m02 = -m02;
-		result.m03 = -m03;
+		Matrix.m00 = -m00;
+		Matrix.m01 = -m01;
+		Matrix.m02 = -m02;
+		Matrix.m03 = -m03;
 
-		result.m10 = -m10;
-		result.m11 = -m11;
-		result.m12 = -m12;
-		result.m13 = -m13;
+		Matrix.m10 = -m10;
+		Matrix.m11 = -m11;
+		Matrix.m12 = -m12;
+		Matrix.m13 = -m13;
 
-		result.m20 = -m20;
-		result.m21 = -m21;
-		result.m22 = -m22;
-		result.m23 = -m23;
+		Matrix.m20 = -m20;
+		Matrix.m21 = -m21;
+		Matrix.m22 = -m22;
+		Matrix.m23 = -m23;
 
-		result.m30 = -m30;
-		result.m31 = -m31;
-		result.m32 = -m32;
-		result.m33 = -m33;
+		Matrix.m30 = -m30;
+		Matrix.m31 = -m31;
+		Matrix.m32 = -m32;
+		Matrix.m33 = -m33;
 
-		return result;
+		return Matrix;
 	}
 
 	/*
@@ -120,7 +143,8 @@ public:
 	*/
 	bool operator == (const Standard_Matrix& m) const noexcept
 	{
-		return m00 == m.m00 && m10 == m.m10 && m20 == m.m20 && m30 == m.m30 &&
+		return
+			m00 == m.m00 && m10 == m.m10 && m20 == m.m20 && m30 == m.m30 &&
 			m01 == m.m01 && m11 == m.m11 && m21 == m.m21 && m31 == m.m31 &&
 			m02 == m.m02 && m12 == m.m12 && m22 == m.m22 && m32 == m.m32 &&
 			m03 == m.m03 && m13 == m.m13 && m23 == m.m23 && m33 == m.m33;
@@ -132,29 +156,29 @@ public:
 	*/
 	Standard_Matrix operator + (const Standard_Matrix& m) const noexcept
 	{
-		Standard_Matrix result;
+		Standard_Matrix Matrix;
 
-		result.m00 = m00 + m.m00;
-		result.m01 = m01 + m.m01;
-		result.m02 = m02 + m.m02;
-		result.m03 = m03 + m.m03;
+		Matrix.m00 = m00 + m.m00;
+		Matrix.m01 = m01 + m.m01;
+		Matrix.m02 = m02 + m.m02;
+		Matrix.m03 = m03 + m.m03;
 
-		result.m10 = m10 + m.m10;
-		result.m11 = m11 + m.m11;
-		result.m12 = m12 + m.m12;
-		result.m13 = m13 + m.m13;
+		Matrix.m10 = m10 + m.m10;
+		Matrix.m11 = m11 + m.m11;
+		Matrix.m12 = m12 + m.m12;
+		Matrix.m13 = m13 + m.m13;
 
-		result.m20 = m20 + m.m20;
-		result.m21 = m21 + m.m21;
-		result.m22 = m22 + m.m22;
-		result.m23 = m23 + m.m23;
+		Matrix.m20 = m20 + m.m20;
+		Matrix.m21 = m21 + m.m21;
+		Matrix.m22 = m22 + m.m22;
+		Matrix.m23 = m23 + m.m23;
 
-		result.m30 = m30 + m.m30;
-		result.m31 = m31 + m.m31;
-		result.m32 = m32 + m.m32;
-		result.m33 = m33 + m.m33;
+		Matrix.m30 = m30 + m.m30;
+		Matrix.m31 = m31 + m.m31;
+		Matrix.m32 = m32 + m.m32;
+		Matrix.m33 = m33 + m.m33;
 
-		return result;
+		return Matrix;
 	}
 	Standard_Matrix& operator += (const Standard_Matrix& m) noexcept { return *this = *this + m; }
 
@@ -163,29 +187,29 @@ public:
 	*/
 	Standard_Matrix operator + (float s) const noexcept
 	{
-		Standard_Matrix result;
+		Standard_Matrix Matrix;
 
-		result.m00 = m00 + s;
-		result.m01 = m01 + s;
-		result.m02 = m02 + s;
-		result.m03 = m03 + s;
+		Matrix.m00 = m00 + s;
+		Matrix.m01 = m01 + s;
+		Matrix.m02 = m02 + s;
+		Matrix.m03 = m03 + s;
 
-		result.m10 = m10 + s;
-		result.m11 = m11 + s;
-		result.m12 = m12 + s;
-		result.m13 = m13 + s;
+		Matrix.m10 = m10 + s;
+		Matrix.m11 = m11 + s;
+		Matrix.m12 = m12 + s;
+		Matrix.m13 = m13 + s;
 
-		result.m20 = m20 + s;
-		result.m21 = m21 + s;
-		result.m22 = m22 + s;
-		result.m23 = m23 + s;
+		Matrix.m20 = m20 + s;
+		Matrix.m21 = m21 + s;
+		Matrix.m22 = m22 + s;
+		Matrix.m23 = m23 + s;
 
-		result.m30 = m30 + s;
-		result.m31 = m31 + s;
-		result.m32 = m32 + s;
-		result.m33 = m33 + s;
+		Matrix.m30 = m30 + s;
+		Matrix.m31 = m31 + s;
+		Matrix.m32 = m32 + s;
+		Matrix.m33 = m33 + s;
 
-		return result;
+		return Matrix;
 	}
 	Standard_Matrix& operator += (float s) noexcept { return *this = *this + s; }
 
@@ -194,29 +218,29 @@ public:
 	*/
 	Standard_Matrix operator - (const Standard_Matrix& m) const noexcept
 	{
-		Standard_Matrix result;
+		Standard_Matrix Matrix;
 
-		result.m00 = m00 - m.m00;
-		result.m01 = m01 - m.m01;
-		result.m02 = m02 - m.m02;
-		result.m03 = m03 - m.m03;
+		Matrix.m00 = m00 - m.m00;
+		Matrix.m01 = m01 - m.m01;
+		Matrix.m02 = m02 - m.m02;
+		Matrix.m03 = m03 - m.m03;
 
-		result.m10 = m10 - m.m10;
-		result.m11 = m11 - m.m11;
-		result.m12 = m12 - m.m12;
-		result.m13 = m13 - m.m13;
+		Matrix.m10 = m10 - m.m10;
+		Matrix.m11 = m11 - m.m11;
+		Matrix.m12 = m12 - m.m12;
+		Matrix.m13 = m13 - m.m13;
 
-		result.m20 = m20 - m.m20;
-		result.m21 = m21 - m.m21;
-		result.m22 = m22 - m.m22;
-		result.m23 = m23 - m.m23;
+		Matrix.m20 = m20 - m.m20;
+		Matrix.m21 = m21 - m.m21;
+		Matrix.m22 = m22 - m.m22;
+		Matrix.m23 = m23 - m.m23;
 
-		result.m30 = m30 - m.m30;
-		result.m31 = m31 - m.m31;
-		result.m32 = m32 - m.m32;
-		result.m33 = m33 - m.m33;
+		Matrix.m30 = m30 - m.m30;
+		Matrix.m31 = m31 - m.m31;
+		Matrix.m32 = m32 - m.m32;
+		Matrix.m33 = m33 - m.m33;
 
-		return result;
+		return Matrix;
 	}
 	Standard_Matrix& operator -= (const Standard_Matrix& m) noexcept { return *this = *this - m; }
 
@@ -225,29 +249,29 @@ public:
 	*/
 	Standard_Matrix operator - (float s) const noexcept
 	{
-		Standard_Matrix result;
+		Standard_Matrix Matrix;
 
-		result.m00 = m00 - s;
-		result.m01 = m01 - s;
-		result.m02 = m02 - s;
-		result.m03 = m03 - s;
+		Matrix.m00 = m00 - s;
+		Matrix.m01 = m01 - s;
+		Matrix.m02 = m02 - s;
+		Matrix.m03 = m03 - s;
 
-		result.m10 = m10 - s;
-		result.m11 = m11 - s;
-		result.m12 = m12 - s;
-		result.m13 = m13 - s;
+		Matrix.m10 = m10 - s;
+		Matrix.m11 = m11 - s;
+		Matrix.m12 = m12 - s;
+		Matrix.m13 = m13 - s;
 
-		result.m20 = m20 - s;
-		result.m21 = m21 - s;
-		result.m22 = m22 - s;
-		result.m23 = m23 - s;
+		Matrix.m20 = m20 - s;
+		Matrix.m21 = m21 - s;
+		Matrix.m22 = m22 - s;
+		Matrix.m23 = m23 - s;
 
-		result.m30 = m30 - s;
-		result.m31 = m31 - s;
-		result.m32 = m32 - s;
-		result.m33 = m33 - s;
+		Matrix.m30 = m30 - s;
+		Matrix.m31 = m31 - s;
+		Matrix.m32 = m32 - s;
+		Matrix.m33 = m33 - s;
 
-		return result;
+		return Matrix;
 	}
 	Standard_Matrix& operator -= (float s) noexcept { return *this = *this - s; }
 
@@ -256,29 +280,29 @@ public:
 	*/
 	Standard_Matrix operator * (const Standard_Matrix& m) const
 	{
-		Standard_Matrix result;
+		Standard_Matrix Matrix;
 
-		result.m00 = m00 * m.m00 + m01 * m.m10 + m02 * m.m20 + m03 * m.m30;
-		result.m01 = m00 * m.m01 + m01 * m.m11 + m02 * m.m21 + m03 * m.m31;
-		result.m02 = m00 * m.m02 + m01 * m.m12 + m02 * m.m22 + m03 * m.m32;
-		result.m03 = m00 * m.m03 + m01 * m.m13 + m02 * m.m23 + m03 * m.m33;
+		Matrix.m00 = m00 * m.m00 + m01 * m.m10 + m02 * m.m20 + m03 * m.m30;
+		Matrix.m01 = m00 * m.m01 + m01 * m.m11 + m02 * m.m21 + m03 * m.m31;
+		Matrix.m02 = m00 * m.m02 + m01 * m.m12 + m02 * m.m22 + m03 * m.m32;
+		Matrix.m03 = m00 * m.m03 + m01 * m.m13 + m02 * m.m23 + m03 * m.m33;
 
-		result.m10 = m10 * m.m00 + m11 * m.m10 + m12 * m.m20 + m13 * m.m30;
-		result.m11 = m10 * m.m01 + m11 * m.m11 + m12 * m.m21 + m13 * m.m31;
-		result.m12 = m10 * m.m02 + m11 * m.m12 + m12 * m.m22 + m13 * m.m32;
-		result.m13 = m10 * m.m03 + m11 * m.m13 + m12 * m.m23 + m13 * m.m33;
+		Matrix.m10 = m10 * m.m00 + m11 * m.m10 + m12 * m.m20 + m13 * m.m30;
+		Matrix.m11 = m10 * m.m01 + m11 * m.m11 + m12 * m.m21 + m13 * m.m31;
+		Matrix.m12 = m10 * m.m02 + m11 * m.m12 + m12 * m.m22 + m13 * m.m32;
+		Matrix.m13 = m10 * m.m03 + m11 * m.m13 + m12 * m.m23 + m13 * m.m33;
 
-		result.m20 = m20 * m.m00 + m21 * m.m10 + m22 * m.m20 + m23 * m.m30;
-		result.m21 = m20 * m.m01 + m21 * m.m11 + m22 * m.m21 + m23 * m.m31;
-		result.m22 = m20 * m.m02 + m21 * m.m12 + m22 * m.m22 + m23 * m.m32;
-		result.m23 = m20 * m.m03 + m21 * m.m13 + m22 * m.m23 + m23 * m.m33;
+		Matrix.m20 = m20 * m.m00 + m21 * m.m10 + m22 * m.m20 + m23 * m.m30;
+		Matrix.m21 = m20 * m.m01 + m21 * m.m11 + m22 * m.m21 + m23 * m.m31;
+		Matrix.m22 = m20 * m.m02 + m21 * m.m12 + m22 * m.m22 + m23 * m.m32;
+		Matrix.m23 = m20 * m.m03 + m21 * m.m13 + m22 * m.m23 + m23 * m.m33;
 
-		result.m30 = m30 * m.m00 + m31 * m.m10 + m32 * m.m20 + m33 * m.m30;
-		result.m31 = m30 * m.m01 + m31 * m.m11 + m32 * m.m21 + m33 * m.m31;
-		result.m32 = m30 * m.m02 + m31 * m.m12 + m32 * m.m22 + m33 * m.m32;
-		result.m33 = m30 * m.m03 + m31 * m.m13 + m32 * m.m23 + m33 * m.m33;
+		Matrix.m30 = m30 * m.m00 + m31 * m.m10 + m32 * m.m20 + m33 * m.m30;
+		Matrix.m31 = m30 * m.m01 + m31 * m.m11 + m32 * m.m21 + m33 * m.m31;
+		Matrix.m32 = m30 * m.m02 + m31 * m.m12 + m32 * m.m22 + m33 * m.m32;
+		Matrix.m33 = m30 * m.m03 + m31 * m.m13 + m32 * m.m23 + m33 * m.m33;
 
-		return result;
+		return Matrix;
 	}
 	Standard_Matrix& operator *= (const Standard_Matrix& m) noexcept { return *this = *this * m; }
 
@@ -287,29 +311,29 @@ public:
 	*/
 	Standard_Matrix operator * (float s) const noexcept
 	{
-		Standard_Matrix result;
+		Standard_Matrix Matrix;
 
-		result.m00 = m00 * s;
-		result.m01 = m01 * s;
-		result.m02 = m02 * s;
-		result.m03 = m03 * s;
+		Matrix.m00 = m00 * s;
+		Matrix.m01 = m01 * s;
+		Matrix.m02 = m02 * s;
+		Matrix.m03 = m03 * s;
 
-		result.m10 = m10 * s;
-		result.m11 = m11 * s;
-		result.m12 = m12 * s;
-		result.m13 = m13 * s;
+		Matrix.m10 = m10 * s;
+		Matrix.m11 = m11 * s;
+		Matrix.m12 = m12 * s;
+		Matrix.m13 = m13 * s;
 
-		result.m20 = m20 * s;
-		result.m21 = m21 * s;
-		result.m22 = m22 * s;
-		result.m23 = m23 * s;
+		Matrix.m20 = m20 * s;
+		Matrix.m21 = m21 * s;
+		Matrix.m22 = m22 * s;
+		Matrix.m23 = m23 * s;
 
-		result.m30 = m30 * s;
-		result.m31 = m31 * s;
-		result.m32 = m32 * s;
-		result.m33 = m33 * s;
+		Matrix.m30 = m30 * s;
+		Matrix.m31 = m31 * s;
+		Matrix.m32 = m32 * s;
+		Matrix.m33 = m33 * s;
 
-		return result;
+		return Matrix;
 	}
 	Standard_Matrix& operator *= (float s) noexcept { return *this = *this * s; }
 
@@ -318,29 +342,29 @@ public:
 	*/
 	Standard_Matrix operator / (const Standard_Matrix& m) const noexcept
 	{
-		Standard_Matrix result;
+		Standard_Matrix Matrix;
 
-		result.m00 = m00 / m.m00;
-		result.m01 = m01 / m.m01;
-		result.m02 = m02 / m.m02;
-		result.m03 = m03 / m.m03;
+		Matrix.m00 = m00 / m.m00;
+		Matrix.m01 = m01 / m.m01;
+		Matrix.m02 = m02 / m.m02;
+		Matrix.m03 = m03 / m.m03;
 
-		result.m10 = m10 / m.m10;
-		result.m11 = m11 / m.m11;
-		result.m12 = m12 / m.m12;
-		result.m13 = m13 / m.m13;
+		Matrix.m10 = m10 / m.m10;
+		Matrix.m11 = m11 / m.m11;
+		Matrix.m12 = m12 / m.m12;
+		Matrix.m13 = m13 / m.m13;
 
-		result.m20 = m20 / m.m20;
-		result.m21 = m21 / m.m21;
-		result.m22 = m22 / m.m22;
-		result.m23 = m23 / m.m23;
+		Matrix.m20 = m20 / m.m20;
+		Matrix.m21 = m21 / m.m21;
+		Matrix.m22 = m22 / m.m22;
+		Matrix.m23 = m23 / m.m23;
 
-		result.m30 = m30 / m.m30;
-		result.m31 = m31 / m.m31;
-		result.m32 = m32 / m.m32;
-		result.m33 = m33 / m.m33;
+		Matrix.m30 = m30 / m.m30;
+		Matrix.m31 = m31 / m.m31;
+		Matrix.m32 = m32 / m.m32;
+		Matrix.m33 = m33 / m.m33;
 
-		return result;
+		return Matrix;
 	}
 	Standard_Matrix& operator /= (const Standard_Matrix& m) noexcept { return *this = *this / m; }
 
@@ -349,29 +373,29 @@ public:
 	*/
 	Standard_Matrix operator / (float s) const noexcept
 	{
-		Standard_Matrix result;
+		Standard_Matrix Matrix;
 
-		result.m00 = m00 / s;
-		result.m01 = m01 / s;
-		result.m02 = m02 / s;
-		result.m03 = m03 / s;
+		Matrix.m00 = m00 / s;
+		Matrix.m01 = m01 / s;
+		Matrix.m02 = m02 / s;
+		Matrix.m03 = m03 / s;
 
-		result.m10 = m10 / s;
-		result.m11 = m11 / s;
-		result.m12 = m12 / s;
-		result.m13 = m13 / s;
+		Matrix.m10 = m10 / s;
+		Matrix.m11 = m11 / s;
+		Matrix.m12 = m12 / s;
+		Matrix.m13 = m13 / s;
 
-		result.m20 = m20 / s;
-		result.m21 = m21 / s;
-		result.m22 = m22 / s;
-		result.m23 = m23 / s;
+		Matrix.m20 = m20 / s;
+		Matrix.m21 = m21 / s;
+		Matrix.m22 = m22 / s;
+		Matrix.m23 = m23 / s;
 
-		result.m30 = m30 / s;
-		result.m31 = m31 / s;
-		result.m32 = m32 / s;
-		result.m33 = m33 / s;
+		Matrix.m30 = m30 / s;
+		Matrix.m31 = m31 / s;
+		Matrix.m32 = m32 / s;
+		Matrix.m33 = m33 / s;
 
-		return result;
+		return Matrix;
 	}
 	Standard_Matrix& operator /= (float s) noexcept { return *this = *this / s; }
 
@@ -381,114 +405,143 @@ public:
 	float* data(void) const noexcept { return (float*)this; }
 
 	/*
-		Get Vertex
+		Get Vector
 	*/
-	Standard_Vertex GetVertex(void) const noexcept { return Standard_Vertex(m03, m13, m23, m33); }
+	vec3 GetVector(void) const noexcept { return vec3(m03, m13, m23); }
 
 	/*
 		Is identity matrix?
 	*/
-	bool IsIdentity(void) const noexcept;
+	bool IsIdentity(void) const noexcept
+	{
+		return
+			m00 == 1.0f && m10 == 0.0f && m20 == 0.0f && m30 == 0.0f &&
+			m01 == 0.0f && m11 == 1.0f && m21 == 0.0f && m31 == 0.0f &&
+			m02 == 0.0f && m12 == 0.0f && m22 == 1.0f && m32 == 0.0f &&
+			m03 == 0.0f && m13 == 0.0f && m23 == 0.0f && m33 == 1.0f;
+	}
 
 	/*
 		Identity
 	*/
-	void Identity(void) noexcept;
+	void Identity(void) noexcept
+	{
+		m00 = 1.0f; m10 = 0.0f; m20 = 0.0f; m30 = 0.0f;
+		m01 = 0.0f; m11 = 1.0f; m21 = 0.0f; m31 = 0.0f;
+		m02 = 0.0f; m12 = 0.0f; m22 = 1.0f; m32 = 0.0f;
+		m03 = 0.0f; m13 = 0.0f; m23 = 0.0f; m33 = 1.0f;
+	}
 
 	/*
 		Translate
 	*/
-	void Translate(float X, float Y, float Z) noexcept;
+	Standard_Matrix Translate(float X, float Y, float Z) noexcept { return Translate(vec3{ X, Y, Z }); }
 
 	/*
 		Translate
 	*/
-	void Translate(Standard_Vertex Vertex) noexcept;
+	Standard_Matrix Translate(vec3 Vector) noexcept;
 
 	/*
 		Scale
 	*/
-	void Scale(float S) noexcept;
+	Standard_Matrix Scale(float S) noexcept { return Scale(vec3{ S, S, S }); }
 
 	/*
 		Scale
 	*/
-	void Scale(float X, float Y, float Z) noexcept;
+	Standard_Matrix Scale(float X, float Y, float Z) noexcept { return Scale(vec3{ X, Y, Z }); }
 
 	/*
 		Scale
 	*/
-	void Scale(Standard_Vertex Vertex) noexcept;
+	Standard_Matrix Scale(vec3 Vector) noexcept;
 
 	/*
 		Rotate
 	*/
-	void Rotate(float X, float Y, float Z) noexcept;
+	Standard_Matrix Rotate(float X, float Y, float Z) noexcept { return Rotate(vec3{ X, Y, Z }); }
 
 	/*
 		Rotate
 	*/
-	void Rotate(Standard_Vertex Vertex) noexcept;
+	Standard_Matrix Rotate(vec3 Vector) noexcept;
 
 	/*
 		Rotate X
 	*/
-	void RotateX(float Angle) noexcept;
+	Standard_Matrix RotateX(float Angle) noexcept;
 
 	/*
 		Rotate Y
 	*/
-	void RotateY(float Angle) noexcept;
+	Standard_Matrix RotateY(float Angle) noexcept;
 
 	/*
 		Rotate Z
 	*/
-	void RotateZ(float Angle) noexcept;
-
-	/*
-		Pitch
-	*/
-	void Pitch(float Angle) noexcept;
-
-	/*
-		Yaw
-	*/
-	void Yaw(float Angle) noexcept;
-
-	/*
-		Roll
-	*/
-	void Roll(float Angle) noexcept;
+	Standard_Matrix RotateZ(float Angle) noexcept;
 
 	/*
 		Pitch, Yaw and Roll
 	*/
-	void PitchYawRoll(float Pitch, float Yaw, float Roll) noexcept;
+	Standard_Matrix PitchYawRoll(float Pitch, float Yaw, float Roll) noexcept { return PitchYawRoll(vec3{ Pitch, Yaw, Roll }); }
+
+	/*
+		Pitch, Yaw and Roll
+	*/
+	Standard_Matrix PitchYawRoll(vec3 Vector) noexcept;
+
+	/*
+		Pitch
+	*/
+	Standard_Matrix Pitch(float Angle) noexcept;
+
+	/*
+		Yaw
+	*/
+	Standard_Matrix Yaw(float Angle) noexcept;
+
+	/*
+		Roll
+	*/
+	Standard_Matrix Roll(float Angle) noexcept;
 
 	/*
 		Shear
 	*/
-	void Shear(float X, float Y, float Z) noexcept;
+	Standard_Matrix Shear(float X, float Y, float Z) noexcept { return Shear(vec3{ X, Y, Z }); }
 
 	/*
 		Shear
 	*/
-	void Shear(Standard_Vertex Vertex) noexcept;
+	Standard_Matrix Shear(vec3 Vector) noexcept;
 
 	/*
 		Reflect
 	*/
-	void Reflect(float X, float Y, float Z) noexcept;
+	Standard_Matrix Reflect(float X, float Y, float Z) noexcept { return Reflect(vec3{ X, Y, Z }); }
 
 	/*
 		Reflect
 	*/
-	void Reflect(Standard_Vertex Vertex) noexcept;
+	Standard_Matrix Reflect(vec3 Vector) noexcept;
 
 	/*
 		Determinant
 	*/
-	float Determinant(void) const noexcept;
+	float Determinant(void) const noexcept
+	{
+		return
+			m00 * m11 * m22 * m33 + m00 * m12 * m23 * m31 + m00 * m13 * m21 * m32 +
+			m01 * m10 * m23 * m32 + m01 * m12 * m20 * m33 + m01 * m13 * m22 * m30 +
+			m02 * m10 * m21 * m33 + m02 * m11 * m23 * m30 + m02 * m13 * m20 * m31 +
+			m03 * m10 * m22 * m31 + m03 * m11 * m20 * m32 + m03 * m12 * m21 * m30 -
+			m00 * m11 * m23 * m32 - m00 * m12 * m21 * m33 - m00 * m13 * m22 * m31 -
+			m01 * m10 * m22 * m33 - m01 * m12 * m23 * m30 - m01 * m13 * m20 * m32 -
+			m02 * m10 * m23 * m31 - m02 * m11 * m20 * m33 - m02 * m13 * m21 * m30 -
+			m03 * m10 * m21 * m32 - m03 * m11 * m22 * m30 - m03 * m12 * m20 * m31;
+	}
 
 	/*
 		Inverse
@@ -501,9 +554,19 @@ public:
 	Standard_Matrix Transpose(Standard_Matrix m0, Standard_Matrix m1) const noexcept;
 
 	/*
+		Dot
+	*/
+	Standard_Matrix Dot(Standard_Matrix& m0, Standard_Matrix& m1) const noexcept;
+
+	/*
 		Product
 	*/
 	Standard_Matrix Product(Standard_Matrix m0, Standard_Matrix m1) const noexcept;
+
+	/*
+		Set World Matrix
+	*/
+	Standard_Matrix SetWorld(const vec3& mTranslation, const vec3& mRotation, const vec3& mScale) noexcept;
 
 	/*
 		Orthogonal Left
@@ -558,11 +621,11 @@ public:
 	/*
 		LookAt Left
 	*/
-	void LookAtLeft(const Standard_Vertex& Eye, const Standard_Vertex& At, const Standard_Vertex& Up) noexcept;
+	void LookAtLeft(const vec3& Eye, const vec3& At, const vec3& Up) noexcept;
 
 	/*
 		LookAt Right
 	*/
-	void LookAtRight(const Standard_Vertex& Eye, const Standard_Vertex& At, const Standard_Vertex& Up) noexcept;
+	void LookAtRight(const vec3& Eye, const vec3& At, const vec3& Up) noexcept;
 
 };

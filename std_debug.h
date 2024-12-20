@@ -1,7 +1,7 @@
 /*
 *
 *	Megan Grass
-*	January 01, 2024
+*	February 02, 2024
 *
 *
 *	TODO: 
@@ -20,7 +20,11 @@
 	If true (1), output from predefined text streams (std::cout, std::wcout, etc.) can be entirely suppressed
 	To suppress all output from every predefined text stream, set DISABLE_ALL_STDOUT to 1, each AUTO_REDIRECT flag to 1 and include std_debug.cpp in the project
 */
+#ifdef _DEBUG
 #define DISABLE_ALL_STDOUT	0
+#else
+#define DISABLE_ALL_STDOUT	1
+#endif
 
 
 /*

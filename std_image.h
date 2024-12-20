@@ -16,7 +16,7 @@
 #include "std_string.h"
 
 #if defined(_WIN64)
-typedef unsigned __int64 ULONG_PTR, * PULONG_PTR;
+typedef std::uint64_t ULONG_PTR, * PULONG_PTR;
 #else
 typedef unsigned long ULONG_PTR, * PULONG_PTR;
 #endif
@@ -35,7 +35,7 @@ typedef DWORD COLORREF;
 
 enum class ImageFormat : int
 {
-	BMP = 0 << 0,
+	BMP = (1 << 0),
 };
 
 
@@ -48,6 +48,7 @@ private:
 
 	#pragma pack(push, 1)
 
+#ifndef _WINDOWS
 	#ifndef BITMAPFILEHEADER
 		struct BITMAPFILEHEADER {
 			WORD	bfType;
@@ -82,6 +83,15 @@ private:
 			BYTE	rgbReserved;
 		};
 	#endif
+
+#ifndef PBITMAPINFO
+		struct BITMAPINFO {
+			BITMAPINFOHEADER    bmiHeader;
+			RGBQUAD             bmiColors[1];
+		} * PBITMAPINFO;
+#endif
+
+#endif
 
 	#pragma pack(pop)
 
@@ -197,8 +207,21 @@ public:
 	void SetPixel(uint32_t X, uint32_t Y, DWORD Color);
 
 	/*
+		Get bitmap info
+	*/
+	PBITMAPINFO GetBitmapInfo(void) const;
+
+	/*
 		Save as Bitmap
 	*/
 	bool SaveAsBitmap(std::filesystem::path Path);
+
+#ifdef _WINDOWS
+	/*
+		Bit blit
+		 - if hdcDst is NULL, the window device context is used
+	*/
+	void BitBlit(HWND hWnd, HDC hdcDst, int X, int Y, int DstWidth, int DstHeight, int SrcX, int SrcY, DWORD dwRop) const;
+#endif
 
 };

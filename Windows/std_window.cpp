@@ -36,6 +36,7 @@ void Standard_Window::ParsePresets(WindowOptions e_Options)
 	b_DialogBox = std::to_underlying(e_Options) & std::to_underlying(WindowOptions::Dialog);
 	b_OpenGL = std::to_underlying(e_Options) & std::to_underlying(WindowOptions::GL);
 	b_DirectX = std::to_underlying(e_Options) & std::to_underlying(WindowOptions::DX);
+	b_Subclass = !(std::to_underlying(e_Options) & std::to_underlying(WindowOptions::NoSubclass));
 
 	// Force onto the Taskbar
 	m_StyleEx |= WS_EX_APPWINDOW;
@@ -154,7 +155,7 @@ void Standard_Window::Create(int Width, int Height, HINSTANCE hInstance, int nCm
 	}
 
 	// Create
-	hWnd = CreateWindowExW(
+	hWndParent = hWnd = CreateWindowExW(
 		m_StyleEx,
 		s_ClassName.c_str(),
 		s_Name.c_str(),
@@ -167,8 +168,16 @@ void Standard_Window::Create(int Width, int Height, HINSTANCE hInstance, int nCm
 		nullptr);
 	if (!hWnd) { GetErrorMessage(); }
 
+#if MSTD_DEVICE
+	if (b_Subclass)
+	{
+		b_StdWinDevicesInitialized = true;
+		m_Devices = std::make_shared<Windows_Devices>();
+	}
+#endif
+
 	// Standard Window Message Handler
-	SetWindowSubclass(hWnd, StandardWindowProc, 0, (DWORD_PTR)this);
+	if (b_Subclass) { SetWindowSubclass(hWnd, StandardWindowProc, 0, (DWORD_PTR)this); }
 
 	// Standard Windows Common Class
 	SetCommonInstance(h_Instance);
@@ -192,25 +201,20 @@ void Standard_Window::Create(int Width, int Height, HINSTANCE hInstance, int nCm
 	{
 		RECT Rect{ 0, 0, Width, Height };
 
-		// Toolbar
 		if (b_Toolbar)
 		{
-			RECT ToolBarRect{};
 			CreateToolbar(m_ToolBarStyle, m_ToolBarStyleEx, h_ToolBarImageList, m_ToolbarButtons);
-			GetWindowRect(h_ToolBar, &ToolBarRect);
-			Rect.bottom += (ToolBarRect.bottom - ToolBarRect.top);
+			GetWindowRect(h_ToolBar, &m_ToolBarRect);
+			Rect.bottom += (m_ToolBarRect.bottom - m_ToolBarRect.top);
 		}
 
-		// StatusBar
 		if (b_StatusBar)
 		{
-			RECT StatusBarRect{};
 			CreateStatusBar(m_StatusBarParts, m_StatusBarStyle);
-			GetWindowRect(h_StatusBar, &StatusBarRect);
-			Rect.bottom += (StatusBarRect.bottom - StatusBarRect.top);
+			GetWindowRect(h_StatusBar, &m_StatusBarRect);
+			Rect.bottom += (m_StatusBarRect.bottom - m_StatusBarRect.top);
 		}
 
-		// Adjust window size
 		if (!AdjustWindowRectExForDpi(&Rect, GetStyle(), GetMenu(hWnd) ? TRUE : FALSE, GetStyleEx(), GetDPI())) { GetErrorMessage(); }
 
 		SetWindowPos(hWnd, 0, 0, 0, (Rect.right - Rect.left), (Rect.bottom - Rect.top), SWP_NOMOVE | SWP_NOZORDER | SWP_NOREDRAW | SWP_NOACTIVATE | SWP_NOCOPYBITS | SWP_NOOWNERZORDER | SWP_NOSENDCHANGING | SWP_DEFERERASE | SWP_ASYNCWINDOWPOS);
@@ -218,6 +222,9 @@ void Standard_Window::Create(int Width, int Height, HINSTANCE hInstance, int nCm
 
 	// Show Window
 	b_Fullscreen ? ShowWindow(hWnd, SW_SHOWMAXIMIZED) : ShowWindow(hWnd, nCmdShow);
+
+	b_Minimized = IsIconic(hWnd);
+	b_Maximized = IsZoomed(hWnd);
 
 	// Update Window
 	UpdateWindow(hWnd);
@@ -227,7 +234,7 @@ void Standard_Window::Create(int Width, int Height, HINSTANCE hInstance, int nCm
 /*
 	Create Child Window
 */
-HWND Standard_Window::CreateChild(int x, int y, int Width, int Height, HINSTANCE hInstance, int nCmdShow, WNDPROC WndProc, DWORD Style, DWORD StyleEx, WindowOptions e_Options)
+std::shared_ptr<Standard_Window> Standard_Window::CreateChild(int x, int y, int Width, int Height, HINSTANCE hInstance, int nCmdShow, WNDPROC WndProc, DWORD Style, DWORD StyleEx, WindowOptions e_Options)
 {
 	// Error
 	if (!hWnd)
@@ -236,9 +243,10 @@ HWND Standard_Window::CreateChild(int x, int y, int Width, int Height, HINSTANCE
 		return nullptr;
 	}
 
-	std::unique_ptr<Standard_Window> Window = std::make_unique<Standard_Window>();
+	std::shared_ptr<Standard_Window> Window = std::make_shared<Standard_Window>();
 
 	Window->b_ChildWindow = true;
+	Window->hWndParent = hWnd;
 
 	Window->m_Style = Style;
 	Window->m_StyleEx = StyleEx;
@@ -293,9 +301,7 @@ HWND Standard_Window::CreateChild(int x, int y, int Width, int Height, HINSTANCE
 
 	if (h_ToolBar)
 	{
-		RECT ToolBarRect{};
-		GetWindowRect(h_ToolBar, &ToolBarRect);
-		y += (ToolBarRect.bottom - ToolBarRect.top);
+		y += (m_ToolBarRect.bottom - m_ToolBarRect.top);
 	}
 
 	// Create Window
@@ -307,7 +313,7 @@ HWND Standard_Window::CreateChild(int x, int y, int Width, int Height, HINSTANCE
 		x, y,
 		(Rect.right - Rect.left),
 		(Rect.bottom - Rect.top),
-		hWnd,
+		Window->hWndParent,
 		nullptr,
 		Window->h_Instance,
 		nullptr);
@@ -338,7 +344,7 @@ HWND Standard_Window::CreateChild(int x, int y, int Width, int Height, HINSTANCE
 
 	v_ChildWindows.push_back(std::move(Window));
 
-	return v_ChildWindows.back()->hWnd;
+	return v_ChildWindows.back();
 }
 
 
@@ -361,7 +367,7 @@ bool Standard_Window::AddChildWindow(HWND hWndChild, int x, int y, bool b_SnapTo
 		return false;
 	}
 
-	std::unique_ptr<Standard_Window> Window = std::make_unique<Standard_Window>();
+	std::shared_ptr<Standard_Window> Window = std::make_shared<Standard_Window>();
 
 	if (b_SnapToChild)
 	{
@@ -388,6 +394,7 @@ bool Standard_Window::AddChildWindow(HWND hWndChild, int x, int y, bool b_SnapTo
 	}
 
 	Window->b_ChildWindow = true;
+	Window->hWndParent = hWnd;
 
 	Window->m_SysDPI = m_SysDPI;
 	Window->m_WindowDPI = m_WindowDPI;
@@ -416,7 +423,7 @@ bool Standard_Window::AddChildWindow(HWND hWndChild, int x, int y, bool b_SnapTo
 	Window->SetTextColorOnLostFocus(GetTextColorOnLostFocus());
 	Window->SetBackdropType(GetBackdropType());
 
-	SetParent(Window->hWnd, hWnd);
+	SetParent(Window->hWnd, Window->hWndParent);
 
 	RECT Rect{};
 	GetClientRect(hWnd, &Rect);
@@ -426,16 +433,13 @@ bool Standard_Window::AddChildWindow(HWND hWndChild, int x, int y, bool b_SnapTo
 
 	if (b_SnapToChild)
 	{
-		x = 0;
-		y = 0;
+		x = y = 0;
 	}
 	else
 	{
 		if (h_ToolBar)
 		{
-			RECT ToolBarRect{};
-			GetWindowRect(h_ToolBar, &ToolBarRect);
-			y += (ToolBarRect.bottom - ToolBarRect.top);
+			y += (m_ToolBarRect.bottom - m_ToolBarRect.top);
 		}
 	}
 
@@ -456,10 +460,10 @@ bool Standard_Window::AddChildWindow(HWND hWndChild, int x, int y, bool b_SnapTo
 /*
 	Get child window
 */
-Standard_Window* Standard_Window::GetChildWindow(UINT Index)
+std::shared_ptr<Standard_Window> Standard_Window::GetChildWindow(UINT Index)
 {
 	if (Index > (v_ChildWindows.size() - 1)) { return nullptr; }
-	return v_ChildWindows.at(Index).get();
+	return v_ChildWindows[Index];
 }
 
 
@@ -707,20 +711,36 @@ RECT Standard_Window::GetRect(void) const
 
 	if (h_ToolBar)
 	{
-		RECT ToolBarRect{};
-		GetWindowRect(h_ToolBar, &ToolBarRect);
-		Rect.top += (ToolBarRect.bottom - ToolBarRect.top);
-		Rect.bottom += (ToolBarRect.bottom - ToolBarRect.top);
+		Rect.top += (m_ToolBarRect.bottom - m_ToolBarRect.top);
+		Rect.bottom += (m_ToolBarRect.bottom - m_ToolBarRect.top);
 	}
 
 	if (h_StatusBar)
 	{
-		RECT StatusBarRect{};
-		GetWindowRect(h_StatusBar, &StatusBarRect);
-		Rect.bottom -= (StatusBarRect.bottom - StatusBarRect.top);
+		Rect.bottom -= (m_StatusBarRect.bottom - m_StatusBarRect.top);
 	}
 
 	return Rect;
+}
+
+
+/*
+	Get toolbar rect
+*/
+RECT Standard_Window::GetToolbarRect(void)
+{
+	GetWindowRect(h_ToolBar, &m_ToolBarRect);
+	return m_ToolBarRect;
+}
+
+
+/*
+	Get statusbar rect
+*/
+RECT Standard_Window::GetStatusBarRect(void)
+{
+	GetWindowRect(h_StatusBar, &m_StatusBarRect);
+	return m_StatusBarRect;
 }
 
 
@@ -742,17 +762,13 @@ bool Standard_Window::Resize(RECT* Rect, bool b_Center)
 	// ToolBar
 	if (h_ToolBar)
 	{
-		RECT ToolBarRect{};
-		GetWindowRect(h_ToolBar, &ToolBarRect);
-		_Rect.bottom += (ToolBarRect.bottom - ToolBarRect.top);
+		_Rect.bottom += (m_ToolBarRect.bottom - m_ToolBarRect.top);
 	}
 
 	// StatusBar
 	if (h_StatusBar)
 	{
-		RECT StatusBarRect{};
-		GetWindowRect(h_StatusBar, &StatusBarRect);
-		_Rect.bottom += (StatusBarRect.bottom - StatusBarRect.top);
+		_Rect.bottom += (m_StatusBarRect.bottom - m_StatusBarRect.top);
 	}
 
 	// Adjust window size

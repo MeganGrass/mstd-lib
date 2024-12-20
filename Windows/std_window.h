@@ -5,6 +5,8 @@
 *
 *
 *	TODO:
+* 
+*		override GetErrorMessage for logging to window instead of TaskDialog
 *
 */
 
@@ -36,6 +38,14 @@ static bool b_StdWinInitCommonControlsEx = false;
 // Windows Devices have been initialized?
 static bool b_StdWinDevicesInitialized = false;
 
+#ifdef IsMinimized
+#undef IsMinimized
+#endif
+
+#ifdef IsMaximized
+#undef IsMaximized
+#endif
+
 
 /*
 	Window Creation Options
@@ -49,6 +59,7 @@ enum class WindowOptions : int
 	Dialog = 1 << 3,					// Window will be a dialog box
 	GL = 1 << 4,						// Window will have OpenGL rendering
 	DX = 1 << 5,						// Window will have Direct-X rendering
+	NoSubclass = 1 << 28,				// Window will not have subclass message handler
 	TrueFullscreen = 1 << 29,			// Window will be sized to the screen on creation
 	Borderless = 1 << 30,				// Window will be borderless
 	Fullscreen = 1 << 31,				// SW_MAXIMIZE will be used for ShowWindow
@@ -70,6 +81,7 @@ private:
 
 	// Basic
 	HWND hWnd;											// Handle
+	HWND hWndParent;									// Parent Handle
 	HINSTANCE h_Instance;								// Instance
 	DWORD m_Style;										// Style
 	DWORD m_StyleEx;									// Extended Style
@@ -129,11 +141,13 @@ private:
 	UINT m_ToolBarIconHeight;							// Toolbar Icon Height
 	HIMAGELIST h_ToolBarImageList;						// Toolbar Image List
 	std::vector<TBBUTTON> m_ToolbarButtons;				// Toolbar Buttons
+	RECT m_ToolBarRect;									// Toolbar Rectangle
 
 	// Status Bar
 	HWND h_StatusBar;									// Status Bar Window Handle
 	DWORD m_StatusBarStyle;								// Status Bar Style
 	INT m_StatusBarParts;								// Status Bar Part Count
+	RECT m_StatusBarRect;								// Status Bar Rectangle
 
 	// Text Editor
 	HWND h_TextEditor;									// Text Editor Window Handle
@@ -151,9 +165,12 @@ private:
 	bool b_DirectX;										// Window has Direct-X rendering?
 
 	// Status
+	bool b_Subclass;									// Window has subclass message handler?
 	bool b_IsActive;									// Window is active?
 	bool b_HasFocus;									// Window has focus?
 	bool b_Fullscreen;									// Window is fullscreen? Otherwise, SW_MAXIMIZE will be used for ShowWindow on creation?
+	bool b_Minimized;									// Window is minimized?
+	bool b_Maximized;									// Window is maximized?
 
 #if MSTD_DEVICE
 	// Windows Devices
@@ -161,7 +178,7 @@ private:
 #endif
 
 	// Child Windows
-	std::vector<std::unique_ptr<Standard_Window>> v_ChildWindows;
+	std::vector<std::shared_ptr<Standard_Window>> v_ChildWindows;
 
 	// Parse Window Creation and Style Options
 	void ParsePresets(WindowOptions e_Options);
@@ -171,6 +188,7 @@ public:
 	// Construction
 	explicit Standard_Window(void) :
 		hWnd(nullptr),
+		hWndParent(nullptr),
 		h_Instance(nullptr),
 		m_Style(0),
 		m_StyleEx(0),
@@ -208,9 +226,11 @@ public:
 		m_ToolBarIconWidth(0),
 		m_ToolBarIconHeight(0),
 		h_ToolBarImageList(nullptr),
+		m_ToolBarRect{},
 		h_StatusBar(nullptr),
 		m_StatusBarStyle(0),
 		m_StatusBarParts(0),
+		m_StatusBarRect{},
 		h_TextEditor(nullptr),
 		h_TextEditorFont(nullptr),
 		b_TrueFullscreen(false),
@@ -222,9 +242,12 @@ public:
 		b_ChildWindow(false),
 		b_OpenGL(false),
 		b_DirectX(false),
+		b_Subclass(false),
 		b_IsActive(false),
 		b_HasFocus(false),
-		b_Fullscreen(false)
+		b_Fullscreen(false),
+		b_Minimized(false),
+		b_Maximized(false)
 	{
 		if (!b_StdWinIsWindows10OrGreater)
 		{
@@ -253,14 +276,6 @@ public:
 				ICC_LINK_CLASS;
 			if (!InitCommonControlsEx(&CommonControls)) { GetErrorMessage(); }
 		}
-
-#if MSTD_DEVICE
-		if (!b_StdWinDevicesInitialized)
-		{
-			b_StdWinDevicesInitialized = true;
-			m_Devices = std::make_shared<Windows_Devices>();
-		}
-#endif
 
 		m_Class.cbSize = sizeof(WNDCLASSEXW);
 	}
@@ -307,6 +322,7 @@ public:
 	// Move
 	Standard_Window(Standard_Window&& v) noexcept :
 		hWnd(std::exchange(v.hWnd, nullptr)),
+		hWndParent(std::exchange(v.hWndParent, nullptr)),
 		h_Instance(std::exchange(v.h_Instance, nullptr)),
 		m_Style(std::exchange(v.m_Style, 0)),
 		m_StyleEx(std::exchange(v.m_StyleEx, 0)),
@@ -344,10 +360,12 @@ public:
 		m_ToolBarIconWidth(std::exchange(v.m_ToolBarIconWidth, 0)),
 		m_ToolBarIconHeight(std::exchange(v.m_ToolBarIconHeight, 0)),
 		h_ToolBarImageList(std::exchange(v.h_ToolBarImageList, nullptr)),
+		m_ToolBarRect(std::exchange(v.m_ToolBarRect, RECT{})),
 		m_ToolbarButtons(std::exchange(v.m_ToolbarButtons, std::vector<TBBUTTON>())),
 		h_StatusBar(std::exchange(v.h_StatusBar, nullptr)),
 		m_StatusBarStyle(std::exchange(v.m_StatusBarStyle, 0)),
 		m_StatusBarParts(std::exchange(v.m_StatusBarParts, 0)),
+		m_StatusBarRect(std::exchange(v.m_StatusBarRect, RECT{})),
 		h_TextEditor(std::exchange(v.h_TextEditor, nullptr)),
 		h_TextEditorFont(std::exchange(v.h_TextEditorFont, nullptr)),
 		b_TrueFullscreen(std::exchange(v.b_TrueFullscreen, false)),
@@ -359,9 +377,12 @@ public:
 		b_ChildWindow(std::exchange(v.b_ChildWindow, false)),
 		b_OpenGL(std::exchange(v.b_OpenGL, false)),
 		b_DirectX(std::exchange(v.b_DirectX, false)),
+		b_Subclass(std::exchange(v.b_Subclass, false)),
 		b_IsActive(std::exchange(v.b_IsActive, false)),
 		b_HasFocus(std::exchange(v.b_HasFocus, false)),
-		b_Fullscreen(std::exchange(v.b_Fullscreen, false))
+		b_Fullscreen(std::exchange(v.b_Fullscreen, false)),
+		b_Minimized(std::exchange(v.b_Minimized, false)),
+		b_Maximized(std::exchange(v.b_Maximized, false))
 	{}
 	Standard_Window& operator = (Standard_Window&& v) noexcept { return *this = Standard_Window(std::move(v)); }
 
@@ -384,6 +405,16 @@ public:
 		Is the window fullscreen?
 	*/
 	[[nodiscard]] bool IsFullscreen(void);
+
+	/*
+		Is the window minimized?
+	*/
+	[[nodiscard]] bool IsMinimized(void) { return b_Minimized = IsIconic(hWnd); }
+
+	/*
+		Is the window maximized?
+	*/
+	[[nodiscard]] bool IsMaximized(void) { return b_Maximized = IsZoomed(hWnd); }
 
 	/*
 		Drag and drop files available to be parsed?
@@ -429,13 +460,15 @@ public:
 
 	/*
 		Create parent window
+		 - when creating additional windows with this function, use WindowOptions::NoSubclass
+		 - when subclassing is disabled, Device class is not initialized (even if MSTD_DEVICE is defined)
 	*/
 	void Create(int Width, int Height, HINSTANCE hInstance, int nCmdShow, WNDPROC WndProc, WindowOptions e_Options = WindowOptions::None);
 
 	/*
 		Create child window
 	*/
-	HWND CreateChild(int x, int y, int Width, int Height, HINSTANCE hInstance, int nCmdShow, WNDPROC WndProc, DWORD Style, DWORD StyleEx, WindowOptions e_Options = WindowOptions::None);
+	std::shared_ptr<Standard_Window> CreateChild(int x, int y, int Width, int Height, HINSTANCE hInstance, int nCmdShow, WNDPROC WndProc, DWORD Style, DWORD StyleEx, WindowOptions e_Options = WindowOptions::None);
 
 	/*
 		Add child window
@@ -516,10 +549,20 @@ public:
 	void SetStatusPercent(int iPart, UINT iIndex, UINT iTotal) const { Status(iPart, L"%0.0f%%", (((double)iIndex / (double)iTotal) * 100)); }
 
 	/*
-		Get rect
+		Get client rect
 		- returns the client area rect, adjusted properly for the window's toolbar and status bar
 	*/
 	[[nodiscard]] RECT GetRect(void) const;
+
+	/*
+		Get toolbar rect
+	*/
+	[[nodiscard]] RECT GetToolbarRect(void);
+
+	/*
+		Get statusbar rect
+	*/
+	[[nodiscard]] RECT GetStatusBarRect(void);
 
 	/*
 		Resize
@@ -527,14 +570,24 @@ public:
 	bool Resize(RECT* Rect, bool b_Center = true);
 
 	/*
+		Get device context
+	*/
+	[[nodiscard]] HDC GetDeviceContext(void) const { return GetDC(hWnd); }
+
+	/*
 		Get window handle
 	*/
 	[[nodiscard]] HWND Get(void) const { return hWnd; }
 
 	/*
+		Get parent window handle
+	*/
+	[[nodiscard]] HWND GetParent(void) const { return hWndParent; }
+
+	/*
 		Get instance handle
 	*/
-	[[nodiscard]] HINSTANCE GetInstance(void) const { return h_Instance; }
+	[[nodiscard]] virtual HINSTANCE GetInstance(void) const override { return h_Instance; }
 
 	/*
 		Get window style
@@ -799,7 +852,7 @@ public:
 	/*
 		Get child window
 	*/
-	[[nodiscard]] Standard_Window* GetChildWindow(UINT Index);
+	[[nodiscard]] std::shared_ptr<Standard_Window> GetChildWindow(UINT Index);
 
 	/*
 		Intended for use with WM_ACTIVATE

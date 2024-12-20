@@ -31,8 +31,6 @@ LRESULT CALLBACK StandardWindowProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM 
 	{
 	case WM_MOVE:
 		break;
-	case WM_SIZE:
-		break;
 	case WM_ACTIVATE:
 		Window->MsgActivate(wParam, lParam);
 		break;
