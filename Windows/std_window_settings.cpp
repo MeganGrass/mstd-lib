@@ -206,6 +206,56 @@ void Standard_Window::SetColor(BYTE Red, BYTE Green, BYTE Blue, bool SetAsClassB
 
 
 /*
+	Get current font path
+*/
+std::filesystem::path Standard_Window::GetFont(void)
+{
+	for (std::size_t i = 0; i < m_Fonts.size(); i++)
+	{
+		StringW CurrentFilename = m_CurrentFont.stem().wstring();
+		StringW FontFilename = m_Fonts[i].stem().wstring();
+		if (ToUpper(CurrentFilename) == ToUpper(FontFilename))
+		{
+			m_CurrentFontIndex = i;
+			return m_CurrentFont = m_Fonts[m_CurrentFontIndex];
+		}
+	}
+
+	SetFont(L"Calibri B", m_FontSize);
+
+	return m_CurrentFont;
+}
+
+
+/*
+	Set font
+*/
+void Standard_Window::SetFont(const std::filesystem::path Font, float Size)
+{
+	Standard_String Str;
+
+	for (std::size_t i = 0; i < m_Fonts.size(); i++)
+	{
+		StringW Filename = Font.stem().wstring();
+		StringW FontFilename = m_Fonts[i].stem().wstring();
+		Str.CleanString(Filename, { L"_", L" " });
+		Str.CleanString(FontFilename, { L"_", L" " });
+		if (ToUpper(Filename) == ToUpper(FontFilename))
+		{
+			m_CurrentFontIndex = i;
+			m_CurrentFont = m_Fonts[m_CurrentFontIndex];
+			m_FontSize = Size;
+			return;
+		}
+	}
+
+	std::cout << "Font not found: " << Font << std::endl;
+
+	SetFont(L"Calibri B", Size);
+}
+
+
+/*
 	Set accelerator table
 */
 void Standard_Window::SetAcceleratorTable(HINSTANCE hInstance, ULONG ResourceID)

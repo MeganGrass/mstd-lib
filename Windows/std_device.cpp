@@ -678,6 +678,31 @@ FLOAT Windows_Devices::GetMouseDeltaX(void) const
 
 
 /*
+	Reset mouse horizontal scroll wheel delta
+*/
+void Windows_Devices::ResetMouseDeltaX(void)
+{
+	for (auto& Mouse : Mice)
+	{
+		Mouse->DeltaX = 0.0f;
+	}
+}
+
+
+
+/*
+	Reset mouse vertical scroll wheel delta
+*/
+void Windows_Devices::ResetMouseDeltaZ(void)
+{
+	for (auto& Mouse : Mice)
+	{
+		Mouse->DeltaZ = 0.0f;
+	}
+}
+
+
+/*
 	Get keyboard state
 */
 BOOL Windows_Devices::GetKeyState(BYTE Key, BOOL* E0, BOOL* E1)

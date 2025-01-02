@@ -115,6 +115,27 @@ std::filesystem::path Standard_Windows_Common::GetUserSavedGamesDir(void)
 
 
 /*
+	Get a list of Truetype Fonts in C:/Windows/Fonts
+*/
+std::vector<std::filesystem::path> Standard_Windows_Common::GetFonts(void)
+{
+	std::vector<std::filesystem::path> Fonts;
+	for (const auto& Entry : std::filesystem::directory_iterator(L"C:\\Windows\\Fonts\\"))
+	{
+		if (Entry.is_regular_file())
+		{
+			StringW Extension = Entry.path().extension().wstring();
+			if (ToUpper(Extension) == L".TTF")
+			{
+				Fonts.push_back(Entry.path());
+			}
+		}
+	}
+	return Fonts;
+}
+
+
+/*
 	Open File Dialog
 */
 std::optional<std::filesystem::path> Standard_Windows_Common::GetOpenFilename(StrVecW _Description, StrVecW _Filter)

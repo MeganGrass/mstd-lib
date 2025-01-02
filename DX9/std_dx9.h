@@ -477,6 +477,7 @@ public:
 
 	/*
 		Create Texture (32bpp)
+		 - Width and Height are automatically adjusted to the next power of two
 		 - Image can be any depth and/or resolution; conversion to 32bpp is automatic
 		 - if Alpha is true and pixel color equals AlphaColor, alpha channel will be set to AlphaChannel
 	*/

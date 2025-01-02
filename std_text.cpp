@@ -471,7 +471,7 @@ void Standard_Text::FlushUTF16(void)
 {
 	if (validUTF16())
 	{
-		std::uintmax_t _Ptr = 0;
+		std::uintmax_t _Ptr = 2;
 		for (auto& Line : m_UTF16.get()->Line)
 		{
 			_Ptr = File().WriteStr(_Ptr, Line, false);
@@ -487,7 +487,7 @@ void Standard_Text::FlushUTF32(void)
 {
 	if (validUTF32())
 	{
-		std::uintmax_t _Ptr = 0;
+		std::uintmax_t _Ptr = 4;
 		for (auto& Line : m_UTF32.get()->Line)
 		{
 			_Ptr = File().WriteStr(_Ptr, Line, false);
@@ -598,7 +598,7 @@ bool Standard_Text::Open(std::filesystem::path _Filename, FileAccessMode e_Mode,
 	if (!validFile()) { m_File = std::make_unique<StdFile>(); }
 
 	// Skip BOM?
-	bool b_SkipBOM = (std::to_underlying(m_BOM) & std::to_underlying(TextFileBOM::Skip));
+	bool b_SkipBOM = ((std::to_underlying(m_BOM) & std::to_underlying(TextFileBOM::Skip)) == std::to_underlying(TextFileBOM::Skip));
 	if (b_SkipBOM)
 	{
 		m_BOM = static_cast<TextFileBOM>(std::to_underlying(m_BOM) & ~std::to_underlying(TextFileBOM::Skip));
@@ -618,7 +618,7 @@ bool Standard_Text::Open(std::filesystem::path _Filename, FileAccessMode e_Mode,
 		File().Open(_Filename, e_Mode, false, false);
 		if (!File())
 		{
-			Message(FormatCStyle("Standard Text File: Error, could not open %s", _Filename.filename().string().c_str()));
+			//Message(FormatCStyle("Standard Text File: Error, could not open %s", _Filename.filename().string().c_str()));
 			m_BOM = TextFileBOM::Unknown;
 			return false;
 		}
@@ -667,7 +667,7 @@ bool Standard_Text::Open(std::filesystem::path _Filename, FileAccessMode e_Mode,
 		File().Open(_Filename, e_Mode, false, true);
 		if (!File())
 		{
-			Message(FormatCStyle("Standard Text File: Error, could not create %s", _Filename.filename().string().c_str()));
+			//Message(FormatCStyle("Standard Text File: Error, could not create %s", _Filename.filename().string().c_str()));
 			m_BOM = TextFileBOM::Unknown;
 			return false;
 		}
@@ -711,7 +711,7 @@ bool Standard_Text::Open(std::filesystem::path _Filename, FileAccessMode e_Mode,
 		File().Open(_Filename, e_Mode, false, false);
 		if (!File())
 		{
-			Message(FormatCStyle("Standard Text File: Error, could not open or create %s", _Filename.filename().string().c_str()));
+			//Message(FormatCStyle("Standard Text File: Error, could not open or create %s", _Filename.filename().string().c_str()));
 			m_BOM = TextFileBOM::Unknown;
 			return false;
 		}

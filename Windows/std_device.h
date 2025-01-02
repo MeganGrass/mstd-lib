@@ -282,6 +282,9 @@ private:
 
 	BOOL b_LockedKeyboardState[256];
 
+	UINT m_MouseDelayDeltaZ;
+	UINT m_MouseDelayDeltaX;
+
 
 	/*
 		Initialize mice, keyboards, HID, joysticks and displays
@@ -326,7 +329,9 @@ public:
 		b_MouseMiddle{ FALSE },
 		b_MouseButton4{ FALSE },
 		b_MouseButton5{ FALSE },
-		b_LockedKeyboardState{}
+		b_LockedKeyboardState{},
+		m_MouseDelayDeltaZ{ 25 },
+		m_MouseDelayDeltaX{ 25 }
 	{
 		Initialize();
 	}
@@ -502,6 +507,20 @@ public:
 
 
 	/*
+		Get mouse vertical scroll wheel delay
+		 - default is 25ms
+	*/
+	UINT MouseDelayDeltaZ(void) const { return m_MouseDelayDeltaZ; }
+
+
+	/*
+		Get mouse horizontal scroll wheel delay
+		 - default is 25ms
+	*/
+	UINT MouseDelayDeltaX(void) const { return m_MouseDelayDeltaX; }
+
+
+	/*
 		Get mouse vertical scroll wheel delta
 	*/
 	[[nodiscard]] FLOAT GetMouseDeltaZ(void) const;
@@ -511,6 +530,18 @@ public:
 		Get mouse horizontal scroll wheel delta
 	*/
 	[[nodiscard]] FLOAT GetMouseDeltaX(void) const;
+
+
+	/*
+		Reset mouse horizontal scroll wheel delta
+	*/
+	void ResetMouseDeltaX(void);
+
+
+	/*
+		Reset mouse vertical scroll wheel delta
+	*/
+	void ResetMouseDeltaZ(void);
 
 
 	/*

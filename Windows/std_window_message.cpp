@@ -13,6 +13,13 @@
 
 #pragma comment(lib, "Shcore.lib")
 
+struct MessageTimer
+{
+	UINT_PTR TimerID{};
+};
+
+MessageTimer MouseWheelTimerZ;
+MessageTimer MouseWheelTimerX;
 
 /*
 	Standard Window Message Handler
@@ -43,7 +50,7 @@ LRESULT CALLBACK StandardWindowProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM 
 	case WM_WINDOWPOSCHANGING:
 		break;
 	case WM_WINDOWPOSCHANGED:
-		Window->MsgPositionChanged(wParam, lParam);
+		//Window->MsgPositionChanged(wParam, lParam);
 		break;
 	case WM_DISPLAYCHANGE:
 		Window->MsgDisplayChange(wParam, lParam);
@@ -57,9 +64,41 @@ LRESULT CALLBACK StandardWindowProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM 
 		break;
 	case WM_MOUSEWHEEL:
 		Window->Device()->MsgMouseWheel(wParam);
+		if (MouseWheelTimerZ.TimerID == 0)
+		{
+			MouseWheelTimerZ.TimerID = SetTimer(hWnd, 1, Window->Device()->MouseDelayDeltaZ(), NULL);
+		}
+		else
+		{
+			KillTimer(hWnd, MouseWheelTimerZ.TimerID);
+			MouseWheelTimerZ.TimerID = SetTimer(hWnd, 1, Window->Device()->MouseDelayDeltaZ(), NULL);
+		}
 		break;
 	case WM_MOUSEHWHEEL:
 		Window->Device()->MsgMouseHWheel(wParam);
+		if (MouseWheelTimerX.TimerID == 0)
+		{
+			MouseWheelTimerX.TimerID = SetTimer(hWnd, 2, Window->Device()->MouseDelayDeltaX(), NULL);
+		}
+		else
+		{
+			KillTimer(hWnd, MouseWheelTimerX.TimerID);
+			MouseWheelTimerX.TimerID = SetTimer(hWnd, 2, Window->Device()->MouseDelayDeltaX(), NULL);
+		}
+		break;
+	case WM_TIMER:
+		if (wParam == MouseWheelTimerZ.TimerID)
+		{
+			KillTimer(hWnd, MouseWheelTimerZ.TimerID);
+			MouseWheelTimerZ.TimerID = 0;
+			Window->Device()->ResetMouseDeltaZ();
+		}
+		if (wParam == MouseWheelTimerX.TimerID)
+		{
+			KillTimer(hWnd, MouseWheelTimerX.TimerID);
+			MouseWheelTimerX.TimerID = 0;
+			Window->Device()->ResetMouseDeltaX();
+		}
 		break;
 #endif
 	case WM_DROPFILES:

@@ -50,6 +50,12 @@ public:
 
 
 	/*
+		Get hexadecimal string from integer value
+	*/
+	[[nodiscard]] String GetHex(std::uintmax_t _Value);
+
+
+	/*
 		Test a string for a single character or substring
 	*/
 	template<typename SubStrType>

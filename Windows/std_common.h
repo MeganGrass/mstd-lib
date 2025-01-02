@@ -171,6 +171,12 @@ public:
 
 
 	/*
+		Get a list of Truetype Fonts in C:/Windows/Fonts
+	*/
+	[[nodiscard]] std::vector<std::filesystem::path> GetFonts(void);
+
+
+	/*
 		Open File Dialog
 	*/
 	[[nodiscard]] std::optional<std::filesystem::path> GetOpenFilename(StrVecW _Description = { L"All Files" }, StrVecW _Filter = { L"*.*" });

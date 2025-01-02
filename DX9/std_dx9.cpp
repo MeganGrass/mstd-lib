@@ -474,15 +474,30 @@ IDirect3DTexture9* Standard_DirectX_9::CreateTexture(std::unique_ptr<Standard_Im
 {
 	if (e_DeviceState != D3DDEVICE_STATE::NORMAL) { return nullptr; }
 
+	auto NextPowerOfTwo = [](int32_t x) {
+		if (x <= 0) { return 1; }
+		x--;
+		for (int Shift = 1; Shift < 32; Shift <<= 1) { x |= x >> Shift; }
+		return x + 1;
+		};
+
+	uint32_t PowWidth = NextPowerOfTwo(Image->GetWidth());
+	uint32_t PowHeight = NextPowerOfTwo(Image->GetHeight());
+
 	IDirect3DTexture9* pImage = nullptr;
+	IDirect3DTexture9* pImagePow = nullptr;
 
 	D3DLOCKED_RECT LockedRect{};
+	D3DLOCKED_RECT LockedRectPow{};
 
 	if (FAILED(D3DXCreateTexture(pDevice, Image->GetWidth(), Image->GetHeight(), D3DX_DEFAULT, D3DUSAGE_DYNAMIC, D3DFMT_A8R8G8B8, D3DPOOL_DEFAULT, &pImage))) { Wnd->GetErrorMessage(); }
+	if (FAILED(D3DXCreateTexture(pDevice, PowWidth, PowHeight, D3DX_DEFAULT, D3DUSAGE_DYNAMIC, D3DFMT_A8R8G8B8, D3DPOOL_DEFAULT, &pImagePow))) { Wnd->GetErrorMessage(); }
 
 	if (FAILED(pImage->LockRect(0, &LockedRect, NULL, 0))) { Wnd->GetErrorMessage(); }
+	if (FAILED(pImagePow->LockRect(0, &LockedRectPow, NULL, 0))) { Wnd->GetErrorMessage(); }
 
 	BYTE* pBits = static_cast<BYTE*>(LockedRect.pBits);
+	BYTE* pBitsPow = static_cast<BYTE*>(LockedRectPow.pBits);
 
 	if (pBits)
 	{
@@ -600,9 +615,22 @@ IDirect3DTexture9* Standard_DirectX_9::CreateTexture(std::unique_ptr<Standard_Im
 		}
 	}
 
-	if (FAILED(pImage->UnlockRect(0))) { Wnd->GetErrorMessage(); }
+	for (uint32_t Y = 0; Y < Image->GetHeight(); Y++)
+	{
+		for (uint32_t X = 0; X < Image->GetWidth(); X++)
+		{
+			if (pBits != nullptr && pBitsPow != nullptr)
+			{
+				((uint32_t*)pBitsPow)[Y * PowWidth + X] = ((uint32_t*)pBits)[Y * Image->GetWidth() + X];
+			}
+		}
+	}
 
-	return pImage;
+	if (FAILED(pImagePow->UnlockRect(0))) { Wnd->GetErrorMessage(); }
+	if (FAILED(pImage->UnlockRect(0))) { Wnd->GetErrorMessage(); }
+	pImage->Release();
+
+	return pImagePow;
 }
 
 

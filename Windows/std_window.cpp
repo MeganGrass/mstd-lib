@@ -323,6 +323,12 @@ std::shared_ptr<Standard_Window> Standard_Window::CreateChild(int x, int y, int 
 	Window->SetCommonInstance(h_Instance);
 	Window->SetCommonOwner(hWnd);
 
+	// TrueType Font
+	Window->m_CurrentFont = m_CurrentFont;
+	Window->m_CurrentFontIndex = m_CurrentFontIndex;
+	Window->m_FontSize = m_FontSize;
+	Window->FontList() = m_Fonts;
+
 	// Desktop Window Manager
 	Window->SetDarkMode(GetDarkMode());
 	Window->SetRoundCorners(GetRoundCorners());
@@ -411,6 +417,12 @@ bool Standard_Window::AddChildWindow(HWND hWndChild, int x, int y, bool b_SnapTo
 	// Standard Windows Common Class
 	Window->SetCommonInstance(h_Instance);
 	Window->SetCommonOwner(hWnd);
+
+	// TrueType Font
+	Window->m_CurrentFont = m_CurrentFont;
+	Window->m_CurrentFontIndex = m_CurrentFontIndex;
+	Window->m_FontSize = m_FontSize;
+	Window->FontList() = m_Fonts;
 
 	// Desktop Window Manager
 	Window->SetDarkMode(GetDarkMode());
@@ -789,6 +801,32 @@ bool Standard_Window::Resize(RECT* Rect, bool b_Center)
 
 
 /*
+	Is the window minimized?
+*/
+bool Standard_Window::IsMinimized(void)
+{
+	// return b_Minimized = IsIconic(hWnd);
+	WINDOWPLACEMENT WindowPlacement{};
+	WindowPlacement.length = sizeof(WINDOWPLACEMENT);
+	GetWindowPlacement(hWnd, &WindowPlacement);
+	return b_Minimized = (WindowPlacement.showCmd == SW_SHOWMINIMIZED);
+}
+
+
+/*
+	Is the window maximized?
+*/
+bool Standard_Window::IsMaximized(void)
+{
+	// return b_Maximized = IsZoomed(hWnd);
+	WINDOWPLACEMENT WindowPlacement{};
+	WindowPlacement.length = sizeof(WINDOWPLACEMENT);
+	GetWindowPlacement(hWnd, &WindowPlacement);
+	return b_Maximized = (WindowPlacement.showCmd == SW_SHOWMAXIMIZED);
+}
+
+
+/*
 	Is fullscreen?
 */
 bool Standard_Window::IsFullscreen(void)
@@ -808,4 +846,29 @@ bool Standard_Window::IsFullscreen(void)
 	case QUNS_APP:
 		return b_Fullscreen = false;
 	}
+}
+
+
+/*
+	Auto fullscreen
+*/
+void Standard_Window::AutoFullscreen(void)
+{
+	ShowWindow(hWnd, SW_HIDE);
+
+	if (IsFullscreen())
+	{
+		SetWindowLong(hWnd, GWL_STYLE, m_OldStyle);
+		Resize(&m_OldRect);
+		ShowWindow(hWnd, SW_RESTORE);
+	}
+	else
+	{
+		m_OldStyle = GetStyle();
+		m_OldRect = GetRect();
+		SetWindowLong(hWnd, GWL_STYLE, 0);
+		ShowWindow(hWnd, SW_MAXIMIZE);
+	}
+
+	SetForegroundWindow(hWnd);
 }

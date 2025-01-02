@@ -68,7 +68,7 @@ enum class TextFileBOM : int
 	SCSU = 1 << 9,			// SCSU
 	BOCU_1 = 1 << 10,		// BOCU-1
 	GB_18030 = 1 << 11,		// GB 18030
-	Skip = -2,				// Skip reading/writing of the Byte Order Mark
+	Skip = 31,				// Skip reading/writing of the Byte Order Mark
 	Unknown = -1			// Unknown Encoding
 };
 

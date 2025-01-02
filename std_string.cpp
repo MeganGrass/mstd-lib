@@ -57,6 +57,17 @@ std::wstring Standard_String::FormatCStyle(const std::wstring _Format, ...)
 
 
 /*
+	Get hexadecimal string from integer value
+*/
+String Standard_String::GetHex(std::uintmax_t _Value)
+{
+	std::stringstream StringStream;
+	StringStream << std::hex << _Value;
+	return StringStream.str();
+}
+
+
+/*
 	Empty String
 */
 bool Standard_String::EmptyString(String _String)
@@ -278,7 +289,7 @@ StrVec Standard_String::GetStrVec(String _String) try
 	StrVec ArgVec;
 
 	// String Op
-	while (strStream >> std::quoted(_String)) { ArgVec.push_back(_String); }
+	while (strStream >> std::quoted(_String, { '"' }, { 0x00 })) { ArgVec.push_back(_String); }
 
 	// Complete
 	return ArgVec;
@@ -294,7 +305,7 @@ StrVecW Standard_String::GetStrVec(StringW _String) try
 	StrVecW ArgVec;
 
 	// String Op
-	while (strStream >> std::quoted(_String)) { ArgVec.push_back(_String); }
+	while (strStream >> std::quoted(_String, { '"' }, { 0x00 })) { ArgVec.push_back(_String); }
 
 	// Complete
 	return ArgVec;

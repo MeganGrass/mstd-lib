@@ -289,10 +289,12 @@ PBITMAPINFO Standard_Image::GetBitmapInfo(void) const
 */
 bool Standard_Image::SaveAsBitmap(std::filesystem::path Path)
 {
+	Standard_String Str;
+
 	StdFile m_Input { Path, FileAccessMode::Write_Ex, true, true };
 	if (!m_Input)
 	{
-		Str->Message("Standard Image: Error, could not create %s", Path.filename().c_str());
+		Str.Message("Standard Image: Error, could not create %s", Path.filename().c_str());
 		return false;
 	}
 

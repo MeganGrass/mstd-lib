@@ -38,6 +38,9 @@ static bool b_StdWinInitCommonControlsEx = false;
 // Windows Devices have been initialized?
 static bool b_StdWinDevicesInitialized = false;
 
+// Windows TrueType Font List has been created?
+static bool b_StdWinFontListCreated = false;
+
 #ifdef IsMinimized
 #undef IsMinimized
 #endif
@@ -87,6 +90,10 @@ private:
 	DWORD m_StyleEx;									// Extended Style
 	StringW s_Name;										// Caption
 
+	// Fullscreen
+	DWORD m_OldStyle;									// Old Style
+	RECT m_OldRect;										// Old Rect
+
 	// Class
 	WNDCLASSEXW m_Class;								// Class
 	UINT m_ClassStyle;									// Class Style
@@ -96,6 +103,12 @@ private:
 	HBRUSH h_Brush;										// Brush
 	COLORREF m_Color;									// Client Area Color
 	bool b_ClassBrush;									// m_Class.hbrBackground will use m_Color? nullptr otherwise
+
+	// Font
+	std::filesystem::path m_CurrentFont;				// Current Font (Path)
+	std::size_t m_CurrentFontIndex;						// Current Font (Index)
+	std::vector<std::filesystem::path> m_Fonts;			// Font List
+	float m_FontSize;									// Font Size
 
 	// Icon
 	HICON h_Icon;										// Icon
@@ -193,12 +206,18 @@ public:
 		m_Style(0),
 		m_StyleEx(0),
 		s_Name(L"untitled"),
+		m_OldStyle(0),
+		m_OldRect{},
 		m_Class{},
 		m_ClassStyle(0),
 		s_ClassName(L"untitled"),
 		h_Brush(nullptr),
-		m_Color(RGB(255, 255, 255)),
+		m_Color(RGB(59, 59, 59)),
 		b_ClassBrush(false),
+		m_CurrentFont(L"Calibri B"),
+		m_CurrentFontIndex(0),
+		m_Fonts{},
+		m_FontSize(24.0f),
 		h_Icon(LoadIcon(0, IDI_APPLICATION)),
 		h_IconSm(LoadIcon(0, IDI_APPLICATION)),
 		h_Cursor(LoadCursor(0, IDC_ARROW)),
@@ -277,6 +296,12 @@ public:
 			if (!InitCommonControlsEx(&CommonControls)) { GetErrorMessage(); }
 		}
 
+		if (!b_StdWinFontListCreated)
+		{
+			b_StdWinFontListCreated = true;
+			m_Fonts = GetFonts();
+		}
+
 		m_Class.cbSize = sizeof(WNDCLASSEXW);
 	}
 
@@ -327,12 +352,18 @@ public:
 		m_Style(std::exchange(v.m_Style, 0)),
 		m_StyleEx(std::exchange(v.m_StyleEx, 0)),
 		s_Name(std::exchange(v.s_Name, L"")),
+		m_OldStyle(std::exchange(v.m_OldStyle, 0)),
+		m_OldRect(std::exchange(v.m_OldRect, RECT{})),
 		m_Class(std::exchange(v.m_Class, WNDCLASSEX())),
 		m_ClassStyle(std::exchange(v.m_ClassStyle, 0)),
 		s_ClassName(std::exchange(v.s_ClassName, L"")),
 		h_Brush(std::exchange(v.h_Brush, nullptr)),
 		m_Color(std::exchange(v.m_Color, RGB(255, 255, 255))),
 		b_ClassBrush(std::exchange(v.b_ClassBrush, false)),
+		m_CurrentFont(std::exchange(v.m_CurrentFont, std::filesystem::path{})),
+		m_CurrentFontIndex(std::exchange(v.m_CurrentFontIndex, 0)),
+		m_Fonts(std::exchange(v.m_Fonts, std::vector<std::filesystem::path>())),
+		m_FontSize(std::exchange(v.m_FontSize, 0.0f)),
 		h_Icon(std::exchange(v.h_Icon, nullptr)),
 		h_IconSm(std::exchange(v.h_IconSm, nullptr)),
 		h_Cursor(std::exchange(v.h_Cursor, nullptr)),
@@ -407,14 +438,21 @@ public:
 	[[nodiscard]] bool IsFullscreen(void);
 
 	/*
+		Auto fullscreen
+		 - if not fullscreen, window will be maximized and borderless
+		 - if fullscreen, window will be restored to previous style and size
+	*/
+	void AutoFullscreen(void);
+
+	/*
 		Is the window minimized?
 	*/
-	[[nodiscard]] bool IsMinimized(void) { return b_Minimized = IsIconic(hWnd); }
+	[[nodiscard]] bool IsMinimized(void);
 
 	/*
 		Is the window maximized?
 	*/
-	[[nodiscard]] bool IsMaximized(void) { return b_Maximized = IsZoomed(hWnd); }
+	[[nodiscard]] bool IsMaximized(void);
 
 	/*
 		Drag and drop files available to be parsed?
@@ -592,12 +630,24 @@ public:
 	/*
 		Get window style
 	*/
-	[[nodiscard]] DWORD GetStyle(void) { return m_Style = GetWindowLong(hWnd, GWL_STYLE); }
+	[[nodiscard]] DWORD& GetStyle(void) { return m_Style = GetWindowLong(hWnd, GWL_STYLE); }
+
+	/*
+		Get old window style
+		- used for restore after fullscreen
+	*/
+	[[nodiscard]] DWORD& GetOldStyle(void) { return m_OldStyle; }
+
+	/*
+		Get old window client rect
+		- used for restore after fullscreen
+	*/
+	[[nodiscard]] RECT& GetOldRect(void) { return m_OldRect; }
 
 	/*
 		Get window extended style
 	*/
-	[[nodiscard]] DWORD GetStyleEx(void) { return m_StyleEx = GetWindowLong(hWnd, GWL_EXSTYLE); }
+	[[nodiscard]] DWORD& GetStyleEx(void) { return m_StyleEx = GetWindowLong(hWnd, GWL_EXSTYLE); }
 
 	/*
 		Set window name (caption string)
@@ -629,6 +679,33 @@ public:
 		Get window client rect color
 	*/
 	[[nodiscard]] COLORREF GetColor(void) const { return m_Color; }
+
+	/*
+		Get current font path
+		 - full path to font file
+	*/
+	[[nodiscard]] std::filesystem::path GetFont(void);
+
+	/*
+		Set font path
+		 - Must be TrueType Font located in C:\Windows\Fonts
+	*/
+	void SetFont(const std::filesystem::path Font, float Size);
+
+	/*
+		Get current font index
+	*/
+	[[nodiscard]] std::size_t& GetFontIndex(void) { return m_CurrentFontIndex; }
+
+	/*
+		Get font list
+	*/
+	[[nodiscard]] std::vector<std::filesystem::path> FontList(void) const { return m_Fonts; }
+
+	/*
+		Get font size
+	*/
+	[[nodiscard]] float& FontSize(void) { return m_FontSize; }
 
 	/*
 		Get brush
