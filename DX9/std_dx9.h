@@ -21,7 +21,7 @@
 
 #include <d3d9.h>
 
-#include <D3dx9tex.h>
+#include <d3dx9tex.h>
 
 /*
 	Shaders
