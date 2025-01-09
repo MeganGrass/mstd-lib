@@ -5,7 +5,7 @@
 *
 *
 *	TODO:
-*
+*		Draw is now broken because texture dimensions are pow2
 */
 
 
@@ -308,8 +308,7 @@ public:
 	}
 	virtual ~Standard_DirectX_9(void)
 	{
-		b_Abort = true;
-		b_Active = false;
+		Shutdown();
 
 		while (!b_Complete)
 		{
@@ -362,6 +361,16 @@ public:
 		if (pDevice) { pDevice->Release(); pDevice = nullptr; }
 		if (pD3D) { pD3D->Release(); pD3D = nullptr; }
 	}
+
+	/*
+		Shutdown
+	*/
+	void Shutdown(void);
+
+	/*
+		Is renderer in normal state?
+	*/
+	bool NormalState(void) const { return e_DeviceState == D3DDEVICE_STATE::NORMAL; }
 
 	/*
 		Initialize
@@ -482,6 +491,11 @@ public:
 		 - if Alpha is true and pixel color equals AlphaColor, alpha channel will be set to AlphaChannel
 	*/
 	[[nodiscard]] IDirect3DTexture9* CreateTexture(std::unique_ptr<Standard_Image>& Image, bool b_Alpha = false, DWORD AlphaColor = 0xFF00FF, std::uint8_t AlphaChannel = 0x00);
+
+	/*
+		Save Texture (32bpp)
+	*/
+	bool SaveTexture(IDirect3DTexture9* Texture, D3DXIMAGE_FILEFORMAT Format, const std::filesystem::path& Filename);
 
 	/*
 		Create index buffer
@@ -633,8 +647,8 @@ public:
 		Draw
 		 - if D3DFILL_WIREFRAME is used, lighting and texture is disabled
 		 - pixel shader info:
-		 	Pixel Shader Constant (F) [c0] is set to texture width
-		 	Pixel Shader Constant (F) [c1] is set to texture height
+			Pixel Shader Constant (F) [c0] is set to texture width
+			Pixel Shader Constant (F) [c1] is set to texture height
 	*/
 	void Draw(D3DDRAWPACKET Packet);
 
@@ -788,7 +802,7 @@ public:
 	void SetProjection(Standard_Matrix Projection) { pDevice->SetTransform(D3DTS_PROJECTION, (D3DXMATRIX*)&Projection); }
 
 	/*
-		Has Direct-X been initialized?
+		Is the renderer in a normal state?
 	*/
 	[[nodiscard]] bool Ready(void) const { return b_Ready; }
 

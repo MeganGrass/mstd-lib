@@ -5,6 +5,8 @@
 *
 *
 *	TODO: 
+* 
+*		toolbar and status bar sizing/placement broken due to MsgPositionChanged no longer being called
 *
 */
 
@@ -856,9 +858,18 @@ void Standard_Window::AutoFullscreen(void)
 {
 	ShowWindow(hWnd, SW_HIDE);
 
-	if (IsFullscreen())
+	if (IsFullscreen() || IsMaximized())
 	{
 		SetWindowLong(hWnd, GWL_STYLE, m_OldStyle);
+		int cxScreen = GetSystemMetricsForDpi(SM_CXSCREEN, m_SysDPI);
+		int cyScreen = GetSystemMetricsForDpi(SM_CYSCREEN, m_SysDPI);
+		if ((m_OldRect.right >= cxScreen) || (m_OldRect.bottom >= cyScreen))
+		{
+			m_OldRect.top = 0;
+			m_OldRect.left = 0;
+			m_OldRect.right = cxScreen / 2;
+			m_OldRect.bottom = cyScreen / 2;
+		}
 		Resize(&m_OldRect);
 		ShowWindow(hWnd, SW_RESTORE);
 	}

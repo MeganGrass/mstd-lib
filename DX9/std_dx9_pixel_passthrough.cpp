@@ -12,11 +12,11 @@ float Height : register(c1);
 
 struct INPUT
 {
-    float4 Position : POSITION;
-    float3 Normal : NORMAL;
-    float4 Color : COLOR0;
-    float PointSize : PSIZE;
-    float2 TexCoord : TEXCOORD0;
+	float4 Position : POSITION;
+	float3 Normal : NORMAL;
+	float4 Color : COLOR0;
+	float PointSize : PSIZE;
+	float2 TexCoord : TEXCOORD0;
 };
 
 float4 main(INPUT Input) : COLOR0
@@ -34,10 +34,10 @@ float4 main(INPUT Input) : COLOR0
 
 technique ShaderTechnique
 {
-    pass P0
-    {
-        VertexShader = compile vs_3_0 main();
-        PixelShader = compile ps_3_0 main();
-    }
+	pass P0
+	{
+		VertexShader = compile vs_3_0 main();
+		PixelShader = compile ps_3_0 main();
+	}
 }
 )";

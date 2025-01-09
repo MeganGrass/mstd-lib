@@ -452,7 +452,7 @@ void Standard_String::Message(const std::string _Format, ...)
 	va_end(_ArgList);
 
 #ifdef _WINDOWS
-	MessageBoxA(0, String.data(), "Message", MB_OK);
+	MessageBoxA(hWnd, String.data(), "Message", MB_OK);
 #else
 	std::cout << String.data() << std::endl;
 #endif
@@ -469,7 +469,7 @@ void Standard_String::Message(const std::wstring _Format, ...)
 	va_end(_ArgList);
 
 #ifdef _WINDOWS
-	MessageBoxW(0, String.data(), L"Message", MB_OK);
+	MessageBoxW(hWnd, String.data(), L"Message", MB_OK);
 #else
 	std::wcout << String.data() << std::endl;
 #endif

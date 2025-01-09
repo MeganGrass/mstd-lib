@@ -340,19 +340,19 @@ public:
 	/*
 		Flush contents to file
 	*/
-	void FlushUTF8(void);
+	bool FlushUTF8(void);
 
 
 	/*
 		Flush contents to file
 	*/
-	void FlushUTF16(void);
+	bool FlushUTF16(void);
 
 
 	/*
 		Flush contents to file
 	*/
-	void FlushUTF32(void);
+	bool FlushUTF32(void);
 
 
 };

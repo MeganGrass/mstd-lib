@@ -14,28 +14,28 @@ float Height : register(c1);
 
 struct INPUT
 {
-    float4 Position : POSITION;
-    float3 Normal : NORMAL;
-    float4 Color : COLOR0;
-    float PointSize : PSIZE;
-    float2 TexCoord : TEXCOORD0;
+	float4 Position : POSITION;
+	float3 Normal : NORMAL;
+	float4 Color : COLOR0;
+	float PointSize : PSIZE;
+	float2 TexCoord : TEXCOORD0;
 };
 
 static const float DitherMatrix[4][4] =
 {
-    { -4.0f, +0.0f, -3.0f, +1.0f },
-    { +2.0f, -2.0f, +3.0f, -1.0f },
-    { -3.0f, +1.0f, -4.0f, +0.0f },
-    { +3.0f, -1.0f, +2.0f, -2.0f }
+	{ -4.0f, +0.0f, -3.0f, +1.0f },
+	{ +2.0f, -2.0f, +3.0f, -1.0f },
+	{ -3.0f, +1.0f, -4.0f, +0.0f },
+	{ +3.0f, -1.0f, +2.0f, -2.0f }
 };
 
 float4 main(INPUT Input) : COLOR0
 {
-    float4 color = tex2D(TextureSampler, Input.TexCoord);
-    
-    int2 Pixel = int2(Input.TexCoord.x * Width, Input.TexCoord.y * Height);
-    
-    float Dither = DitherMatrix[Pixel.y % 4][Pixel.x % 4];
+	float4 color = tex2D(TextureSampler, Input.TexCoord);
+	
+	int2 Pixel = int2(Input.TexCoord.x * Width, Input.TexCoord.y * Height);
+	
+	float Dither = DitherMatrix[Pixel.y % 4][Pixel.x % 4];
 
 	color.r = max(0.0f, min(1.0f, color.r + Dither / 255));
 	color.g = max(0.0f, min(1.0f, color.g + Dither / 255));
@@ -45,15 +45,15 @@ float4 main(INPUT Input) : COLOR0
 	color.g = max(0.0f, min(1.0f, saturate(color.g)));
 	color.b = max(0.0f, min(1.0f, saturate(color.b)));
 
-    return color;
+	return color;
 }
 
 technique ShaderTechnique
 {
-    pass P0
-    {
-        VertexShader = compile vs_3_0 main();
-        PixelShader = compile ps_3_0 main();
-    }
+	pass P0
+	{
+		VertexShader = compile vs_3_0 main();
+		PixelShader = compile ps_3_0 main();
+	}
 }
 )";

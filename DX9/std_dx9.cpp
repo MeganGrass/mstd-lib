@@ -5,7 +5,7 @@
 *
 *
 *	TODO:
-*
+*		Draw is now broken because texture dimensions are pow2
 */
 
 
@@ -120,7 +120,7 @@ static LRESULT CALLBACK DirectX9WndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPA
 {
 	Standard_DirectX_9* DX9 = (Standard_DirectX_9*)dwRefData;
 
-	if (!DX9->Ready()) { return DefSubclassProc(hWnd, uMsg, wParam, lParam); }
+	if (!DX9 || !DX9->Ready()) { return DefSubclassProc(hWnd, uMsg, wParam, lParam); }
 
 	switch (uMsg)
 	{
@@ -151,6 +151,63 @@ static LRESULT CALLBACK DirectX9WndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPA
 	}
 
 	return DefSubclassProc(hWnd, uMsg, wParam, lParam);
+}
+
+
+/*
+	Soft shutdown
+*/
+void Standard_DirectX_9::Shutdown(void)
+{
+	b_Abort = true;
+	b_Active = false;
+	e_DeviceState = D3DDEVICE_STATE::UNKNOWN;
+
+	if (AxisGrid) { AxisGrid->Release(); AxisGrid = nullptr; }
+
+	if (ShaderVecpg.Decl) { ShaderVecpg.Decl->Release(); ShaderVecpg.Decl = nullptr; }
+	if (ShaderVecpg.Shader) { ShaderVecpg.Shader->Release(); ShaderVecpg.Shader = nullptr; }
+	if (ShaderVecpg.Const) { ShaderVecpg.Const->Release(); ShaderVecpg.Const = nullptr; }
+
+	if (ShaderVecpgt.Decl) { ShaderVecpgt.Decl->Release(); ShaderVecpgt.Decl = nullptr; }
+	if (ShaderVecpgt.Shader) { ShaderVecpgt.Shader->Release(); ShaderVecpgt.Shader = nullptr; }
+	if (ShaderVecpgt.Const) { ShaderVecpgt.Const->Release(); ShaderVecpgt.Const = nullptr; }
+
+	if (ShaderVec3t.Decl) { ShaderVec3t.Decl->Release(); ShaderVec3t.Decl = nullptr; }
+	if (ShaderVec3t.Shader) { ShaderVec3t.Shader->Release(); ShaderVec3t.Shader = nullptr; }
+	if (ShaderVec3t.Const) { ShaderVec3t.Const->Release(); ShaderVec3t.Const = nullptr; }
+
+	if (ShaderVec4t.Decl) { ShaderVec4t.Decl->Release(); ShaderVec4t.Decl = nullptr; }
+	if (ShaderVec4t.Shader) { ShaderVec4t.Shader->Release(); ShaderVec4t.Shader = nullptr; }
+	if (ShaderVec4t.Const) { ShaderVec4t.Const->Release(); ShaderVec4t.Const = nullptr; }
+
+	if (ShaderVec3n.Decl) { ShaderVec3n.Decl->Release(); ShaderVec3n.Decl = nullptr; }
+	if (ShaderVec3n.Shader) { ShaderVec3n.Shader->Release(); ShaderVec3n.Shader = nullptr; }
+	if (ShaderVec3n.Const) { ShaderVec3n.Const->Release(); ShaderVec3n.Const = nullptr; }
+
+	if (ShaderVec3nt.Decl) { ShaderVec3nt.Decl->Release(); ShaderVec3nt.Decl = nullptr; }
+	if (ShaderVec3nt.Shader) { ShaderVec3nt.Shader->Release(); ShaderVec3nt.Shader = nullptr; }
+	if (ShaderVec3nt.Const) { ShaderVec3nt.Const->Release(); ShaderVec3nt.Const = nullptr; }
+
+	if (ShaderVec3g.Decl) { ShaderVec3g.Decl->Release(); ShaderVec3g.Decl = nullptr; }
+	if (ShaderVec3g.Shader) { ShaderVec3g.Shader->Release(); ShaderVec3g.Shader = nullptr; }
+	if (ShaderVec3g.Const) { ShaderVec3g.Const->Release(); ShaderVec3g.Const = nullptr; }
+
+	if (ShaderVec3gn.Decl) { ShaderVec3gn.Decl->Release(); ShaderVec3gn.Decl = nullptr; }
+	if (ShaderVec3gn.Shader) { ShaderVec3gn.Shader->Release(); ShaderVec3gn.Shader = nullptr; }
+	if (ShaderVec3gn.Const) { ShaderVec3gn.Const->Release(); ShaderVec3gn.Const = nullptr; }
+
+	if (ShaderVec3gt.Decl) { ShaderVec3gt.Decl->Release(); ShaderVec3gt.Decl = nullptr; }
+	if (ShaderVec3gt.Shader) { ShaderVec3gt.Shader->Release(); ShaderVec3gt.Shader = nullptr; }
+	if (ShaderVec3gt.Const) { ShaderVec3gt.Const->Release(); ShaderVec3gt.Const = nullptr; }
+
+	if (ShaderVec3gnt.Decl) { ShaderVec3gnt.Decl->Release(); ShaderVec3gnt.Decl = nullptr; }
+	if (ShaderVec3gnt.Shader) { ShaderVec3gnt.Shader->Release(); ShaderVec3gnt.Shader = nullptr; }
+	if (ShaderVec3gnt.Const) { ShaderVec3gnt.Const->Release(); ShaderVec3gnt.Const = nullptr; }
+
+	if (pSwapChain) { pSwapChain->Release(); pSwapChain = nullptr; }
+	if (pDevice) { pDevice->Release(); pDevice = nullptr; }
+	if (pD3D) { pD3D->Release(); pD3D = nullptr; }
 }
 
 
@@ -631,6 +688,24 @@ IDirect3DTexture9* Standard_DirectX_9::CreateTexture(std::unique_ptr<Standard_Im
 	pImage->Release();
 
 	return pImagePow;
+}
+
+
+/*
+	Save Texture (32bpp)
+*/
+bool Standard_DirectX_9::SaveTexture(IDirect3DTexture9* Texture, D3DXIMAGE_FILEFORMAT Format, const std::filesystem::path& Filename)
+{
+	if (!Texture) { return false; }
+
+	HRESULT hr = D3DXSaveTextureToFile(Filename.wstring().c_str(), Format, Texture, nullptr);
+	if (FAILED(hr))
+	{
+		Wnd->GetErrorMessage(false);
+		return false;
+	}
+
+	return true;
 }
 
 

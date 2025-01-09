@@ -118,27 +118,27 @@ void Standard_Thread_Pool::ThreadPoolResize(std::size_t nThreads)
 
 
 /*
-    Busy
+	Busy
 */
 bool Standard_Thread_Pool::ThreadPoolBusy(void)
 {
 	std::scoped_lock<std::mutex> Lock(m_Mutex);
-    return !m_Queue.empty();
+	return !m_Queue.empty();
 }
 
 
 /*
-    Stop
+	Stop
 */
 void Standard_Thread_Pool::ThreadPoolStop(void)
 {
-    {
+	{
 		std::scoped_lock<std::mutex> Lock(m_Mutex);
 		b_Terminate = true;
 	}
 	m_Condition.notify_all();
-    for (std::size_t i = 0; i < m_Threads.size(); i++)
-    {
+	for (std::size_t i = 0; i < m_Threads.size(); i++)
+	{
 		if (m_Threads[i].joinable()) { m_Threads[i].join(); }
 	}
 	m_Threads.clear();

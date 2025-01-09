@@ -11,6 +11,7 @@
 
 #include "std_image.h"
 
+DWORD Standard_Image::TransparentColor = RGB(0xFF, 0, 0xFF);
 
 /*
 	Get Format
@@ -248,11 +249,26 @@ void Standard_Image::SetPixel(uint32_t X, uint32_t Y, DWORD Color)
 
 
 /*
-	Get bitmap info
+	Save as Bitmap
 */
-PBITMAPINFO Standard_Image::GetBitmapInfo(void) const
+bool Standard_Image::SaveAsBitmap(std::filesystem::path Path)
 {
-	// biSizeImage
+	Standard_String Str;
+
+	if (Pixels.empty())
+	{
+		Str.Message("Standard Image: Error, pixel data is empty");
+		return false;
+	}
+
+	StdFile m_Input { Path, FileAccessMode::Write_Ex, true, true };
+	if (!m_Input)
+	{
+		Str.Message("Standard Image: Error, could not create %s", Path.filename().c_str());
+		return false;
+	}
+
+	// Info Header
 	std::uint32_t biSizeImage = Width * Height * (Depth / 8);
 	std::uint32_t Padding = (4 - (Width * Depth) % 4) % 4;
 	biSizeImage += Padding * Height;
@@ -279,28 +295,6 @@ PBITMAPINFO Standard_Image::GetBitmapInfo(void) const
 		Info->bmiColors[i] = Palette.data()[i];
 	}
 
-	// Complete
-	return Info;
-}
-
-
-/*
-	Save as Bitmap
-*/
-bool Standard_Image::SaveAsBitmap(std::filesystem::path Path)
-{
-	Standard_String Str;
-
-	StdFile m_Input { Path, FileAccessMode::Write_Ex, true, true };
-	if (!m_Input)
-	{
-		Str.Message("Standard Image: Error, could not create %s", Path.filename().c_str());
-		return false;
-	}
-
-	// Info Header
-	PBITMAPINFO Info = GetBitmapInfo();
-
 	// File Header
 	BITMAPFILEHEADER FileHeader{};
 	FileHeader.bfType = 0x4D42;
@@ -320,13 +314,84 @@ bool Standard_Image::SaveAsBitmap(std::filesystem::path Path)
 }
 
 
+/*
+	Save Microsoft Palette (*.PAL)
+*/
+void Standard_Image::SaveMicrosoftPalette(std::filesystem::path Path)
+{
+	Standard_String Str;
+
+	if (Palette.empty())
+	{
+		Str.Message("Standard Image: Error, palette is empty");
+		return;
+	}
+
+	StdFile m_Input{ Path, FileAccessMode::Write_Ex, true, true };
+	if (!m_Input)
+	{
+		Str.Message("Standard Image: Error, could not create %s", Path.filename().c_str());
+		return;
+	}
+
+	std::uint16_t DataSize = Depth == 4 ? 16 : 256 * 4 + 4;
+	std::uint16_t Version = 0x0300;
+	std::uint16_t nColors = Depth == 4 ? 16 : 256;
+	std::uintmax_t pPalette = 0x16;
+	std::uint32_t FileSize = 0x0A + DataSize;
+
+	// RIFF Header
+	m_Input.WriteStr(0x00, "RIFF\0");
+	m_Input.Write(0x04, &FileSize, 4);
+	m_Input.WriteStr(0x08, "PAL \0");
+	m_Input.WriteStr(0x0C, "data\0");
+	m_Input.Write(0x10, &DataSize, 2);
+	m_Input.Write(0x12, &Version, 2);
+	m_Input.Write(0x14, &nColors, 2);
+
+	// Colors
+	for (std::size_t i = 0; i < nColors; i++)
+	{
+		m_Input.Write(pPalette, &Palette[i], sizeof(RGBQUAD));
+
+		pPalette += sizeof(RGBQUAD);
+	}
+
+}
+
+
 #ifdef _WINDOWS
 /*
 	Bit blit
 */
 void Standard_Image::BitBlit(HWND hWnd, HDC hdcDst, int X, int Y, int DstWidth, int DstHeight, int SrcX, int SrcY, DWORD dwRop) const
 {
-	PBITMAPINFO Info = GetBitmapInfo();
+	// Info Header
+	std::uint32_t biSizeImage = Width * Height * (Depth / 8);
+	std::uint32_t Padding = (4 - (Width * Depth) % 4) % 4;
+	biSizeImage += Padding * Height;
+
+	// Header
+	BITMAPINFOHEADER InfoHeader{};
+	InfoHeader.biSize = sizeof(BITMAPINFOHEADER);
+	InfoHeader.biWidth = Width;
+	InfoHeader.biHeight = Height;
+	InfoHeader.biPlanes = 1;
+	InfoHeader.biBitCount = Depth;
+	InfoHeader.biCompression = BI_RGB;
+	InfoHeader.biSizeImage = biSizeImage;
+	InfoHeader.biXPelsPerMeter = 0;
+	InfoHeader.biYPelsPerMeter = 0;
+	InfoHeader.biClrUsed = static_cast<DWORD>(Palette.size());
+	InfoHeader.biClrImportant = 0;
+
+	// Info
+	PBITMAPINFO Info = (PBITMAPINFO)new char[sizeof(BITMAPINFOHEADER) + Palette.size() * sizeof(RGBQUAD)];
+	Info->bmiHeader = InfoHeader;
+	for (std::size_t i = 0; i < Palette.size(); i++)
+	{
+		Info->bmiColors[i] = Palette.data()[i];
+	}
 
 	HDC hDC = NULL;
 	hdcDst ? hDC = hdcDst : hDC = GetDC(hWnd);

@@ -6,7 +6,7 @@
 *
 *	TODO:
 * 
-*		override GetErrorMessage for logging to window instead of TaskDialog
+*		toolbar and status bar sizing/placement broken due to MsgPositionChanged no longer being called
 *
 */
 

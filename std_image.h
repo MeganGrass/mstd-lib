@@ -49,6 +49,13 @@ private:
 	#pragma pack(push, 1)
 
 #ifndef _WINDOWS
+
+#define far
+#define FAR           far
+#define near
+#define NEAR          near
+#define BI_RGB        0L
+
 	#ifndef BITMAPFILEHEADER
 		struct BITMAPFILEHEADER {
 			WORD	bfType;
@@ -85,10 +92,11 @@ private:
 	#endif
 
 #ifndef PBITMAPINFO
-		struct BITMAPINFO {
+		typedef struct tagBITMAPINFO
+		{
 			BITMAPINFOHEADER    bmiHeader;
 			RGBQUAD             bmiColors[1];
-		} * PBITMAPINFO;
+		} BITMAPINFO, FAR* LPBITMAPINFO, * PBITMAPINFO;
 #endif
 
 #endif
@@ -112,6 +120,9 @@ private:
 
 	// Palette
 	std::vector<RGBQUAD> Palette;
+
+	// Transparent Color
+	static DWORD TransparentColor;
 
 	// Get Format
 	ImageFormat GetFormat(ImageFormat _Format);
@@ -192,6 +203,11 @@ public:
 	[[nodiscard]] std::vector<uint8_t>& GetData(void) { return Pixels; }
 
 	/*
+		Get Transparent Color
+	*/
+	[[nodiscard]] DWORD& GetTransparentColor(void) { return TransparentColor; }
+
+	/*
 		Set Palette
 	*/
 	void SetPalette(size_t iPalette, DWORD Color);
@@ -207,14 +223,14 @@ public:
 	void SetPixel(uint32_t X, uint32_t Y, DWORD Color);
 
 	/*
-		Get bitmap info
-	*/
-	PBITMAPINFO GetBitmapInfo(void) const;
-
-	/*
 		Save as Bitmap
 	*/
 	bool SaveAsBitmap(std::filesystem::path Path);
+
+	/*
+		Save Microsoft Palette (*.PAL)
+	*/
+	void SaveMicrosoftPalette(std::filesystem::path Path);
 
 #ifdef _WINDOWS
 	/*

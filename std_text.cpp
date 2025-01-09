@@ -451,7 +451,7 @@ void Standard_Text::AddEndLine(void)
 /*
 	Flush contents to file
 */
-void Standard_Text::FlushUTF8(void)
+bool Standard_Text::FlushUTF8(void)
 {
 	if (validUTF8())
 	{
@@ -461,13 +461,14 @@ void Standard_Text::FlushUTF8(void)
 			_Ptr = File().WriteStr(_Ptr, Line, false);
 		}
 	}
+	return true;
 }
 
 
 /*
 	Flush contents to file
 */
-void Standard_Text::FlushUTF16(void)
+bool Standard_Text::FlushUTF16(void)
 {
 	if (validUTF16())
 	{
@@ -477,13 +478,14 @@ void Standard_Text::FlushUTF16(void)
 			_Ptr = File().WriteStr(_Ptr, Line, false);
 		}
 	}
+	return true;
 }
 
 
 /*
 	Flush contents to file
 */
-void Standard_Text::FlushUTF32(void)
+bool Standard_Text::FlushUTF32(void)
 {
 	if (validUTF32())
 	{
@@ -493,7 +495,7 @@ void Standard_Text::FlushUTF32(void)
 			_Ptr = File().WriteStr(_Ptr, Line, false);
 		}
 	}
-
+	return true;
 }
 
 

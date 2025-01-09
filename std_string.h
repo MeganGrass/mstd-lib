@@ -26,8 +26,11 @@ class Standard_String :
 	protected Standard_Exception {
 private:
 
-
 public:
+
+#ifdef _WINDOWS
+	HWND hWnd = nullptr;
+#endif
 
 
 	/*
@@ -35,6 +38,12 @@ public:
 	*/
 	explicit constexpr Standard_String(void) noexcept = default;
 	virtual ~Standard_String(void) noexcept = default;
+
+
+	/*
+		Get wide string from string
+	*/
+	[[nodiscard]] std::wstring GetWide(const std::string _String) noexcept { return std::wstring(_String.begin(), _String.end()); }
 
 
 	/*

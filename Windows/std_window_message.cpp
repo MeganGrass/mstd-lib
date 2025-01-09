@@ -56,6 +56,14 @@ LRESULT CALLBACK StandardWindowProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM 
 		Window->MsgDisplayChange(wParam, lParam);
 		break;
 #if MSTD_DEVICE
+	case WM_DESTROY:
+	{
+		// Destroy the timer when the window is destroyed
+		KillTimer(hWnd, MouseWheelTimerZ.TimerID);
+		KillTimer(hWnd, MouseWheelTimerX.TimerID);
+		PostQuitMessage(0);
+		break;
+	}
 	case WM_INPUT_DEVICE_CHANGE:
 		Window->Device()->MsgInputDeviceChange(wParam, lParam);
 		break;
@@ -66,24 +74,24 @@ LRESULT CALLBACK StandardWindowProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM 
 		Window->Device()->MsgMouseWheel(wParam);
 		if (MouseWheelTimerZ.TimerID == 0)
 		{
-			MouseWheelTimerZ.TimerID = SetTimer(hWnd, 1, Window->Device()->MouseDelayDeltaZ(), NULL);
+			MouseWheelTimerZ.TimerID = SetTimer(hWnd, 1, 1, NULL);
 		}
 		else
 		{
 			KillTimer(hWnd, MouseWheelTimerZ.TimerID);
-			MouseWheelTimerZ.TimerID = SetTimer(hWnd, 1, Window->Device()->MouseDelayDeltaZ(), NULL);
+			MouseWheelTimerZ.TimerID = SetTimer(hWnd, 1, 1, NULL);
 		}
 		break;
 	case WM_MOUSEHWHEEL:
 		Window->Device()->MsgMouseHWheel(wParam);
 		if (MouseWheelTimerX.TimerID == 0)
 		{
-			MouseWheelTimerX.TimerID = SetTimer(hWnd, 2, Window->Device()->MouseDelayDeltaX(), NULL);
+			MouseWheelTimerX.TimerID = SetTimer(hWnd, 2, 1, NULL);
 		}
 		else
 		{
 			KillTimer(hWnd, MouseWheelTimerX.TimerID);
-			MouseWheelTimerX.TimerID = SetTimer(hWnd, 2, Window->Device()->MouseDelayDeltaX(), NULL);
+			MouseWheelTimerX.TimerID = SetTimer(hWnd, 2, 1, NULL);
 		}
 		break;
 	case WM_TIMER:

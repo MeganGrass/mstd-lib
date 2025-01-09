@@ -11,6 +11,8 @@
 
 #include "std_common.h"
 
+#include <mutex>
+
 #pragma comment(linker, "\"/manifestdependency:type='Win32' name='Microsoft.Windows.Common-Controls' version='6.0.0.0' processorArchitecture='*' publicKeyToken='6595b64144ccf1df' language='*'\"")
 
 #pragma comment(lib, "Comctl32.lib")
@@ -140,6 +142,9 @@ std::vector<std::filesystem::path> Standard_Windows_Common::GetFonts(void)
 */
 std::optional<std::filesystem::path> Standard_Windows_Common::GetOpenFilename(StrVecW _Description, StrVecW _Filter)
 {
+	static std::mutex mtx;
+	std::lock_guard<std::mutex> lock(mtx);
+
 	// Error
 	if (_Description.size() != _Filter.size()) { return std::nullopt; }
 
@@ -195,6 +200,9 @@ std::optional<std::filesystem::path> Standard_Windows_Common::GetOpenFilename(St
 */
 std::optional<std::filesystem::path> Standard_Windows_Common::GetSaveFilename(StrVecW _Description, StrVecW _Filter)
 {
+	static std::mutex mtx;
+	std::lock_guard<std::mutex> lock(mtx);
+
 	// Error
 	if (_Description.size() != _Filter.size()) { return std::nullopt; }
 
@@ -250,6 +258,9 @@ std::optional<std::filesystem::path> Standard_Windows_Common::GetSaveFilename(St
 */
 [[nodiscard]] std::optional<std::filesystem::path> Standard_Windows_Common::GetFileDirectory(void) const
 {
+	static std::mutex mtx;
+	std::lock_guard<std::mutex> lock(mtx);
+
 	// CoCreate
 	IFileDialog* pFileDialog;
 	if (CoCreateInstance(CLSID_FileOpenDialog, 0, CLSCTX_INPROC_SERVER, IID_PPV_ARGS(&pFileDialog)) != S_OK) { return std::nullopt; }
