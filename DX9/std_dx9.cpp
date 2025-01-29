@@ -692,6 +692,214 @@ IDirect3DTexture9* Standard_DirectX_9::CreateTexture(std::unique_ptr<Standard_Im
 
 
 /*
+	Create Texture from Sony PlayStation Texture (*.TIM)
+*/
+IDirect3DTexture9* Standard_DirectX_9::CreateTexture(std::unique_ptr<Sony_PlayStation_Texture>& TIM, uint16_t iClut, Sony_Texture_Transparency Transparency, DWORD TransparencyColor)
+{
+	if (e_DeviceState != D3DDEVICE_STATE::NORMAL) { return nullptr; }
+
+	if (!TIM->IsOpen())
+	{
+		Str->Message(L"Direct-X: Error, Sony PlayStation Texture Image is not open");
+		return nullptr;
+	}
+
+	bool b_Superblack = (std::to_underlying(Transparency) & std::to_underlying(Sony_Texture_Transparency::Superblack));
+	bool b_Superimposed = (std::to_underlying(Transparency) & std::to_underlying(Sony_Texture_Transparency::Superimposed));
+	bool b_External = (std::to_underlying(Transparency) & std::to_underlying(Sony_Texture_Transparency::External));
+	bool b_Half = (std::to_underlying(Transparency) & std::to_underlying(Sony_Texture_Transparency::Half));
+	bool b_Full = (std::to_underlying(Transparency) & std::to_underlying(Sony_Texture_Transparency::Full));
+	bool b_Inverse = (std::to_underlying(Transparency) & std::to_underlying(Sony_Texture_Transparency::Inverse));
+	bool b_Quarter = (std::to_underlying(Transparency) & std::to_underlying(Sony_Texture_Transparency::Quarter));
+	bool b_STP = (std::to_underlying(Transparency) & std::to_underlying(Sony_Texture_Transparency::STP));
+
+	iClut = std::clamp(iClut, (uint16_t)0, (uint16_t)(TIM->GetPalette().size() - 1));
+
+	auto GetTransparency = [b_Half, b_Full, b_Inverse, b_Quarter]()
+		{
+			if (b_Half || b_Full || b_Inverse || b_Quarter)
+			{
+				if (b_Half) { return 0x80; }
+				else if (b_Full) { return 0x00; }
+				else if (b_Inverse) { return 0xFF; }
+				else if (b_Quarter) { return 0x40; }
+			}
+			return 0x00;
+		};
+
+	auto GetAlpha = [b_Superblack, b_Superimposed, b_External, b_STP, GetTransparency, &TIM, iClut, TransparencyColor](Sony_Texture_16bpp Color)
+		{
+			if (b_Superblack && !TIM->Red(Color) && !TIM->Green(Color) && !TIM->Blue(Color) && !TIM->STP(Color))
+			{
+				return 0x00;
+			}
+
+			if (b_Superimposed && !TIM->GetPalette().empty() &&
+				(Color.R == TIM->GetPalette()[iClut][0].R) &&
+				(Color.G == TIM->GetPalette()[iClut][0].G) &&
+				(Color.B == TIM->GetPalette()[iClut][0].B))
+			{
+				return GetTransparency();
+			}
+
+			if (b_External &&
+				(TIM->Red(Color) == GetRValue(TransparencyColor)) &&
+				(TIM->Green(Color) == GetGValue(TransparencyColor)) &&
+				(TIM->Blue(Color) == GetBValue(TransparencyColor)))
+			{
+				return GetTransparency();
+			}
+
+			if (b_STP && !TIM->STP(Color))
+			{
+				return GetTransparency();
+			}
+
+			return 0xFF;
+		};
+
+	auto GetAlpha24 = [b_Superblack, b_Superimposed, b_External, b_STP, GetTransparency, &TIM, iClut, TransparencyColor](Sony_Texture_24bpp Color)
+		{
+			if (b_Superblack && !Color.R0 && !Color.G0 && !Color.B0)
+			{
+				return 0x00;
+			}
+
+			if (b_Superimposed && !TIM->GetPalette().empty() &&
+				(Color.R0 == TIM->Red(TIM->GetPalette()[iClut][0])) &&
+				(Color.G0 == TIM->Green(TIM->GetPalette()[iClut][0])) &&
+				(Color.B0 == TIM->Green(TIM->GetPalette()[iClut][0])))
+			{
+				return GetTransparency();
+			}
+
+			if (b_External &&
+				(Color.R0 == GetRValue(TransparencyColor)) &&
+				(Color.G0 == GetGValue(TransparencyColor)) &&
+				(Color.B0 == GetBValue(TransparencyColor)))
+			{
+				return GetTransparency();
+			}
+
+			return 0xFF;
+		};
+
+	auto NextPowerOfTwo = [](int32_t x) {
+		if (x <= 0) { return 1; }
+		x--;
+		for (int Shift = 1; Shift < 32; Shift <<= 1) { x |= x >> Shift; }
+		return x + 1;
+		};
+
+	std::uint32_t Depth = TIM->GetDepth();
+
+	LONG Width = TIM->GetWidth();
+	LONG Height = TIM->GetHeight();
+
+	IDirect3DTexture9* pTexture = nullptr;
+
+	D3DLOCKED_RECT LockedRect{};
+
+	RECT Area = { 0, 0, Width, Height };
+
+	UINT WidthPow = NextPowerOfTwo(Width);
+	UINT HeightPow = NextPowerOfTwo(Height);
+
+	if (FAILED(D3DXCreateTexture(pDevice, WidthPow, HeightPow, D3DX_DEFAULT, D3DUSAGE_DYNAMIC, D3DFMT_A8R8G8B8, D3DPOOL_DEFAULT, &pTexture)))
+	{
+		Wnd->GetErrorMessage(false);
+		return nullptr;
+	}
+
+	if (TIM->GetPixels().empty())
+	{
+		std::cout << "Direct-X: Error, Sony PlayStation Texture Image pixel data is empty" << std::endl;
+		return pTexture;
+	}
+
+	if (FAILED(pTexture->LockRect(0, &LockedRect, &Area, NULL)))
+	{
+		Wnd->GetErrorMessage(false);
+		pTexture->Release();
+		return nullptr;
+	}
+
+	BYTE* Bits = static_cast<BYTE*>(LockedRect.pBits);
+
+	if (Bits)
+	{
+		for (LONG Y = 0; Y < Height; Y++)
+		{
+			for (LONG X = 0; X < Width; X++)
+			{
+				if (Depth == 4)
+				{
+					Sony_Texture_4bpp Pixels = TIM->Get4bpp(X, Y);
+
+					if (!TIM->GetPalette().empty())
+					{
+						Sony_Texture_16bpp Color = TIM->GetPalette().data()[iClut][Pixels.Pix0];
+
+						((uint32_t*)Bits)[(Height - Y - 1) * WidthPow + X] = (GetAlpha(Color) << 24) | TIM->Red(Color) << 16 | TIM->Green(Color) << 8 | TIM->Blue(Color);
+
+						Pixels = TIM->Get4bpp(++X, Y);
+
+						Color = TIM->GetPalette().data()[iClut][Pixels.Pix1];
+
+						((uint32_t*)Bits)[(Height - Y - 1) * WidthPow + X] = (GetAlpha(Color) << 24) | TIM->Red(Color) << 16 | TIM->Green(Color) << 8 | TIM->Blue(Color);
+					}
+					else
+					{
+						((uint32_t*)Bits)[(Height - Y - 1) * WidthPow + X] = 0xFF000000;
+						((uint32_t*)Bits)[(Height - Y - 1) * WidthPow + ++X] = 0xFF000000;
+					}
+				}
+
+				else if (Depth == 8)
+				{
+					Sony_Texture_8bpp Pixels = TIM->Get8bpp(X, Y);
+
+					if (!TIM->GetPalette().empty())
+					{
+						Sony_Texture_16bpp Color = TIM->GetPalette().data()[iClut][Pixels.Pix0];
+
+						((uint32_t*)Bits)[(Height - Y - 1) * WidthPow + X] = (GetAlpha(Color) << 24) | TIM->Red(Color) << 16 | TIM->Green(Color) << 8 | TIM->Blue(Color);
+					}
+					else
+					{
+						((uint32_t*)Bits)[(Height - Y - 1) * WidthPow + X] = 0xFF000000;
+					}
+				}
+
+				else if (Depth == 16)
+				{
+					Sony_Texture_16bpp Color = TIM->Get16bpp(X, Y);
+
+					((uint32_t*)Bits)[(Height - Y - 1) * WidthPow + X] = (GetAlpha(Color) << 24) | TIM->Red(Color) << 16 | TIM->Green(Color) << 8 | TIM->Blue(Color);
+				}
+
+				else if (Depth == 24)
+				{
+					Sony_Texture_24bpp Color = TIM->Get24bpp(X, Y);
+
+					((uint32_t*)Bits)[(Height - Y - 1) * WidthPow + X] = (GetAlpha24(Color) << 24) | Color.R0 << 16 | Color.G0 << 8 | Color.B0;
+				}
+			}
+		}
+	}
+
+	if (FAILED(pTexture->UnlockRect(0)))
+	{
+		Wnd->GetErrorMessage(false);
+		pTexture->Release();
+		return nullptr;
+	}
+
+	return pTexture;
+}
+
+
+/*
 	Save Texture (32bpp)
 */
 bool Standard_DirectX_9::SaveTexture(IDirect3DTexture9* Texture, D3DXIMAGE_FILEFORMAT Format, const std::filesystem::path& Filename)

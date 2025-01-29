@@ -36,7 +36,6 @@ uint32_t Standard_Image::GetDepth(uint32_t _Depth) try
 {
 	switch (_Depth)
 	{
-	case 1:
 	case 4:
 	case 8:
 	case 16:
@@ -58,14 +57,6 @@ void Standard_Image::InitializePalette(void) try
 	uint32_t Size = 0;
 	switch (Depth)
 	{
-	case 1:
-		Size = 4 * sizeof(RGBQUAD);
-		Palette.resize(Size);
-		Palette[1].rgbRed = 0xFF;
-		Palette[1].rgbGreen = 0xFF;
-		Palette[1].rgbBlue = 0xFF;
-		Palette[1].rgbReserved = 0;
-		break;
 	case 4:
 		Size = 16 * sizeof(RGBQUAD);
 		Palette.resize(Size);
@@ -103,8 +94,6 @@ uint32_t Standard_Image::GetPixelSize(void) try
 {
 	switch (Depth)
 	{
-	case 1:
-		return 1;
 	case 4:
 		return 1;
 	case 8:
@@ -165,10 +154,10 @@ void Standard_Image::SetPalette(size_t iPalette, DWORD Color)
 {
 	if (iPalette < Palette.size())
 	{
-		Palette[iPalette].rgbRed = GetRValue(Color);
-		Palette[iPalette].rgbGreen = GetGValue(Color);
-		Palette[iPalette].rgbBlue = GetBValue(Color);
-		Palette[iPalette].rgbReserved = GetAValue(Color);
+		Palette[iPalette].rgbBlue = (Color & 0xFF);
+		Palette[iPalette].rgbGreen = ((Color >> 8) & 0xFF);
+		Palette[iPalette].rgbRed = ((Color >> 16) & 0xFF);
+		Palette[iPalette].rgbReserved = ((Color >> 24) & 0xFF);
 	}
 }
 
@@ -182,24 +171,55 @@ DWORD Standard_Image::GetPixel(uint32_t X, uint32_t Y)
 
 	uint32_t Pixel = (X * Depth / 8) + Offset;
 
-	uint32_t Shift = 0;
-
-	uint32_t Mask = 0;
-
 	switch (Depth)
 	{
 	case 4:
-		Offset = (Height - Y - 1) * (Width / 2);
-		Pixel = (X / 2) + Offset;
-		return Pixels.data()[Pixel];
+		Pixel = (X / 2) + ((Height - Y - 1) * (Width / 2));
+		if (X & 1)
+		{
+			return Pixels.data()[Pixel] & 0x0F;
+		}
+		else
+		{
+			return Pixels.data()[Pixel] >> 4;
+		}
 	case 8:
 		return Pixels.data()[Pixel];
 	case 16:
-		return (Pixels.data()[Pixel + 0] << 8) | Pixels.data()[Pixel + 1];
+	{
+		struct Pixel_16bpp
+		{
+			std::uint16_t A : 1;
+			std::uint16_t R : 5;
+			std::uint16_t G : 5;
+			std::uint16_t B : 5;
+		};
+		Pixel_16bpp Color = *reinterpret_cast<Pixel_16bpp*>(&Pixels.data()[Pixel]);
+		return (Color.A << 15) | (Color.R << 10) | (Color.G << 5) | Color.B;
+	}
 	case 24:
-		return (Pixels.data()[Pixel + 0] << 16) | (Pixels.data()[Pixel + 1] << 8) | Pixels.data()[Pixel + 2];
+	{
+		struct Pixel_24bpp
+		{
+			std::uint8_t R : 8;
+			std::uint8_t G : 8;
+			std::uint8_t B : 8;
+		};
+		Pixel_24bpp Color = *reinterpret_cast<Pixel_24bpp*>(&Pixels.data()[Pixel]);
+		return (0xFF << 24) | (Color.R << 16) | (Color.G << 8) | Color.B;
+	}
 	case 32:
-		return (Pixels.data()[Pixel + 0] << 24) | (Pixels.data()[Pixel + 1] << 16) | (Pixels.data()[Pixel + 2] << 8) | Pixels.data()[Pixel + 3];
+	{
+		struct Pixel_32bpp
+		{
+			std::uint8_t A : 8;
+			std::uint8_t R : 8;
+			std::uint8_t G : 8;
+			std::uint8_t B : 8;
+		};
+		Pixel_32bpp Color = *reinterpret_cast<Pixel_32bpp*>(&Pixels.data()[Pixel]);
+		return (Color.A << 24) | (Color.R << 16) | (Color.G << 8) | Color.B;
+	}
 	default:
 		return 0;
 	}
@@ -215,34 +235,56 @@ void Standard_Image::SetPixel(uint32_t X, uint32_t Y, DWORD Color)
 
 	uint32_t Pixel = (X * Depth / 8) + Offset;
 
-	uint32_t Shift = 0;
-
-	uint32_t Mask = 0;
-
 	switch (Depth)
 	{
 	case 4:
-		Offset = (Height - Y - 1) * (Width / 2);
-		Pixel = (X / 2) + Offset;
-		Pixels.data()[Pixel] = GetRValue(Color);
+		Pixel = (X / 2) + ((Height - Y - 1) * (Width / 2));
+		if (X & 1)
+		{
+			Pixels.data()[Pixel] = (Pixels.data()[Pixel] & 0xF0) | (Color & 0x0F);
+		}
+		else
+		{
+			Pixels.data()[Pixel] = (Pixels.data()[Pixel] & 0x0F) | (Color & 0x0F) << 4;
+		}
 		break;
 	case 8:
-		Pixels.data()[Pixel] = GetRValue(Color);
+		Pixels.data()[Pixel] = (Color & 0xFF);
 		break;
 	case 16:
-		Pixels.data()[Pixel + 0] = GetRValue(Color);
-		Pixels.data()[Pixel + 1] = GetGValue(Color);
+	{
+		struct Pixel_16bpp
+		{
+			std::uint16_t A : 1;
+			std::uint16_t R : 5;
+			std::uint16_t G : 5;
+			std::uint16_t B : 5;
+		};
+		*reinterpret_cast<Pixel_16bpp*>(&Pixels.data()[Pixel]) = *reinterpret_cast<Pixel_16bpp*>(&Color);
+	}
 		break;
 	case 24:
-		Pixels.data()[Pixel + 0] = GetRValue(Color);
-		Pixels.data()[Pixel + 1] = GetGValue(Color);
-		Pixels.data()[Pixel + 2] = GetBValue(Color);
+	{
+		struct Pixel_24bpp
+		{
+			std::uint8_t R : 8;
+			std::uint8_t G : 8;
+			std::uint8_t B : 8;
+		};
+		*reinterpret_cast<Pixel_24bpp*>(&Pixels.data()[Pixel]) = *reinterpret_cast<Pixel_24bpp*>(&Color);
+	}
 		break;
 	case 32:
-		Pixels.data()[Pixel + 0] = GetRValue(Color);
-		Pixels.data()[Pixel + 1] = GetGValue(Color);
-		Pixels.data()[Pixel + 2] = GetBValue(Color);
-		Pixels.data()[Pixel + 3] = GetAValue(Color);
+	{
+		struct Pixel_32bpp
+		{
+			std::uint8_t A : 8;
+			std::uint8_t R : 8;
+			std::uint8_t G : 8;
+			std::uint8_t B : 8;
+		};
+		*reinterpret_cast<Pixel_32bpp*>(&Pixels.data()[Pixel]) = *reinterpret_cast<Pixel_32bpp*>(&Color);
+	}
 		break;
 	}
 }
@@ -257,14 +299,20 @@ bool Standard_Image::SaveAsBitmap(std::filesystem::path Path)
 
 	if (Pixels.empty())
 	{
-		Str.Message("Standard Image: Error, pixel data is empty");
+		Str.Message(L"Standard Image: Error, pixel data is empty");
+		return false;
+	}
+
+	if (!GetWidth() || !GetHeight())
+	{
+		Str.Message(L"Standard Image: Error, width or height is zero");
 		return false;
 	}
 
 	StdFile m_Input { Path, FileAccessMode::Write_Ex, true, true };
 	if (!m_Input)
 	{
-		Str.Message("Standard Image: Error, could not create %s", Path.filename().c_str());
+		Str.Message(L"Standard Image: Error, could not create \"%ws\"", Path.filename().wstring().c_str());
 		return false;
 	}
 
@@ -323,18 +371,18 @@ void Standard_Image::SaveMicrosoftPalette(std::filesystem::path Path)
 
 	if (Palette.empty())
 	{
-		Str.Message("Standard Image: Error, palette is empty");
+		Str.Message(L"Standard Image: Error, palette is empty");
 		return;
 	}
 
 	StdFile m_Input{ Path, FileAccessMode::Write_Ex, true, true };
 	if (!m_Input)
 	{
-		Str.Message("Standard Image: Error, could not create %s", Path.filename().c_str());
+		Str.Message(L"Standard Image: Error, could not create \"%ws\"", Path.filename().wstring().c_str());
 		return;
 	}
 
-	std::uint16_t DataSize = Depth == 4 ? 16 : 256 * 4 + 4;
+	std::uint16_t DataSize = Depth == 4 ? 16 * 4 + 4 : 256 * 4 + 4;
 	std::uint16_t Version = 0x0300;
 	std::uint16_t nColors = Depth == 4 ? 16 : 256;
 	std::uintmax_t pPalette = 0x16;

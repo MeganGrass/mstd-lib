@@ -17,7 +17,7 @@
 */
 [[nodiscard]] std::vector<std::uint8_t> Standard_Basic_FStream::buffer(void) try
 {
-	std::vector<std::uint8_t> _Buffer(size(File()));
+	std::vector<std::uint8_t> _Buffer((size_t)(size(File())));
 
 	read(File(), 0, _Buffer.data(), _Buffer.size());
 
@@ -263,7 +263,7 @@ std::uintmax_t Standard_Basic_FStream::readStr(std::fstream& _File, std::uintmax
 	} while ((p_Ptr < _FileSize) && (!_File.eof()));
 
 	// Read
-	std::vector<char> _Buffer(_BufferSize + sizeof(char));
+	std::vector<char> _Buffer((size_t)(_BufferSize + sizeof(char)));
 	readNext(_File, _Ptr, _Buffer.data(), _BufferSize);
 
 	_OutStr.erase();
@@ -312,14 +312,14 @@ std::uintmax_t Standard_Basic_FStream::readStr(std::fstream& _File, std::uintmax
 	} while ((p_Ptr < _FileSize) && (!_File.eof()));
 
 	// Read
-	std::vector<wchar_t> _Buffer(_BufferSize + sizeof(wchar_t));
+	std::vector<wchar_t> _Buffer((size_t)(_BufferSize + sizeof(wchar_t)));
 	readNext(_File, _Ptr, _Buffer.data(), _BufferSize);
 
 	if (b_SwapBytes)
 	{
 		for (std::uintmax_t i = 0; i < _BufferSize; i++)
 		{
-			_Buffer[i] = std::byteswap<wchar_t>(_Buffer[i]);
+			_Buffer[(size_t)i] = std::byteswap<wchar_t>(_Buffer[(size_t)i]);
 		}
 	}
 
@@ -369,14 +369,14 @@ std::uintmax_t Standard_Basic_FStream::readStr(std::fstream& _File, std::uintmax
 	} while ((p_Ptr < _FileSize) && (!_File.eof()));
 
 	// Read
-	std::vector<char32_t> _Buffer(_BufferSize + sizeof(char32_t));
+	std::vector<char32_t> _Buffer((size_t)(_BufferSize + sizeof(char32_t)));
 	readNext(_File, _Ptr, _Buffer.data(), _BufferSize);
 
 	if (b_SwapBytes)
 	{
 		for (std::uintmax_t i = 0; i < _BufferSize; i++)
 		{
-			_Buffer[i] = std::byteswap<char32_t>(_Buffer[i]);
+			_Buffer[(size_t)i] = std::byteswap<char32_t>(_Buffer[(size_t)i]);
 		}
 	}
 
@@ -457,13 +457,13 @@ std::uintmax_t Standard_Basic_FStream::find(void* _Data, std::uintmax_t _Element
 
 	if (_PtrStart >= _PtrEnd) { return -1; }
 
-	std::vector<std::uint8_t> _Buffer(_ElementSize);
+	std::vector<std::uint8_t> _Buffer((size_t)_ElementSize);
 
 	while (_PtrStart < _PtrEnd)
 	{
 		readNext(File(), _PtrStart, _Buffer.data(), _ElementSize);
 
-		if (std::memcmp(_Buffer.data(), _Data, _ElementSize) == 0)
+		if (std::memcmp(_Buffer.data(), _Data, (size_t)_ElementSize) == 0)
 		{
 			return _PtrStart;
 		}
@@ -612,7 +612,7 @@ std::uint32_t Standard_Basic_FStream::CRC32(std::uintmax_t _Ptr, std::uintmax_t 
 {
 	if ((!validFile()) || (!_ElementSize)) { return 0; }
 
-	std::vector<std::uint8_t> _Buffer(_ElementSize);
+	std::vector<std::uint8_t> _Buffer((size_t)_ElementSize);
 
 	read(File(), 0, _Buffer.data(), _ElementSize);
 

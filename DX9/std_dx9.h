@@ -19,6 +19,8 @@
 
 #include "../std_thread_pool.h"
 
+#include <sony_texture.h>
+
 #include <d3d9.h>
 
 #include <d3dx9tex.h>
@@ -486,11 +488,26 @@ public:
 
 	/*
 		Create Texture (32bpp)
-		 - Width and Height are automatically adjusted to the next power of two
-		 - Image can be any depth and/or resolution; conversion to 32bpp is automatic
-		 - if Alpha is true and pixel color equals AlphaColor, alpha channel will be set to AlphaChannel
+		 - 4bpp/8bpp/16bpp/24bpp/32bpp supported
+		 - Width and Height are automatically adjusted to power of two
+		 - if "b_Alpha" is true and pixel color equals "AlphaColor", alpha channel will be set to "AlphaChannel"
 	*/
 	[[nodiscard]] IDirect3DTexture9* CreateTexture(std::unique_ptr<Standard_Image>& Image, bool b_Alpha = false, DWORD AlphaColor = 0xFF00FF, std::uint8_t AlphaChannel = 0x00);
+
+	/*
+		Create Texture (32bpp) from Sony PlayStation Texture (*.TIM)
+		 - 4bpp/8bpp/16bpp/24bpp supported
+		 - Width and Height are automatically adjusted to power of two
+		 - if TransparencyFlags & Superblack, Semi/Full Transparency for solid black pixels
+		 - if TransparencyFlags & Superimposed, Semi/Full Transparency for palette index 0 (if available)
+		 - if TransparencyFlags & External, Semi/Full Transparency for TransparencyColor
+		 - if TransparencyFlags & STP, STP flag determines if Semi-Transparency can be used
+	*/
+	[[nodiscard]] IDirect3DTexture9* CreateTexture(
+		std::unique_ptr<Sony_PlayStation_Texture>& TIM,
+		uint16_t iClut = 0,
+		Sony_Texture_Transparency TransparencyFlags = Sony_Texture_Transparency::None,
+		DWORD TransparencyColor = 0xFF00FF);
 
 	/*
 		Save Texture (32bpp)
