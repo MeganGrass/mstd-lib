@@ -435,7 +435,7 @@ public:
 	/*
 		Is the window fullscreen?
 	*/
-	[[nodiscard]] bool IsFullscreen(void);
+	[[nodiscard]] bool IsFullscreen(void) const;
 
 	/*
 		Auto fullscreen

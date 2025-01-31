@@ -831,9 +831,9 @@ bool Standard_Window::IsMaximized(void)
 /*
 	Is fullscreen?
 */
-bool Standard_Window::IsFullscreen(void)
+bool Standard_Window::IsFullscreen(void) const
 {
-	QUERY_USER_NOTIFICATION_STATE m_FullscreenState;
+	/*QUERY_USER_NOTIFICATION_STATE m_FullscreenState;
 	SHQueryUserNotificationState(&m_FullscreenState);
 	switch (m_FullscreenState)
 	{
@@ -847,7 +847,22 @@ bool Standard_Window::IsFullscreen(void)
 	case QUNS_QUIET_TIME:
 	case QUNS_APP:
 		return b_Fullscreen = false;
-	}
+	}*/
+
+	RECT WindowRect{};
+	GetWindowRect(hWnd, &WindowRect);
+
+	RECT ScreenRect{};
+	ScreenRect.left = 0;
+	ScreenRect.top = 0;
+	ScreenRect.right = GetSystemMetrics(SM_CXSCREEN);
+	ScreenRect.bottom = GetSystemMetrics(SM_CYSCREEN);
+
+	return
+		(WindowRect.left == ScreenRect.left &&
+		WindowRect.top == ScreenRect.top &&
+		WindowRect.right == ScreenRect.right &&
+		WindowRect.bottom == ScreenRect.bottom);
 }
 
 
@@ -858,26 +873,23 @@ void Standard_Window::AutoFullscreen(void)
 {
 	ShowWindow(hWnd, SW_HIDE);
 
-	if (IsFullscreen() || IsMaximized())
+	m_OldRect.left = 0;
+	m_OldRect.top = 0;
+	m_OldRect.right = 1024;
+	m_OldRect.bottom = 720;
+
+	if (b_Fullscreen)
 	{
+		b_Fullscreen = false;
 		SetWindowLong(hWnd, GWL_STYLE, m_OldStyle);
-		int cxScreen = GetSystemMetricsForDpi(SM_CXSCREEN, m_SysDPI);
-		int cyScreen = GetSystemMetricsForDpi(SM_CYSCREEN, m_SysDPI);
-		if ((m_OldRect.right >= cxScreen) || (m_OldRect.bottom >= cyScreen))
-		{
-			m_OldRect.top = 0;
-			m_OldRect.left = 0;
-			m_OldRect.right = cxScreen / 2;
-			m_OldRect.bottom = cyScreen / 2;
-		}
 		Resize(&m_OldRect);
-		ShowWindow(hWnd, SW_RESTORE);
+		ShowWindow(hWnd, SW_SHOWDEFAULT);
 	}
 	else
 	{
+		b_Fullscreen = true;
 		m_OldStyle = GetStyle();
-		m_OldRect = GetRect();
-		SetWindowLong(hWnd, GWL_STYLE, 0);
+		SetWindowLong(hWnd, GWL_STYLE, NULL);
 		ShowWindow(hWnd, SW_MAXIMIZE);
 	}
 
