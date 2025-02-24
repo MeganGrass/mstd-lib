@@ -498,14 +498,14 @@ public:
 		Create Texture (32bpp) from Sony PlayStation Texture (*.TIM)
 		 - 4bpp/8bpp/16bpp/24bpp supported
 		 - Width and Height are automatically adjusted to power of two
-		 - if TransparencyFlags & Superblack, Semi/Full Transparency for solid black pixels
+		 - if TransparencyFlags & Superblack, Full Transparency for solid black pixels (5:5:5:1 and 8:8:8)
 		 - if TransparencyFlags & Superimposed, Semi/Full Transparency for palette index 0 (if available)
-		 - if TransparencyFlags & External, Semi/Full Transparency for TransparencyColor
-		 - if TransparencyFlags & STP, STP flag determines if Semi-Transparency can be used
+		 - if TransparencyFlags & External, Semi/Full Transparency for external color (TransparencyColor)
+		 - if TransparencyFlags & STP, STP flag determines if Semi/Full Transparency is used
 	*/
 	[[nodiscard]] IDirect3DTexture9* CreateTexture(
 		std::unique_ptr<Sony_PlayStation_Texture>& TIM,
-		uint16_t iClut = 0,
+		uint16_t iPalette = 0,
 		Sony_Texture_Transparency TransparencyFlags = Sony_Texture_Transparency::None,
 		DWORD TransparencyColor = 0xFF00FF);
 
