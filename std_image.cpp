@@ -1411,7 +1411,7 @@ bool Standard_Image::OpenBMP(std::filesystem::path Path, std::uintmax_t pSource)
 		}
 		DecompressBitfields(m_Depth, m_Width, m_Height, m_Pixels, m_Pixels, Red, Green, Blue, Alpha);
 	}
-#ifdef LIB_JPG
+#ifdef LIB_JPEG
 	else if (InfoHeader.biCompression == BI_JPEG)
 	{
 		DecompressJPEG(m_Pixels, m_Pixels, m_Depth, m_Width, m_Height);
