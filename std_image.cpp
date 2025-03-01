@@ -112,13 +112,13 @@ void Standard_Image::SetPixel(uint32_t X, uint32_t Y, DWORD Color)
 		m_Pixels.data()[Pixel] = (Color & 0xFF);
 		break;
 	case 16:
-		*reinterpret_cast<Bitmap_Pixel_16bpp*>(&m_Pixels.data()[Pixel]) = *reinterpret_cast<Bitmap_Pixel_16bpp*>(&Color);
+		*reinterpret_cast<Pixel_16bpp*>(&m_Pixels.data()[Pixel]) = *reinterpret_cast<Pixel_16bpp*>(&Color);
 		break;
 	case 24:
-		*reinterpret_cast<Bitmap_Pixel_24bpp*>(&m_Pixels.data()[Pixel]) = *reinterpret_cast<Bitmap_Pixel_24bpp*>(&Color);
+		*reinterpret_cast<Pixel_24bpp*>(&m_Pixels.data()[Pixel]) = *reinterpret_cast<Pixel_24bpp*>(&Color);
 		break;
 	case 32:
-		*reinterpret_cast<Bitmap_Pixel_32bpp*>(&m_Pixels.data()[Pixel]) = *reinterpret_cast<Bitmap_Pixel_32bpp*>(&Color);
+		*reinterpret_cast<Pixel_32bpp*>(&m_Pixels.data()[Pixel]) = *reinterpret_cast<Pixel_32bpp*>(&Color);
 		break;
 	}
 }
@@ -698,7 +698,7 @@ bool Standard_Image::SaveJPG(std::filesystem::path Path, std::uintmax_t pSource,
 			}
 			else if (m_Depth == 16)
 			{
-				Bitmap_Pixel_16bpp Pixel16 = *reinterpret_cast<Bitmap_Pixel_16bpp*>(&Pixel);
+				Pixel_16bpp Pixel16 = *reinterpret_cast<Pixel_16bpp*>(&Pixel);
 				RowBuffer[i] = ((Pixel16.R << 3) | (Pixel16.R >> 2));
 				RowBuffer[i + 1] = ((Pixel16.G << 3) | (Pixel16.G >> 2));
 				RowBuffer[i + 2] = ((Pixel16.B << 3) | (Pixel16.B >> 2));

@@ -32,31 +32,51 @@
 #pragma pack(push, 1)
 
 
-struct Bitmap_Pixel_4bpp
+struct Pixel_4bpp
 {
 	std::uint8_t Pix0 : 4;
 	std::uint8_t Pix1 : 4;
 };
 
 
-struct Bitmap_Pixel_8bpp
+struct Pixel_8bpp
 {
 	std::uint8_t Pixel : 8;
 };
 
 
-struct Bitmap_Pixel_16bpp
+struct Pixel_16bpp
 {
 	std::uint16_t B : 5;
 	std::uint16_t G : 5;
 	std::uint16_t R : 5;
 	std::uint16_t A : 1;
-	explicit Bitmap_Pixel_16bpp(void) : B(0), G(0), R(0), A(0) {}
-	explicit Bitmap_Pixel_16bpp(uint16_t Pixel) : B(Pixel & 0x1F), G((Pixel & 0x7E0) >> 5), R((Pixel & 0xF800) >> 10), A((Pixel & 0x8000) >> 15) {}
+	explicit Pixel_16bpp(void) : B(0), G(0), R(0), A(0) {}
+	explicit Pixel_16bpp(uint16_t Pixel) : B(Pixel & 0x1F), G((Pixel & 0x7E0) >> 5), R((Pixel & 0xF800) >> 10), A((Pixel & 0x8000) >> 15) {}
 };
 
 
-struct Bitmap_Pixel_24bpp
+struct Pixel_16bppL
+{
+	std::uint16_t R : 5;
+	std::uint16_t G : 5;
+	std::uint16_t B : 5;
+	std::uint16_t A : 1;
+	explicit Pixel_16bppL(void) : R(0), G(0), B(0), A(0) {}
+	explicit Pixel_16bppL(std::uint16_t R, std::uint16_t G, std::uint16_t B, std::uint16_t A) : R(R), G(G), B(B), A(A) {}
+	explicit Pixel_16bppL(uint16_t Pixel) : R(Pixel & 0x1F), G((Pixel & 0x7E0) >> 5), B((Pixel & 0xF800) >> 10), A((Pixel & 0x8000) >> 15) {}
+	bool operator ! (void) const { return !this->R && !this->G && !this->B && !this->A; }
+	bool operator = (const Pixel_16bppL& External) { std::memcpy(this, &External, sizeof(Pixel_16bppL)); return true; }
+	bool operator == (const Pixel_16bppL& External) const { return (this->R == External.R) && (this->G == External.G) && (this->B == External.B) && (this->A == External.A); }
+	bool operator != (const Pixel_16bppL& External) const { return (this->R != External.R) || (this->G != External.G) || (this->B != External.B) || (this->A != External.A); }
+	[[nodiscard]] std::uint8_t Red(void) const { return ((R << 3) | (R >> 2)); }
+	[[nodiscard]] std::uint8_t Green(void) const { return ((G << 3) | (G >> 2)); }
+	[[nodiscard]] std::uint8_t Blue(void) const { return ((B << 3) | (B >> 2)); }
+	[[nodiscard]] bool Alpha(void) const { return A; }
+};
+
+
+struct Pixel_24bpp
 {
 	std::uint8_t B : 8;
 	std::uint8_t G : 8;
@@ -64,13 +84,49 @@ struct Bitmap_Pixel_24bpp
 };
 
 
-struct Bitmap_Pixel_32bpp
+struct Pixel_24bppL
+{
+	std::uint8_t R : 8;
+	std::uint8_t G : 8;	
+	std::uint8_t B : 8;
+	explicit Pixel_24bppL(void) : R(0), G(0), B(0) {}
+	explicit Pixel_24bppL(std::uint8_t R, std::uint8_t G, std::uint8_t B) : R(R), G(G), B(B) {}
+};
+
+
+struct Pixel_32bpp
 {
 	std::uint8_t B : 8;
 	std::uint8_t G : 8;
 	std::uint8_t R : 8;
 	std::uint8_t A : 8;
 };
+
+
+struct Pixel_32bppL
+{
+	std::uint8_t R : 8;
+	std::uint8_t G : 8;
+	std::uint8_t B : 8;
+	std::uint8_t A : 8;
+};
+
+
+typedef struct Pixel_4bpp Pixel_4bpp;
+
+typedef struct Pixel_8bpp Pixel_8bpp;
+
+typedef struct Pixel_16bpp Pixel_16bpp;
+
+typedef struct Pixel_24bpp Pixel_24bpp;
+
+typedef struct Pixel_32bpp Pixel_32bpp;
+
+typedef struct Pixel_16bppL Pixel_16bppL;
+
+typedef struct Pixel_24bppL Pixel_24bppL;
+
+typedef struct Pixel_32bppL Pixel_32bppL;
 
 
 struct Microsoft_RIFF_Palette
@@ -84,9 +140,12 @@ struct Microsoft_RIFF_Palette
 	std::uint16_t nColors;
 };
 
+
+#pragma pack(pop)
+
 enum class ImageType : int32_t
 {
-	None = 0,						// no data
+	null = 0,						// no data
 	RAW = (1 << 0),					// raw data
 	BMP = (1 << 1),					// Bitmap Graphic (*.BMP) File
 	PAL = (1 << 2),					// Microsoft RIFF Palette (*.PAL) File
@@ -96,6 +155,7 @@ enum class ImageType : int32_t
 #ifdef LIB_JPEG
 	JPG = (1 << 4),					// Joint Photographic Experts Group (*.JPEG)
 #endif
+	TM2 = (1 << 28),				// Sony PlayStation 2 Texture Map (*.TM2;*.CL2)
 	PXL = (1 << 29),				// Sony PlayStation Texture Pixels (*.PXL)
 	CLT = (1 << 30),				// Sony PlayStation Texture CLUT (*.CLT)
 	TIM = (1 << 31),				// Sony PlayStation Texture Image (*.TIM)
@@ -144,8 +204,6 @@ static ImageIO operator | (ImageIO _Mode0, ImageIO _Mode1)
 {
 	return static_cast<ImageIO>(std::to_underlying(_Mode0) | std::to_underlying(_Mode1));
 }
-
-#pragma pack(pop)
 
 
 #if defined(_WIN64)
@@ -248,11 +306,11 @@ private:
 	{
 		switch (m_Depth)
 		{
-		case 4: return sizeof(Bitmap_Pixel_4bpp);
-		case 8: return sizeof(Bitmap_Pixel_8bpp);
-		case 16: return sizeof(Bitmap_Pixel_16bpp);
-		case 24: return sizeof(Bitmap_Pixel_24bpp);
-		case 32: return sizeof(Bitmap_Pixel_32bpp);
+		case 4: return sizeof(Pixel_4bpp);
+		case 8: return sizeof(Pixel_8bpp);
+		case 16: return sizeof(Pixel_16bpp);
+		case 24: return sizeof(Pixel_24bpp);
+		case 32: return sizeof(Pixel_32bpp);
 		default: return 0;
 		}
 	}
@@ -361,20 +419,17 @@ public:
 	/*
 		Get 16-bit color from pixel data
 	*/
-	[[nodiscard]] Bitmap_Pixel_16bpp Get16bpp(uint32_t X, uint32_t Y) { return *reinterpret_cast<Bitmap_Pixel_16bpp*>
-		(&m_Pixels[(size_t)(X * m_Depth / 8) + (size_t)((m_Height - Y - 1) * (m_Width * (m_Depth / 8)))]); }
+	[[nodiscard]] Pixel_16bpp Get16bpp(uint32_t X, uint32_t Y) { return *reinterpret_cast<Pixel_16bpp*>(&m_Pixels[(size_t)(X * m_Depth / 8) + (size_t)((m_Height - Y - 1) * (m_Width * (m_Depth / 8)))]); }
 
 	/*
 		Get 24-bit color from pixel data
 	*/
-	[[nodiscard]] Bitmap_Pixel_24bpp Get24bpp(uint32_t X, uint32_t Y) { return *reinterpret_cast<Bitmap_Pixel_24bpp*>
-		(&m_Pixels[(size_t)(X * m_Depth / 8) + (size_t)((m_Height - Y - 1) * (m_Width * (m_Depth / 8)))]); }
+	[[nodiscard]] Pixel_24bpp Get24bpp(uint32_t X, uint32_t Y) { return *reinterpret_cast<Pixel_24bpp*>(&m_Pixels[(size_t)(X * m_Depth / 8) + (size_t)((m_Height - Y - 1) * (m_Width * (m_Depth / 8)))]); }
 
 	/*
 		Get 32-bit color from pixel data
 	*/
-	[[nodiscard]] Bitmap_Pixel_32bpp Get32bpp(uint32_t X, uint32_t Y) { return *reinterpret_cast<Bitmap_Pixel_32bpp*>
-		(&m_Pixels[(size_t)(X * m_Depth / 8) + (size_t)((m_Height - Y - 1) * (m_Width * (m_Depth / 8)))]); }
+	[[nodiscard]] Pixel_32bpp Get32bpp(uint32_t X, uint32_t Y) { return *reinterpret_cast<Pixel_32bpp*>(&m_Pixels[(size_t)(X * m_Depth / 8) + (size_t)((m_Height - Y - 1) * (m_Width * (m_Depth / 8)))]); }
 
 	/*
 		Decompress RLE data (4-bit/8-bit)

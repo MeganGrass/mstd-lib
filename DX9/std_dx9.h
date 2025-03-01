@@ -170,6 +170,21 @@ struct D3DDRAWPACKET final
 };
 
 /*
+	Direct-X 9 Texture custom deleter for smart pointers
+*/
+struct IDirect3DTexture9Delete
+{
+	void operator()(IDirect3DTexture9* texture) const
+	{
+		if (texture)
+		{
+			texture->Release();
+			texture = nullptr;
+		}
+	}
+};
+
+/*
 	Standard Direct-X 9
 */
 class Standard_DirectX_9 final :

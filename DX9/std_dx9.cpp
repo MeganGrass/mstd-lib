@@ -727,9 +727,9 @@ IDirect3DTexture9* Standard_DirectX_9::CreateTexture(std::unique_ptr<Sony_PlaySt
 			return 0x00;
 		};
 
-	auto GetAlpha = [b_Superblack, b_Superimposed, b_External, b_STP, GetTransparency, &TIM, iPalette, TransparencyColor](Sony_Texture_16bpp Color)
+	auto GetAlpha = [b_Superblack, b_Superimposed, b_External, b_STP, GetTransparency, &TIM, iPalette, TransparencyColor](Sony_Pixel_16bpp Color)
 		{
-			if (b_Superblack && !TIM->GetRed(Color) && !TIM->GetGreen(Color) && !TIM->GetBlue(Color) && !TIM->GetSTP(Color))
+			if (b_Superblack && !Color.Red() && !Color.Green() && !Color.Blue() && !Color.Alpha())
 			{
 				return 0x00;
 			}
@@ -743,14 +743,14 @@ IDirect3DTexture9* Standard_DirectX_9::CreateTexture(std::unique_ptr<Sony_PlaySt
 			}
 
 			if (b_External &&
-				(TIM->GetRed(Color) == GetRValue(TransparencyColor)) &&
-				(TIM->GetGreen(Color) == GetGValue(TransparencyColor)) &&
-				(TIM->GetBlue(Color) == GetBValue(TransparencyColor)))
+				(Color.Red() == GetRValue(TransparencyColor)) &&
+				(Color.Green() == GetGValue(TransparencyColor)) &&
+				(Color.Blue() == GetBValue(TransparencyColor)))
 			{
 				return GetTransparency();
 			}
 
-			if (b_STP && TIM->GetSTP(Color))
+			if (b_STP && Color.Alpha())
 			{
 				return GetTransparency();
 			}
@@ -758,25 +758,25 @@ IDirect3DTexture9* Standard_DirectX_9::CreateTexture(std::unique_ptr<Sony_PlaySt
 			return 0xFF;
 		};
 
-	auto GetAlpha24 = [b_Superblack, b_Superimposed, b_External, b_STP, GetTransparency, &TIM, iPalette, TransparencyColor](Sony_Texture_24bpp Color)
+	auto GetAlpha24 = [b_Superblack, b_Superimposed, b_External, b_STP, GetTransparency, &TIM, iPalette, TransparencyColor](Sony_Pixel_24bpp Color)
 		{
-			if (b_Superblack && !Color.R0 && !Color.G0 && !Color.B0)
+			if (b_Superblack && !Color.R && !Color.G && !Color.B)
 			{
 				return 0x00;
 			}
 
 			if (b_Superimposed && !TIM->GetPalette().empty() &&
-				(Color.R0 == TIM->GetRed(TIM->GetPalette()[TIM->GetPalettePtr(iPalette)])) &&
-				(Color.G0 == TIM->GetGreen(TIM->GetPalette()[TIM->GetPalettePtr(iPalette)])) &&
-				(Color.B0 == TIM->GetGreen(TIM->GetPalette()[TIM->GetPalettePtr(iPalette)])))
+				(Color.R == TIM->GetPalette()[TIM->GetPalettePtr(iPalette)].Red()) &&
+				(Color.G == TIM->GetPalette()[TIM->GetPalettePtr(iPalette)].Green()) &&
+				(Color.B == TIM->GetPalette()[TIM->GetPalettePtr(iPalette)].Blue()))
 			{
 				return GetTransparency();
 			}
 
 			if (b_External &&
-				(Color.R0 == GetRValue(TransparencyColor)) &&
-				(Color.G0 == GetGValue(TransparencyColor)) &&
-				(Color.B0 == GetBValue(TransparencyColor)))
+				(Color.R == GetRValue(TransparencyColor)) &&
+				(Color.G == GetGValue(TransparencyColor)) &&
+				(Color.B == GetBValue(TransparencyColor)))
 			{
 				return GetTransparency();
 			}
@@ -836,17 +836,17 @@ IDirect3DTexture9* Standard_DirectX_9::CreateTexture(std::unique_ptr<Sony_PlaySt
 			{
 				if (Depth == 4)
 				{
-					Sony_Texture_4bpp Pixels = TIM->Get4bpp(X, Y);
+					Sony_Pixel_4bpp Pixels = TIM->Get4bpp(X, Y);
 
 					if (!TIM->GetPalette().empty())
 					{
-						Sony_Texture_16bpp Color = TIM->GetPalette()[pPalette + Pixels.Pix0];
+						Sony_Pixel_16bpp Color = TIM->GetPalette()[pPalette + Pixels.Pix0];
 
-						((uint32_t*)Bits)[(Height - Y - 1) * WidthPow + X] = (GetAlpha(Color) << 24) | TIM->GetRed(Color) << 16 | TIM->GetGreen(Color) << 8 | TIM->GetBlue(Color);
+						((uint32_t*)Bits)[(Height - Y - 1) * WidthPow + X] = (GetAlpha(Color) << 24) | Color.Red() << 16 | Color.Green() << 8 | Color.Blue();
 
 						Color = TIM->GetPalette()[pPalette + Pixels.Pix1];
 
-						((uint32_t*)Bits)[(Height - Y - 1) * WidthPow + ++X] = (GetAlpha(Color) << 24) | TIM->GetRed(Color) << 16 | TIM->GetGreen(Color) << 8 | TIM->GetBlue(Color);
+						((uint32_t*)Bits)[(Height - Y - 1) * WidthPow + ++X] = (GetAlpha(Color) << 24) | Color.Red() << 16 | Color.Green() << 8 | Color.Blue();
 					}
 					else
 					{
@@ -857,13 +857,13 @@ IDirect3DTexture9* Standard_DirectX_9::CreateTexture(std::unique_ptr<Sony_PlaySt
 
 				else if (Depth == 8)
 				{
-					Sony_Texture_8bpp Pixels = TIM->Get8bpp(X, Y);
+					Sony_Pixel_8bpp Pixels = TIM->Get8bpp(X, Y);
 
 					if (!TIM->GetPalette().empty())
 					{
-						Sony_Texture_16bpp Color = TIM->GetPalette()[pPalette + Pixels.Pix0];
+						Sony_Pixel_16bpp Color = TIM->GetPalette()[pPalette + Pixels.Pixel];
 
-						((uint32_t*)Bits)[(Height - Y - 1) * WidthPow + X] = (GetAlpha(Color) << 24) | TIM->GetRed(Color) << 16 | TIM->GetGreen(Color) << 8 | TIM->GetBlue(Color);
+						((uint32_t*)Bits)[(Height - Y - 1) * WidthPow + X] = (GetAlpha(Color) << 24) | Color.Red() << 16 | Color.Green() << 8 | Color.Blue();
 					}
 					else
 					{
@@ -873,16 +873,16 @@ IDirect3DTexture9* Standard_DirectX_9::CreateTexture(std::unique_ptr<Sony_PlaySt
 
 				else if (Depth == 16)
 				{
-					Sony_Texture_16bpp Color = TIM->Get16bpp(X, Y);
+					Sony_Pixel_16bpp Color = TIM->Get16bpp(X, Y);
 
-					((uint32_t*)Bits)[(Height - Y - 1) * WidthPow + X] = (GetAlpha(Color) << 24) | TIM->GetRed(Color) << 16 | TIM->GetGreen(Color) << 8 | TIM->GetBlue(Color);
+					((uint32_t*)Bits)[(Height - Y - 1) * WidthPow + X] = (GetAlpha(Color) << 24) | Color.Red() << 16 | Color.Green() << 8 | Color.Blue();
 				}
 
 				else if (Depth == 24)
 				{
-					Sony_Texture_24bpp Color = TIM->Get24bpp(X, Y);
+					Sony_Pixel_24bpp Color = TIM->Get24bpp(X, Y);
 
-					((uint32_t*)Bits)[(Height - Y - 1) * WidthPow + X] = (GetAlpha24(Color) << 24) | Color.R0 << 16 | Color.G0 << 8 | Color.B0;
+					((uint32_t*)Bits)[(Height - Y - 1) * WidthPow + X] = (GetAlpha24(Color) << 24) | Color.R << 16 | Color.G << 8 | Color.B;
 				}
 			}
 		}
