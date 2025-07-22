@@ -3,16 +3,6 @@
 *	Megan Grass
 *	January 01, 2024
 *
-*
-*	TODO: 
-*		Implement Operations from std::basic_string_view (https://en.cppreference.com/w/cpp/string/basic_string_view)
-*
-*		Do so many of these functions need to be bool?
-*
-*		Many of these functions need to be better tested
-*
-*		Thread safety?
-*
 */
 
 

@@ -3,9 +3,6 @@
 *	Megan Grass
 *	January 01, 2024
 *
-*
-*	TODO: 
-*
 */
 
 
@@ -21,9 +18,7 @@ struct MessageTimer
 MessageTimer MouseWheelTimerZ;
 MessageTimer MouseWheelTimerX;
 
-/*
-	Standard Window Message Handler
-*/
+
 LRESULT CALLBACK StandardWindowProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam, UINT_PTR uIdSubclass, DWORD_PTR dwRefData)
 {
 	StdWin* Window = (StdWin*)dwRefData;
@@ -51,6 +46,29 @@ LRESULT CALLBACK StandardWindowProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM 
 		break;
 	case WM_WINDOWPOSCHANGED:
 		//Window->MsgPositionChanged(wParam, lParam);
+	{
+		WINDOWPOS* WindowPos = (WINDOWPOS*)lParam;
+
+		if (Window->IsToolBar())
+		{
+			SendMessage(Window->GetToolBar(), TB_AUTOSIZE, 0, 0);
+			SendMessage(Window->GetToolBar(), WM_SIZE, 0, 0);
+		}
+
+		if (Window->IsStatusBar())
+		{
+			SendMessage(Window->GetStatusBar(), WM_SIZE, 0, MAKELPARAM(WindowPos->cx, WindowPos->cy));
+			std::vector<INT> Parts(Window->GetStatusBarParts());
+			LONG Width = WindowPos->cx / Window->GetStatusBarParts();
+			INT RightEdge = Width;
+			for (auto& Part : Parts)
+			{
+				Part = RightEdge;
+				RightEdge += Width;
+			}
+			SendMessage(Window->GetStatusBar(), SB_SETPARTS, Window->GetStatusBarParts(), (LPARAM)Parts.data());
+		}
+	}
 		break;
 	case WM_DISPLAYCHANGE:
 		Window->MsgDisplayChange(wParam, lParam);
@@ -127,10 +145,6 @@ LRESULT CALLBACK StandardWindowProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM 
 	return DefSubclassProc(hWnd, uMsg, wParam, lParam);
 }
 
-
-/*
-	WM_ACTIVATE
-*/
 void Standard_Window::MsgActivate(WPARAM wParam, LPARAM lParam)
 {
 	if ((wParam & WA_ACTIVE) || (wParam & WA_CLICKACTIVE))
@@ -152,28 +166,16 @@ void Standard_Window::MsgActivate(WPARAM wParam, LPARAM lParam)
 #endif
 }
 
-
-/*
-	WM_SETFOCUS
-*/
 void Standard_Window::MsgSetFocus(WPARAM wParam, LPARAM lParam)
 {
 	b_HasFocus = true;
 }
 
-
-/*
-	WM_KILLFOCUS
-*/
 void Standard_Window::MsgKillFocus(WPARAM wParam, LPARAM lParam)
 {
 	b_HasFocus = false;
 }
 
-
-/*
-	WM_WINDOWPOSCHANGED
-*/
 void Standard_Window::MsgPositionChanged(WPARAM wParam, LPARAM lParam)
 {
 	WINDOWPOS* WindowPos = (WINDOWPOS*)lParam;
@@ -188,7 +190,7 @@ void Standard_Window::MsgPositionChanged(WPARAM wParam, LPARAM lParam)
 
 	if (GetScaleFactorForMonitor(MonitorFromWindow(hWnd, MONITOR_DEFAULTTONEAREST), &m_ScaleFactor) != S_OK) { GetErrorMessage(); }
 
-	if (h_ToolBar)
+	/*if (h_ToolBar)
 	{
 		SendMessage(h_ToolBar, TB_AUTOSIZE, 0, 0);
 		SendMessage(h_ToolBar, WM_SIZE, 0, 0);
@@ -206,13 +208,9 @@ void Standard_Window::MsgPositionChanged(WPARAM wParam, LPARAM lParam)
 			RightEdge += Width;
 		}
 		SendMessage(h_StatusBar, SB_SETPARTS, m_StatusBarParts, (LPARAM)Parts.data());
-	}
+	}*/
 }
 
-
-/*
-	WM_DISPLAYCHANGE
-*/
 void Standard_Window::MsgDisplayChange(WPARAM wParam, LPARAM lParam)
 {
 	if (IsFullscreen())
@@ -229,10 +227,6 @@ void Standard_Window::MsgDisplayChange(WPARAM wParam, LPARAM lParam)
 	}
 }
 
-
-/*
-	WM_DROPFILES
-*/
 void Standard_Window::MsgDropFiles(WPARAM wParam, LPARAM lParam)
 {
 	HDROP hDrop = (HDROP)wParam;
@@ -255,10 +249,6 @@ void Standard_Window::MsgDropFiles(WPARAM wParam, LPARAM lParam)
 	DragFinish(hDrop);
 }
 
-
-/*
-	WM_DPICHANGED
-*/
 void Standard_Window::MsgDpiChanged(WPARAM wParam, LPARAM lParam)
 {
 	m_SysDPI = GetDpiForSystem();

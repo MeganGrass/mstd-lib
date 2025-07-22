@@ -2,9 +2,6 @@
 *
 *	Megan Grass
 *	April 12, 2024
-*
-*
-*	TODO: 
 * 
 */
 
@@ -38,9 +35,9 @@ struct vecp
 };
 
 /*
-	Point (Gouraud-shaded)
+	Point (w/ Color)
 */
-struct vecpg
+struct vecpc
 {
 	vec3 vec;
 	unsigned long color;
@@ -48,9 +45,9 @@ struct vecpg
 };
 
 /*
-	Point (Gouraud-shaded w/ UV)
+	Point (w/ Color and UV)
 */
-struct vecpgt
+struct vecpct
 {
 	vec3 vec;
 	unsigned long color;
@@ -96,18 +93,18 @@ struct vec3nt
 };
 
 /*
-	Vertex (Gouraud-shaded)
+	Vertex (w/ Color)
 */
-struct vec3g
+struct vec3c
 {
 	vec3 vec;
 	unsigned long color;
 };
 
 /*
-	Vertex (Gouraud-shaded w/ Normal)
+	Vertex (w/ Normal and Color)
 */
-struct vec3gn
+struct vec3cn
 {
 	vec3 vec;
 	vec3 normal;
@@ -115,9 +112,9 @@ struct vec3gn
 };
 
 /*
-	Vertex (Gouraud-shaded w/ UV)
+	Vertex (w/ Color and UV)
 */
-struct vec3gt
+struct vec3ct
 {
 	vec3 vec;
 	unsigned long color;
@@ -125,9 +122,9 @@ struct vec3gt
 };
 
 /*
-	Vertex (Gouraud-shaded w/ Normal and UV)
+	Vertex (w/ Normal, Color and UV)
 */
-struct vec3gnt
+struct vec3cnt
 {
 	vec3 vec;
 	vec3 normal;

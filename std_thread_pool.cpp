@@ -3,20 +3,12 @@
 *	Megan Grass
 *	January 01, 2024
 *
-*
-*	TODO: 
-* 
-*			Is_idle
-*
 */
 
 
 #include "std_thread_pool.h"
 
 
-/*
-	Loop
-*/
 void Standard_Thread_Pool::ThreadPoolManager(void)
 {
 	while (!b_Terminate)
@@ -35,10 +27,6 @@ void Standard_Thread_Pool::ThreadPoolManager(void)
 	}
 }
 
-
-/*
-	Initialize
-*/
 void Standard_Thread_Pool::ThreadPoolInit(std::size_t nThreads)
 {
 	if (!m_Threads.empty())
@@ -62,10 +50,6 @@ void Standard_Thread_Pool::ThreadPoolInit(std::size_t nThreads)
 	}
 }
 
-
-/*
-	Resize
-*/
 void Standard_Thread_Pool::ThreadPoolResize(std::size_t nThreads)
 {
 	if (m_Threads.empty())
@@ -116,20 +100,12 @@ void Standard_Thread_Pool::ThreadPoolResize(std::size_t nThreads)
 
 }
 
-
-/*
-	Busy
-*/
 bool Standard_Thread_Pool::ThreadPoolBusy(void)
 {
 	std::scoped_lock<std::mutex> Lock(m_Mutex);
 	return !m_Queue.empty();
 }
 
-
-/*
-	Stop
-*/
 void Standard_Thread_Pool::ThreadPoolStop(void)
 {
 	{

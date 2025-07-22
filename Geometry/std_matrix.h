@@ -3,15 +3,14 @@
 *	Megan Grass
 *	April 11, 2024
 *
-*
-*	TODO:
-*
 */
 
 
 #pragma once
 
-#include "vertex.h"
+#include "std_vertex.h"
+
+#include <vector>
 
 
 /*
@@ -21,6 +20,8 @@ class Standard_Matrix {
 private:
 
 public:
+
+	constexpr static float PI = 3.141592654f;
 
 	/*
 		Data
@@ -54,13 +55,12 @@ public:
 		m01(0.0f), m11(1.0f), m21(0.0f), m31(0.0f),
 		m02(0.0f), m12(0.0f), m22(1.0f), m32(0.0f),
 		m03(tVertex.x), m13(tVertex.y), m23(tVertex.z), m33(1.0f) {}
-	explicit Standard_Matrix(vec3 Translation, vec3 Rotation, vec3 Scale) noexcept
+	explicit Standard_Matrix(vec3 _Translation, vec3 _Rotation, vec3 _Scale = vec3{1.0f, 1.0f, 1.0f}) noexcept
 	{
-		Standard_Matrix Matrix;
-		Matrix.Scale(Scale);
-		Matrix.Rotate(Rotation);
-		Matrix.Translate(Translation);
-		*this = Matrix;
+		Standard_Matrix S = Standard_Matrix().Scale(_Scale);
+		Standard_Matrix R = Standard_Matrix().YawPitchRoll(vec3{ Radian(_Rotation.x), Radian(_Rotation.y), Radian(_Rotation.z) });
+		Standard_Matrix T = Standard_Matrix().Translate(_Translation);
+		*this = S * R * T;
 	}
 
 	/*
@@ -405,6 +405,11 @@ public:
 	float* data(void) const noexcept { return (float*)this; }
 
 	/*
+		Get Radian
+	*/
+	float Radian(float Degree) const noexcept { return Degree * (PI / 180.0f); }
+
+	/*
 		Get Vector
 	*/
 	vec3 GetVector(void) const noexcept { return vec3(m03, m13, m23); }
@@ -424,12 +429,13 @@ public:
 	/*
 		Identity
 	*/
-	void Identity(void) noexcept
+	Standard_Matrix Identity(void) noexcept
 	{
 		m00 = 1.0f; m10 = 0.0f; m20 = 0.0f; m30 = 0.0f;
 		m01 = 0.0f; m11 = 1.0f; m21 = 0.0f; m31 = 0.0f;
 		m02 = 0.0f; m12 = 0.0f; m22 = 1.0f; m32 = 0.0f;
 		m03 = 0.0f; m13 = 0.0f; m23 = 0.0f; m33 = 1.0f;
+		return *this;
 	}
 
 	/*
@@ -485,12 +491,12 @@ public:
 	/*
 		Pitch, Yaw and Roll
 	*/
-	Standard_Matrix PitchYawRoll(float Pitch, float Yaw, float Roll) noexcept { return PitchYawRoll(vec3{ Pitch, Yaw, Roll }); }
+	Standard_Matrix YawPitchRoll(float Yaw, float Pitch, float Roll) noexcept { return YawPitchRoll(vec3{ Yaw, Pitch, Roll }); }
 
 	/*
 		Pitch, Yaw and Roll
 	*/
-	Standard_Matrix PitchYawRoll(vec3 Vector) noexcept;
+	Standard_Matrix YawPitchRoll(vec3 Vector) noexcept;
 
 	/*
 		Pitch
@@ -566,7 +572,27 @@ public:
 	/*
 		Set World Matrix
 	*/
-	Standard_Matrix SetWorld(const vec3& mTranslation, const vec3& mRotation, const vec3& mScale) noexcept;
+	Standard_Matrix SetWorld(const vec3& mTranslation, const vec3& mRotation, const vec3& mScale = vec3{ 1.0f , 1.0f , 1.0f }) noexcept;
+
+	/*
+		Set World Matrix w/Centroid
+	*/
+	Standard_Matrix SetWorldCentroid(const vec3& mTranslation, const vec3& mRotation, const vec3& mCentroid, const vec3& mScale = vec3{ 1.0f , 1.0f , 1.0f }) noexcept;
+
+	/*
+		Centroid
+	*/
+	vec3 Centroid(const std::vector<vec3>& Shape) const noexcept;
+
+	/*
+		Centroid
+	*/
+	vec3 Centroid(const std::vector<vec3>& Shape, const vec3& Pos) const noexcept;
+
+	/*
+		Transform Point
+	*/
+	vec3 TransformPoint(const vec3& v) const noexcept;
 
 	/*
 		Orthogonal Left

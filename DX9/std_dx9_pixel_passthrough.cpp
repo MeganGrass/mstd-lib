@@ -9,6 +9,8 @@ const char* PixelShaderCode = R"(
 sampler2D TextureSampler : register(s0);
 float Width : register(c0);
 float Height : register(c1);
+float ScaleX : register(c2);
+float ScaleY : register(c3);
 
 struct INPUT
 {
@@ -21,15 +23,16 @@ struct INPUT
 
 float4 main(INPUT Input) : COLOR0
 {
-	if ((Width == 0.0f && Height == 0.0f))
+	if (!Width && !Height)
 	{
 		return Input.Color;
 	}
-	else
+	else if(ScaleX && ScaleY)
 	{
-		float4 Color = tex2D(TextureSampler, Input.TexCoord);
-		return Color;
+		Input.TexCoord.x *= ScaleX;
+		Input.TexCoord.y *= ScaleY;
 	}
+	return tex2D(TextureSampler, Input.TexCoord);
 }
 
 technique ShaderTechnique

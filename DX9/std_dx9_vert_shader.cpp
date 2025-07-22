@@ -8,8 +8,9 @@
 const char* VertexShaderCode = R"(
 cbuffer MatrixBuffer : register(b0)
 {
-	matrix WorldViewProjectionMatrix;
-	matrix WorldMatrix;
+	matrix World;
+	matrix View;
+	matrix Projection;
 };
 
 cbuffer LightBuffer : register(b1)
@@ -22,14 +23,14 @@ cbuffer LightBuffer : register(b1)
 	float LightRange[3];
 };
 
-struct INPUT_POINTG
+struct INPUT_POINTC
 {
 	float3 Position : POSITION;
 	float4 Color : COLOR0;
 	float PointSize : PSIZE;
 };
 
-struct INPUT_POINTGT
+struct INPUT_POINTCT
 {
 	float3 Position : POSITION;
 	float4 Color : COLOR0;
@@ -62,27 +63,27 @@ struct INPUT_VERTNT
 	float2 TexCoord : TEXCOORD0;
 };
 
-struct INPUT_VERTG
+struct INPUT_VERTC
 {
 	float4 Position : POSITION;
 	float4 Color : COLOR0;
 };
 
-struct INPUT_VERTGN
+struct INPUT_VERTCN
 {
 	float4 Position : POSITION;
 	float3 Normal : NORMAL;
 	float4 Color : COLOR0;
 };
 
-struct INPUT_VERTGT
+struct INPUT_VERTCT
 {
 	float4 Position : POSITION;
 	float4 Color : COLOR0;
 	float2 TexCoord : TEXCOORD0;
 };
 
-struct INPUT_VERTGNT
+struct INPUT_VERTCNT
 {
 	float4 Position : POSITION;
 	float3 Normal : NORMAL;
@@ -99,11 +100,10 @@ struct OUTPUT
 	float2 TexCoord : TEXCOORD0;
 };
 
-OUTPUT vecpg(INPUT_POINTG Input)
+OUTPUT vecpc(INPUT_POINTC Input)
 {
 	OUTPUT Output;
-	float4 worldPosition = mul(float4(Input.Position, 1.0f), WorldMatrix);
-	Output.Position = mul(worldPosition, WorldViewProjectionMatrix);
+	Output.Position = mul(mul(mul(float4(Input.Position, 1.0f), World), View), Projection);
 	Output.Normal = float3(0.0f, 0.0f, 0.0f);
 	Output.Color = Input.Color;
 	Output.PointSize = Input.PointSize;
@@ -111,11 +111,10 @@ OUTPUT vecpg(INPUT_POINTG Input)
 	return Output;
 }
 
-OUTPUT vecpgt(INPUT_POINTGT Input)
+OUTPUT vecpct(INPUT_POINTCT Input)
 {
 	OUTPUT Output;
-	float4 worldPosition = mul(float4(Input.Position, 1.0f), WorldMatrix);
-	Output.Position = mul(worldPosition, WorldViewProjectionMatrix);
+	Output.Position = mul(mul(mul(float4(Input.Position, 1.0f), World), View), Projection);
 	Output.Normal = float3(0.0f, 0.0f, 0.0f);
 	Output.Color = Input.Color;
 	Output.PointSize = Input.PointSize;
@@ -126,8 +125,7 @@ OUTPUT vecpgt(INPUT_POINTGT Input)
 OUTPUT vec3t(INPUT_TEX3D Input)
 {
 	OUTPUT Output;
-	float4 worldPosition = mul(float4(Input.Position, 1.0f), WorldMatrix);
-	Output.Position = mul(worldPosition, WorldViewProjectionMatrix);
+	Output.Position = mul(mul(mul(float4(Input.Position, 1.0f), World), View), Projection);
 	Output.Normal = float3(0.0f, 0.0f, 0.0f);
 	Output.Color = float4(1.0f, 1.0f, 1.0f, 1.0f);
 	Output.PointSize = 1.0f;
@@ -138,8 +136,7 @@ OUTPUT vec3t(INPUT_TEX3D Input)
 OUTPUT vec4t(INPUT_TEX4D Input)
 {
 	OUTPUT Output;
-	float4 worldPosition = mul(Input.Position, WorldMatrix);
-	Output.Position = mul(worldPosition, WorldViewProjectionMatrix);
+	Output.Position = mul(mul(mul(Input.Position, World), View), Projection);
 	Output.Normal = float3(0.0f, 0.0f, 0.0f);
 	Output.Color = float4(1.0f, 1.0f, 1.0f, 1.0f);
 	Output.PointSize = 1.0f;
@@ -150,8 +147,7 @@ OUTPUT vec4t(INPUT_TEX4D Input)
 OUTPUT vec3n(INPUT_VERTN Input)
 {
 	OUTPUT Output;
-	float4 worldPosition = mul(Input.Position, WorldMatrix);
-	Output.Position = mul(worldPosition, WorldViewProjectionMatrix);
+	Output.Position = mul(mul(mul(Input.Position, World), View), Projection);
 	Output.Normal = Input.Normal;
 	Output.Color = float4(1.0f, 1.0f, 1.0f, 1.0f);
 	Output.PointSize = 1.0f;
@@ -162,8 +158,7 @@ OUTPUT vec3n(INPUT_VERTN Input)
 OUTPUT vec3nt(INPUT_VERTNT Input)
 {
 	OUTPUT Output;
-	float4 worldPosition = mul(Input.Position, WorldMatrix);
-	Output.Position = mul(worldPosition, WorldViewProjectionMatrix);
+	Output.Position = mul(mul(mul(Input.Position, World), View), Projection);
 	Output.Normal = Input.Normal;
 	Output.Color = float4(1.0f, 1.0f, 1.0f, 1.0f);
 	Output.PointSize = 1.0f;
@@ -171,11 +166,10 @@ OUTPUT vec3nt(INPUT_VERTNT Input)
 	return Output;
 }
 
-OUTPUT vec3g(INPUT_VERTG Input)
+OUTPUT vec3c(INPUT_VERTC Input)
 {
 	OUTPUT Output;
-	float4 worldPosition = mul(Input.Position, WorldMatrix);
-	Output.Position = mul(worldPosition, WorldViewProjectionMatrix);
+	Output.Position = mul(mul(mul(Input.Position, World), View), Projection);
 	Output.Normal = float3(0.0f, 0.0f, 0.0f);
 	Output.Color = Input.Color;
 	Output.PointSize = 1.0f;
@@ -183,11 +177,10 @@ OUTPUT vec3g(INPUT_VERTG Input)
 	return Output;
 }
 
-OUTPUT vec3gn(INPUT_VERTGN Input)
+OUTPUT vec3cn(INPUT_VERTCN Input)
 {
 	OUTPUT Output;
-	float4 worldPosition = mul(Input.Position, WorldMatrix);
-	Output.Position = mul(worldPosition, WorldViewProjectionMatrix);
+	Output.Position = mul(mul(mul(Input.Position, World), View), Projection);
 	Output.Normal = Input.Normal;
 	Output.Color = Input.Color;
 	Output.PointSize = 1.0f;
@@ -195,11 +188,10 @@ OUTPUT vec3gn(INPUT_VERTGN Input)
 	return Output;
 }
 
-OUTPUT vec3gt(INPUT_VERTGT Input)
+OUTPUT vec3ct(INPUT_VERTCT Input)
 {
 	OUTPUT Output;
-	float4 worldPosition = mul(Input.Position, WorldMatrix);
-	Output.Position = mul(worldPosition, WorldViewProjectionMatrix);
+	Output.Position = mul(mul(mul(Input.Position, World), View), Projection);
 	Output.Normal = float3(0.0f, 0.0f, 0.0f);
 	Output.Color = Input.Color;
 	Output.PointSize = 1.0f;
@@ -207,11 +199,10 @@ OUTPUT vec3gt(INPUT_VERTGT Input)
 	return Output;
 }
 
-OUTPUT vec3gnt(INPUT_VERTGNT Input)
+OUTPUT vec3cnt(INPUT_VERTCNT Input)
 {
 	OUTPUT Output;
-	float4 worldPosition = mul(Input.Position, WorldMatrix);
-	Output.Position = mul(worldPosition, WorldViewProjectionMatrix);
+	Output.Position = mul(mul(mul(Input.Position, World), View), Projection);
 	Output.Normal = Input.Normal;
 	Output.Color = Input.Color;
 	Output.PointSize = 1.0f;

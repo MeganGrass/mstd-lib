@@ -3,11 +3,6 @@
 *	Megan Grass
 *	January 01, 2024
 *
-*
-*	TODO: 
-* 
-*		toolbar and status bar sizing/placement broken due to MsgPositionChanged no longer being called
-*
 */
 
 
@@ -22,10 +17,6 @@
 */
 extern LRESULT CALLBACK StandardWindowProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam, UINT_PTR uIdSubclass, DWORD_PTR dwRefData);
 
-
-/*
-	Parse Window Creation and Style Options
-*/
 void Standard_Window::ParsePresets(WindowOptions e_Options)
 {
 	// Parse Window Creation Options
@@ -90,10 +81,6 @@ void Standard_Window::ParsePresets(WindowOptions e_Options)
 
 }
 
-
-/*
-	Create Parent Window
-*/
 void Standard_Window::Create(int Width, int Height, HINSTANCE hInstance, int nCmdShow, WNDPROC WndProc, WindowOptions e_Options)
 {
 	// Error
@@ -232,10 +219,6 @@ void Standard_Window::Create(int Width, int Height, HINSTANCE hInstance, int nCm
 	UpdateWindow(hWnd);
 }
 
-
-/*
-	Create Child Window
-*/
 std::shared_ptr<Standard_Window> Standard_Window::CreateChild(int x, int y, int Width, int Height, HINSTANCE hInstance, int nCmdShow, WNDPROC WndProc, DWORD Style, DWORD StyleEx, WindowOptions e_Options)
 {
 	// Error
@@ -355,10 +338,6 @@ std::shared_ptr<Standard_Window> Standard_Window::CreateChild(int x, int y, int 
 	return v_ChildWindows.back();
 }
 
-
-/*
-	Add Child Window
-*/
 bool Standard_Window::AddChildWindow(HWND hWndChild, int x, int y, bool b_SnapToChild, RECT* Size)
 {
 	// Error
@@ -470,20 +449,12 @@ bool Standard_Window::AddChildWindow(HWND hWndChild, int x, int y, bool b_SnapTo
 	return true;
 }
 
-
-/*
-	Get child window
-*/
 std::shared_ptr<Standard_Window> Standard_Window::GetChildWindow(UINT Index)
 {
 	if (Index > (v_ChildWindows.size() - 1)) { return nullptr; }
 	return v_ChildWindows[Index];
 }
 
-
-/*
-	Clear child windows
-*/
 void Standard_Window::ClearChildWindows(void)
 {
 	for (auto& Child : v_ChildWindows)
@@ -493,10 +464,6 @@ void Standard_Window::ClearChildWindows(void)
 	v_ChildWindows.clear();
 }
 
-
-/*
-	Create tooltip
-*/
 HWND Standard_Window::CreateTooltip(HWND hWndParent, ULONG ResourceID, StringW Tooltip)
 {
 	// Error
@@ -544,10 +511,6 @@ HWND Standard_Window::CreateTooltip(HWND hWndParent, ULONG ResourceID, StringW T
 	return h_Tooltip;
 }
 
-
-/*
-	Create Toolbar
-*/
 void Standard_Window::CreateToolbar(DWORD Style, DWORD StyleEx, HIMAGELIST ImageList, std::vector<TBBUTTON> Buttons)
 {
 	if (!hWnd)
@@ -589,10 +552,6 @@ void Standard_Window::CreateToolbar(DWORD Style, DWORD StyleEx, HIMAGELIST Image
 	SendMessage(h_ToolBar, WM_SIZE, 0, 0);
 }
 
-
-/*
-	Create Status Bar
-*/
 void Standard_Window::CreateStatusBar(INT PartCount, DWORD Style)
 {
 	if (!hWnd)
@@ -644,10 +603,6 @@ void Standard_Window::CreateStatusBar(INT PartCount, DWORD Style)
 	SendMessage(h_StatusBar, SB_SETPARTS, m_StatusBarParts, (LPARAM)Parts.data());
 }
 
-
-/*
-	Set status bar tooltip
-*/
 void Standard_Window::SetStatusBarTooltip(int iPart, const StringW Tooltip) const
 {
 	if ((!h_StatusBar) || (iPart > (m_StatusBarParts - 1))) { return; }
@@ -655,10 +610,6 @@ void Standard_Window::SetStatusBarTooltip(int iPart, const StringW Tooltip) cons
 	SendMessageW(h_StatusBar, SB_SETTIPTEXTW, iPart, (LPARAM)Tooltip.c_str());
 }
 
-
-/*
-	Status Bar Message
-*/
 void Standard_Window::Status(int iPart, const String _Message, ...) const
 {
 	// Error
@@ -676,10 +627,6 @@ void Standard_Window::Status(int iPart, const String _Message, ...) const
 	SendMessageA(h_StatusBar, SB_SETTEXTA, iPart, (LPARAM)String.data());
 }
 
-
-/*
-	Status Bar Message
-*/
 void Standard_Window::Status(int iPart, const StringW _Message, ...) const
 {
 	// Error
@@ -697,10 +644,6 @@ void Standard_Window::Status(int iPart, const StringW _Message, ...) const
 	SendMessageW(h_StatusBar, SB_SETTEXTW, iPart, (LPARAM)String.data());
 }
 
-
-/*
-	Get status bar string
-*/
 StringW Standard_Window::GetStatus(int iPart) const
 {
 	if ((!h_StatusBar) || (iPart > (m_StatusBarParts - 1))) { return L""; }
@@ -714,10 +657,6 @@ StringW Standard_Window::GetStatus(int iPart) const
 	return Buffer;
 }
 
-
-/*
-	Get rect
-*/
 RECT Standard_Window::GetRect(void) const
 {
 	RECT Rect{};
@@ -737,30 +676,18 @@ RECT Standard_Window::GetRect(void) const
 	return Rect;
 }
 
-
-/*
-	Get toolbar rect
-*/
 RECT Standard_Window::GetToolbarRect(void)
 {
 	GetWindowRect(h_ToolBar, &m_ToolBarRect);
 	return m_ToolBarRect;
 }
 
-
-/*
-	Get statusbar rect
-*/
 RECT Standard_Window::GetStatusBarRect(void)
 {
 	GetWindowRect(h_StatusBar, &m_StatusBarRect);
 	return m_StatusBarRect;
 }
 
-
-/*
-	Resize
-*/
 bool Standard_Window::Resize(RECT* Rect, bool b_Center)
 {
 	// Error
@@ -801,10 +728,6 @@ bool Standard_Window::Resize(RECT* Rect, bool b_Center)
 	return true;
 }
 
-
-/*
-	Is the window minimized?
-*/
 bool Standard_Window::IsMinimized(void)
 {
 	// return b_Minimized = IsIconic(hWnd);
@@ -814,10 +737,6 @@ bool Standard_Window::IsMinimized(void)
 	return b_Minimized = (WindowPlacement.showCmd == SW_SHOWMINIMIZED);
 }
 
-
-/*
-	Is the window maximized?
-*/
 bool Standard_Window::IsMaximized(void)
 {
 	// return b_Maximized = IsZoomed(hWnd);
@@ -827,10 +746,6 @@ bool Standard_Window::IsMaximized(void)
 	return b_Maximized = (WindowPlacement.showCmd == SW_SHOWMAXIMIZED);
 }
 
-
-/*
-	Is fullscreen?
-*/
 bool Standard_Window::IsFullscreen(void) const
 {
 	/*QUERY_USER_NOTIFICATION_STATE m_FullscreenState;
@@ -865,10 +780,6 @@ bool Standard_Window::IsFullscreen(void) const
 		WindowRect.bottom == ScreenRect.bottom);
 }
 
-
-/*
-	Auto fullscreen
-*/
 void Standard_Window::AutoFullscreen(void)
 {
 	ShowWindow(hWnd, SW_HIDE);

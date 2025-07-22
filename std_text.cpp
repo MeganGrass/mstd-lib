@@ -2,9 +2,6 @@
 *
 *	Megan Grass
 *	January 01, 2024
-*
-*
-*	TODO: 
 * 
 */
 
@@ -12,11 +9,6 @@
 #include "std_text.h"
 
 
-/*
-	Get Text File Byte Order Mark
-
-	Get the encoding of a text file (Read, Read_Ex)
-*/
 void Standard_Text::GetTextFileBOM(std::uintmax_t _Ptr)
 {
 	// File Size
@@ -104,12 +96,6 @@ void Standard_Text::GetTextFileBOM(std::uintmax_t _Ptr)
 	m_BOM = TextFileBOM::UTF8;
 }
 
-
-/*
-	Set Text File Byte Order Mark
-
-	Set the encoding of a text file (Write, Write_Ex, Append, Append_Ex)
-*/
 void Standard_Text::SetTextFileBOM(std::uintmax_t _Ptr)
 {
 	// Write BOM
@@ -206,10 +192,6 @@ void Standard_Text::SetTextFileBOM(std::uintmax_t _Ptr)
 	}
 }
 
-
-/*
-	Get Byte Order Mark (String)
-*/
 String Standard_Text::GetBOMStr(void)
 {
 	switch (m_BOM)
@@ -229,10 +211,6 @@ String Standard_Text::GetBOMStr(void)
 	return "Unknown";
 }
 
-
-/*
-	Get Byte Order Mark (Wide String)
-*/
 StringW Standard_Text::GetBOMStrW(void)
 {
 	switch (m_BOM)
@@ -252,10 +230,6 @@ StringW Standard_Text::GetBOMStrW(void)
 	return L"Unknown";
 }
 
-
-/*
-	Get Byte Order Mark (32-bit String)
-*/
 String32 Standard_Text::GetBOMStr32(void)
 {
 	switch (m_BOM)
@@ -275,10 +249,6 @@ String32 Standard_Text::GetBOMStr32(void)
 	return U"Unknown";
 }
 
-
-/*
-	Get total line count
-*/
 std::size_t Standard_Text::GetLineCount(void)
 {
 	if (validUTF8())
@@ -296,10 +266,6 @@ std::size_t Standard_Text::GetLineCount(void)
 	return 0;
 }
 
-
-/*
-	Get line
-*/
 String Standard_Text::GetLine(std::size_t Line_No)
 {
 	if (validUTF8())
@@ -312,10 +278,6 @@ String Standard_Text::GetLine(std::size_t Line_No)
 	return std::string();
 }
 
-
-/*
-	Get line (Wide String)
-*/
 StringW Standard_Text::GetLineW(std::size_t Line_No)
 {
 	if (validUTF16())
@@ -328,10 +290,6 @@ StringW Standard_Text::GetLineW(std::size_t Line_No)
 	return std::wstring();
 }
 
-
-/*
-	Get line (32-bit String)
-*/
 String32 Standard_Text::GetLine32(std::size_t Line_No)
 {
 	if (validUTF32())
@@ -344,10 +302,6 @@ String32 Standard_Text::GetLine32(std::size_t Line_No)
 	return std::u32string();
 }
 
-
-/*
-	Get line arguments (String)
-*/
 StrVec Standard_Text::GetArgs(std::size_t Line_No)
 {
 	if (validUTF8())
@@ -360,10 +314,6 @@ StrVec Standard_Text::GetArgs(std::size_t Line_No)
 	return StrVec();
 }
 
-
-/*
-	Get line arguments (Wide String)
-*/
 StrVecW Standard_Text::GetArgsW(std::size_t Line_No)
 {
 	if (validUTF16())
@@ -376,10 +326,6 @@ StrVecW Standard_Text::GetArgsW(std::size_t Line_No)
 	return StrVecW();
 }
 
-
-/*
-	Get line arguments (32-bit String)
-*/
 StrVec32 Standard_Text::GetArgs32(std::size_t Line_No)
 {
 	if (validUTF32())
@@ -392,10 +338,6 @@ StrVec32 Standard_Text::GetArgs32(std::size_t Line_No)
 	return StrVec32();
 }
 
-
-/*
-	Add line (C-Style formatted String)
-*/
 void Standard_Text::AddLine(const std::string _Format, ...)
 {
 	std::va_list _ArgList;
@@ -408,10 +350,6 @@ void Standard_Text::AddLine(const std::string _Format, ...)
 	m_UTF8.get()->Line.push_back(String.data());
 }
 
-
-/*
-	Add line (C-Style formatted Wide String)
-*/
 void Standard_Text::AddLine(const std::wstring _Format, ...)
 {
 	std::va_list _ArgList;
@@ -424,10 +362,6 @@ void Standard_Text::AddLine(const std::wstring _Format, ...)
 	m_UTF16.get()->Line.push_back(String.data());
 }
 
-
-/*
-	Add end line
-*/
 void Standard_Text::AddEndLine(void)
 {
 	if (validUTF8())
@@ -447,10 +381,6 @@ void Standard_Text::AddEndLine(void)
 	}
 }
 
-
-/*
-	Flush contents to file
-*/
 bool Standard_Text::FlushUTF8(void)
 {
 	if (validUTF8())
@@ -464,10 +394,6 @@ bool Standard_Text::FlushUTF8(void)
 	return true;
 }
 
-
-/*
-	Flush contents to file
-*/
 bool Standard_Text::FlushUTF16(void)
 {
 	if (validUTF16())
@@ -481,10 +407,6 @@ bool Standard_Text::FlushUTF16(void)
 	return true;
 }
 
-
-/*
-	Flush contents to file
-*/
 bool Standard_Text::FlushUTF32(void)
 {
 	if (validUTF32())
@@ -498,10 +420,6 @@ bool Standard_Text::FlushUTF32(void)
 	return true;
 }
 
-
-/*
-	Open Text File (UTF8)
-*/
 void Standard_Text::OpenTextFileA(std::uintmax_t _Ptr) try
 {
 	if (!validUTF8()) { m_UTF8 = std::make_unique<TextFileUTF8>(); }
@@ -525,10 +443,6 @@ void Standard_Text::OpenTextFileA(std::uintmax_t _Ptr) try
 }
 catch (...) { Exception(std::current_exception()); }
 
-
-/*
-	Open Text File (UTF16)
-*/
 void Standard_Text::OpenTextFileW(std::uintmax_t _Ptr) try
 {
 	if (!validUTF16()) { m_UTF16 = std::make_unique<TextFileUTF16>(); }
@@ -552,10 +466,6 @@ void Standard_Text::OpenTextFileW(std::uintmax_t _Ptr) try
 }
 catch (...) { Exception(std::current_exception()); }
 
-
-/*
-	Open Text File (UTF32)
-*/
 void Standard_Text::OpenTextFile32(std::uintmax_t _Ptr) try
 {
 	if (!validUTF32()) { m_UTF32 = std::make_unique<TextFileUTF32>(); }
@@ -579,10 +489,6 @@ void Standard_Text::OpenTextFile32(std::uintmax_t _Ptr) try
 }
 catch (...) { Exception(std::current_exception()); }
 
-
-/*
-	Open Text File (auto-detect/create BOM)
-*/
 bool Standard_Text::Open(std::filesystem::path _Filename, FileAccessMode e_Mode, std::uintmax_t _Ptr) try
 {
 	// File Access Mode constants
@@ -756,10 +662,6 @@ bool Standard_Text::Open(std::filesystem::path _Filename, FileAccessMode e_Mode,
 }
 catch (...) { Exception(std::current_exception()); return false; }
 
-
-/*
-	Close file and clear memory
-*/
 void Standard_Text::Close(void) noexcept
 {
 	if (validFile())

@@ -15,10 +15,6 @@
 #include "std_exception.h"
 
 
-typedef class Standard_String StdStr;
-extern std::unique_ptr<Standard_String> Str;
-
-
 /*
 *	https://en.cppreference.com/w/cpp/header/string
 */

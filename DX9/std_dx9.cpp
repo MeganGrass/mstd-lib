@@ -3,9 +3,6 @@
 *	Megan Grass
 *	April 12, 2024
 *
-*
-*	TODO:
-*		Draw is now broken because texture dimensions are pow2
 */
 
 
@@ -27,52 +24,52 @@ extern "C"
 	__declspec(dllexport) int AmdPowerXpressRequestHighPerformance = 1;
 }
 
-D3DVERTEXELEMENT9 VecpElements[] =
+D3DVERTEXELEMENT9 ElementVecPoint[] =
 {
 	{ 0, offsetof(vecp, vec), D3DDECLTYPE_FLOAT3, D3DDECLMETHOD_DEFAULT, D3DDECLUSAGE_POSITION, 0 },
 	{ 0, offsetof(vecp, size), D3DDECLTYPE_FLOAT1, D3DDECLMETHOD_DEFAULT, D3DDECLUSAGE_PSIZE, 0 },
 	D3DDECL_END()
 };
 
-D3DVERTEXELEMENT9 VecpgElements[] =
+D3DVERTEXELEMENT9 ElementVecPointc[] =
 {
-	{ 0, offsetof(vecpg, vec), D3DDECLTYPE_FLOAT3, D3DDECLMETHOD_DEFAULT, D3DDECLUSAGE_POSITION, 0 },
-	{ 0, offsetof(vecpg, color), D3DDECLTYPE_D3DCOLOR, D3DDECLMETHOD_DEFAULT, D3DDECLUSAGE_COLOR, 0 },
-	{ 0, offsetof(vecpg, size), D3DDECLTYPE_FLOAT1, D3DDECLMETHOD_DEFAULT, D3DDECLUSAGE_PSIZE, 0 },
+	{ 0, offsetof(vecpc, vec), D3DDECLTYPE_FLOAT3, D3DDECLMETHOD_DEFAULT, D3DDECLUSAGE_POSITION, 0 },
+	{ 0, offsetof(vecpc, color), D3DDECLTYPE_D3DCOLOR, D3DDECLMETHOD_DEFAULT, D3DDECLUSAGE_COLOR, 0 },
+	{ 0, offsetof(vecpc, size), D3DDECLTYPE_FLOAT1, D3DDECLMETHOD_DEFAULT, D3DDECLUSAGE_PSIZE, 0 },
 	D3DDECL_END()
 };
 
-D3DVERTEXELEMENT9 VecpgtElements[] =
+D3DVERTEXELEMENT9 ElementVecPointct[] =
 {
-	{ 0, offsetof(vecpgt, vec), D3DDECLTYPE_FLOAT3, D3DDECLMETHOD_DEFAULT, D3DDECLUSAGE_POSITION, 0 },
-	{ 0, offsetof(vecpgt, color), D3DDECLTYPE_D3DCOLOR, D3DDECLMETHOD_DEFAULT, D3DDECLUSAGE_COLOR, 0 },
-	{ 0, offsetof(vecpgt, size), D3DDECLTYPE_FLOAT1, D3DDECLMETHOD_DEFAULT, D3DDECLUSAGE_PSIZE, 0 },
-	{ 0, offsetof(vecpgt, uv), D3DDECLTYPE_FLOAT2, D3DDECLMETHOD_DEFAULT, D3DDECLUSAGE_TEXCOORD, 0 },
+	{ 0, offsetof(vecpct, vec), D3DDECLTYPE_FLOAT3, D3DDECLMETHOD_DEFAULT, D3DDECLUSAGE_POSITION, 0 },
+	{ 0, offsetof(vecpct, color), D3DDECLTYPE_D3DCOLOR, D3DDECLMETHOD_DEFAULT, D3DDECLUSAGE_COLOR, 0 },
+	{ 0, offsetof(vecpct, size), D3DDECLTYPE_FLOAT1, D3DDECLMETHOD_DEFAULT, D3DDECLUSAGE_PSIZE, 0 },
+	{ 0, offsetof(vecpct, uv), D3DDECLTYPE_FLOAT2, D3DDECLMETHOD_DEFAULT, D3DDECLUSAGE_TEXCOORD, 0 },
 	D3DDECL_END()
 };
 
-D3DVERTEXELEMENT9 Vec3tElements[] =
+D3DVERTEXELEMENT9 ElementVec3t[] =
 {
 	{ 0, offsetof(vec3t, vec), D3DDECLTYPE_FLOAT3, D3DDECLMETHOD_DEFAULT, D3DDECLUSAGE_POSITION, 0 },
 	{ 0, offsetof(vec3t, uv), D3DDECLTYPE_FLOAT2, D3DDECLMETHOD_DEFAULT, D3DDECLUSAGE_TEXCOORD, 0 },
 	D3DDECL_END()
 };
 
-D3DVERTEXELEMENT9 Vec4tElements[] =
+D3DVERTEXELEMENT9 ElementVec4t[] =
 {
 	{ 0, offsetof(vec4t, vec), D3DDECLTYPE_FLOAT4, D3DDECLMETHOD_DEFAULT, D3DDECLUSAGE_POSITION, 0 },
 	{ 0, offsetof(vec4t, uv), D3DDECLTYPE_FLOAT2, D3DDECLMETHOD_DEFAULT, D3DDECLUSAGE_TEXCOORD, 0 },
 	D3DDECL_END()
 };
 
-D3DVERTEXELEMENT9 Vec3nElements[] =
+D3DVERTEXELEMENT9 ElementVec3n[] =
 {
 	{ 0, offsetof(vec3n, vec), D3DDECLTYPE_FLOAT3, D3DDECLMETHOD_DEFAULT, D3DDECLUSAGE_POSITION, 0 },
 	{ 0, offsetof(vec3n, normal), D3DDECLTYPE_FLOAT3, D3DDECLMETHOD_DEFAULT, D3DDECLUSAGE_NORMAL, 0 },
 	D3DDECL_END()
 };
 
-D3DVERTEXELEMENT9 Vec3ntElements[] =
+D3DVERTEXELEMENT9 ElementVec3nt[] =
 {
 	{ 0, offsetof(vec3nt, vec), D3DDECLTYPE_FLOAT3, D3DDECLMETHOD_DEFAULT, D3DDECLUSAGE_POSITION, 0 },
 	{ 0, offsetof(vec3nt, normal), D3DDECLTYPE_FLOAT3, D3DDECLMETHOD_DEFAULT, D3DDECLUSAGE_NORMAL, 0 },
@@ -80,42 +77,39 @@ D3DVERTEXELEMENT9 Vec3ntElements[] =
 	D3DDECL_END()
 };
 
-D3DVERTEXELEMENT9 Vec3gElements[] =
+D3DVERTEXELEMENT9 ElementVec3c[] =
 {
-	{ 0, offsetof(vec3g, vec), D3DDECLTYPE_FLOAT3, D3DDECLMETHOD_DEFAULT, D3DDECLUSAGE_POSITION, 0 },
-	{ 0, offsetof(vec3g, color), D3DDECLTYPE_D3DCOLOR, D3DDECLMETHOD_DEFAULT, D3DDECLUSAGE_COLOR, 0 },
+	{ 0, offsetof(vec3c, vec), D3DDECLTYPE_FLOAT3, D3DDECLMETHOD_DEFAULT, D3DDECLUSAGE_POSITION, 0 },
+	{ 0, offsetof(vec3c, color), D3DDECLTYPE_D3DCOLOR, D3DDECLMETHOD_DEFAULT, D3DDECLUSAGE_COLOR, 0 },
 	D3DDECL_END()
 };
 
-D3DVERTEXELEMENT9 Vec3gnElements[] =
+D3DVERTEXELEMENT9 ElementVec3cn[] =
 {
-	{ 0, offsetof(vec3gn, vec), D3DDECLTYPE_FLOAT3, D3DDECLMETHOD_DEFAULT, D3DDECLUSAGE_POSITION, 0 },
-	{ 0, offsetof(vec3gn, normal), D3DDECLTYPE_FLOAT3, D3DDECLMETHOD_DEFAULT, D3DDECLUSAGE_NORMAL, 0 },
-	{ 0, offsetof(vec3gn, color), D3DDECLTYPE_D3DCOLOR, D3DDECLMETHOD_DEFAULT, D3DDECLUSAGE_COLOR, 0 },
+	{ 0, offsetof(vec3cn, vec), D3DDECLTYPE_FLOAT3, D3DDECLMETHOD_DEFAULT, D3DDECLUSAGE_POSITION, 0 },
+	{ 0, offsetof(vec3cn, normal), D3DDECLTYPE_FLOAT3, D3DDECLMETHOD_DEFAULT, D3DDECLUSAGE_NORMAL, 0 },
+	{ 0, offsetof(vec3cn, color), D3DDECLTYPE_D3DCOLOR, D3DDECLMETHOD_DEFAULT, D3DDECLUSAGE_COLOR, 0 },
 	D3DDECL_END()
 };
 
-D3DVERTEXELEMENT9 Vec3gtElements[] =
+D3DVERTEXELEMENT9 ElementVec3ct[] =
 {
-	{ 0, offsetof(vec3gt, vec), D3DDECLTYPE_FLOAT3, D3DDECLMETHOD_DEFAULT, D3DDECLUSAGE_POSITION, 0 },
-	{ 0, offsetof(vec3gt, color), D3DDECLTYPE_D3DCOLOR, D3DDECLMETHOD_DEFAULT, D3DDECLUSAGE_COLOR, 0 },
-	{ 0, offsetof(vec3gt, uv), D3DDECLTYPE_FLOAT2, D3DDECLMETHOD_DEFAULT, D3DDECLUSAGE_TEXCOORD, 0 },
+	{ 0, offsetof(vec3ct, vec), D3DDECLTYPE_FLOAT3, D3DDECLMETHOD_DEFAULT, D3DDECLUSAGE_POSITION, 0 },
+	{ 0, offsetof(vec3ct, color), D3DDECLTYPE_D3DCOLOR, D3DDECLMETHOD_DEFAULT, D3DDECLUSAGE_COLOR, 0 },
+	{ 0, offsetof(vec3ct, uv), D3DDECLTYPE_FLOAT2, D3DDECLMETHOD_DEFAULT, D3DDECLUSAGE_TEXCOORD, 0 },
 	D3DDECL_END()
 };
 
-D3DVERTEXELEMENT9 Vec3gntElements[] =
+D3DVERTEXELEMENT9 ElementVec3cnt[] =
 {
-	{ 0, offsetof(vec3gnt, vec), D3DDECLTYPE_FLOAT3, D3DDECLMETHOD_DEFAULT, D3DDECLUSAGE_POSITION, 0 },
-	{ 0, offsetof(vec3gnt, normal), D3DDECLTYPE_FLOAT3, D3DDECLMETHOD_DEFAULT, D3DDECLUSAGE_NORMAL, 0 },
-	{ 0, offsetof(vec3gnt, color), D3DDECLTYPE_D3DCOLOR, D3DDECLMETHOD_DEFAULT, D3DDECLUSAGE_COLOR, 0 },
-	{ 0, offsetof(vec3gnt, uv), D3DDECLTYPE_FLOAT2, D3DDECLMETHOD_DEFAULT, D3DDECLUSAGE_TEXCOORD, 0 },
+	{ 0, offsetof(vec3cnt, vec), D3DDECLTYPE_FLOAT3, D3DDECLMETHOD_DEFAULT, D3DDECLUSAGE_POSITION, 0 },
+	{ 0, offsetof(vec3cnt, normal), D3DDECLTYPE_FLOAT3, D3DDECLMETHOD_DEFAULT, D3DDECLUSAGE_NORMAL, 0 },
+	{ 0, offsetof(vec3cnt, color), D3DDECLTYPE_D3DCOLOR, D3DDECLMETHOD_DEFAULT, D3DDECLUSAGE_COLOR, 0 },
+	{ 0, offsetof(vec3cnt, uv), D3DDECLTYPE_FLOAT2, D3DDECLMETHOD_DEFAULT, D3DDECLUSAGE_TEXCOORD, 0 },
 	D3DDECL_END()
 };
 
 
-/*
-	Standard Direct-X 9 Window Message Handler
-*/
 static LRESULT CALLBACK DirectX9WndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam, UINT_PTR uIdSubclass, DWORD_PTR dwRefData)
 {
 	Standard_DirectX_9* DX9 = (Standard_DirectX_9*)dwRefData;
@@ -153,67 +147,18 @@ static LRESULT CALLBACK DirectX9WndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPA
 	return DefSubclassProc(hWnd, uMsg, wParam, lParam);
 }
 
-
-/*
-	Soft shutdown
-*/
 void Standard_DirectX_9::Shutdown(void)
 {
 	b_Abort = true;
 	b_Active = false;
 	e_DeviceState = D3DDEVICE_STATE::UNKNOWN;
 
-	if (AxisGrid) { AxisGrid->Release(); AxisGrid = nullptr; }
-
-	if (ShaderVecpg.Decl) { ShaderVecpg.Decl->Release(); ShaderVecpg.Decl = nullptr; }
-	if (ShaderVecpg.Shader) { ShaderVecpg.Shader->Release(); ShaderVecpg.Shader = nullptr; }
-	if (ShaderVecpg.Const) { ShaderVecpg.Const->Release(); ShaderVecpg.Const = nullptr; }
-
-	if (ShaderVecpgt.Decl) { ShaderVecpgt.Decl->Release(); ShaderVecpgt.Decl = nullptr; }
-	if (ShaderVecpgt.Shader) { ShaderVecpgt.Shader->Release(); ShaderVecpgt.Shader = nullptr; }
-	if (ShaderVecpgt.Const) { ShaderVecpgt.Const->Release(); ShaderVecpgt.Const = nullptr; }
-
-	if (ShaderVec3t.Decl) { ShaderVec3t.Decl->Release(); ShaderVec3t.Decl = nullptr; }
-	if (ShaderVec3t.Shader) { ShaderVec3t.Shader->Release(); ShaderVec3t.Shader = nullptr; }
-	if (ShaderVec3t.Const) { ShaderVec3t.Const->Release(); ShaderVec3t.Const = nullptr; }
-
-	if (ShaderVec4t.Decl) { ShaderVec4t.Decl->Release(); ShaderVec4t.Decl = nullptr; }
-	if (ShaderVec4t.Shader) { ShaderVec4t.Shader->Release(); ShaderVec4t.Shader = nullptr; }
-	if (ShaderVec4t.Const) { ShaderVec4t.Const->Release(); ShaderVec4t.Const = nullptr; }
-
-	if (ShaderVec3n.Decl) { ShaderVec3n.Decl->Release(); ShaderVec3n.Decl = nullptr; }
-	if (ShaderVec3n.Shader) { ShaderVec3n.Shader->Release(); ShaderVec3n.Shader = nullptr; }
-	if (ShaderVec3n.Const) { ShaderVec3n.Const->Release(); ShaderVec3n.Const = nullptr; }
-
-	if (ShaderVec3nt.Decl) { ShaderVec3nt.Decl->Release(); ShaderVec3nt.Decl = nullptr; }
-	if (ShaderVec3nt.Shader) { ShaderVec3nt.Shader->Release(); ShaderVec3nt.Shader = nullptr; }
-	if (ShaderVec3nt.Const) { ShaderVec3nt.Const->Release(); ShaderVec3nt.Const = nullptr; }
-
-	if (ShaderVec3g.Decl) { ShaderVec3g.Decl->Release(); ShaderVec3g.Decl = nullptr; }
-	if (ShaderVec3g.Shader) { ShaderVec3g.Shader->Release(); ShaderVec3g.Shader = nullptr; }
-	if (ShaderVec3g.Const) { ShaderVec3g.Const->Release(); ShaderVec3g.Const = nullptr; }
-
-	if (ShaderVec3gn.Decl) { ShaderVec3gn.Decl->Release(); ShaderVec3gn.Decl = nullptr; }
-	if (ShaderVec3gn.Shader) { ShaderVec3gn.Shader->Release(); ShaderVec3gn.Shader = nullptr; }
-	if (ShaderVec3gn.Const) { ShaderVec3gn.Const->Release(); ShaderVec3gn.Const = nullptr; }
-
-	if (ShaderVec3gt.Decl) { ShaderVec3gt.Decl->Release(); ShaderVec3gt.Decl = nullptr; }
-	if (ShaderVec3gt.Shader) { ShaderVec3gt.Shader->Release(); ShaderVec3gt.Shader = nullptr; }
-	if (ShaderVec3gt.Const) { ShaderVec3gt.Const->Release(); ShaderVec3gt.Const = nullptr; }
-
-	if (ShaderVec3gnt.Decl) { ShaderVec3gnt.Decl->Release(); ShaderVec3gnt.Decl = nullptr; }
-	if (ShaderVec3gnt.Shader) { ShaderVec3gnt.Shader->Release(); ShaderVec3gnt.Shader = nullptr; }
-	if (ShaderVec3gnt.Const) { ShaderVec3gnt.Const->Release(); ShaderVec3gnt.Const = nullptr; }
-
-	if (pSwapChain) { pSwapChain->Release(); pSwapChain = nullptr; }
-	if (pDevice) { pDevice->Release(); pDevice = nullptr; }
-	if (pD3D) { pD3D->Release(); pD3D = nullptr; }
+	while (!b_Complete)
+	{
+		std::this_thread::sleep_for(std::chrono::milliseconds(100));
+	}
 }
 
-
-/*
-	Update device state
-*/
 void Standard_DirectX_9::Update(void)
 {
 	b_Complete = false;
@@ -250,74 +195,89 @@ void Standard_DirectX_9::Update(void)
 	b_Complete = true;
 }
 
-
-/*
-	Initialize basic shaders
-*/
 void Standard_DirectX_9::InitShaders(void)
 {
-	PassthroughPixelShader = CreatePixelShader(PixelShaderCode, "main", "ps_3_0");
+	PassthroughPixelShader.reset(CreatePixelShader(PixelShaderCode, "main", "ps_3_0"));
 
-	PS1DitherPixelShader = CreatePixelShader(PlayStationDitherShaderCode, "main", "ps_3_0");
+	PS1DitherPixelShader.reset(CreatePixelShader(PlayStationDitherShaderCode, "main", "ps_3_0"));
 
-	if (FAILED(pDevice->CreateVertexDeclaration(VecpgElements, &ShaderVecpg.Decl))) { Wnd->GetErrorMessage(); }
-	if (FAILED(pDevice->CreateVertexDeclaration(VecpgtElements, &ShaderVecpgt.Decl))) { Wnd->GetErrorMessage(); }
-	if (FAILED(pDevice->CreateVertexDeclaration(Vec3tElements, &ShaderVec3t.Decl))) { Wnd->GetErrorMessage(); }
-	if (FAILED(pDevice->CreateVertexDeclaration(Vec4tElements, &ShaderVec4t.Decl))) { Wnd->GetErrorMessage(); }
-	if (FAILED(pDevice->CreateVertexDeclaration(Vec3nElements, &ShaderVec3n.Decl))) { Wnd->GetErrorMessage(); }
-	if (FAILED(pDevice->CreateVertexDeclaration(Vec3ntElements, &ShaderVec3nt.Decl))) { Wnd->GetErrorMessage(); }
-	if (FAILED(pDevice->CreateVertexDeclaration(Vec3gElements, &ShaderVec3g.Decl))) { Wnd->GetErrorMessage(); }
-	if (FAILED(pDevice->CreateVertexDeclaration(Vec3gnElements, &ShaderVec3gn.Decl))) { Wnd->GetErrorMessage(); }
-	if (FAILED(pDevice->CreateVertexDeclaration(Vec3gtElements, &ShaderVec3gt.Decl))) { Wnd->GetErrorMessage(); }
-	if (FAILED(pDevice->CreateVertexDeclaration(Vec3gntElements, &ShaderVec3gnt.Decl))) { Wnd->GetErrorMessage(); }
-
+	ID3DXConstantTable* Const = nullptr;
+	IDirect3DVertexDeclaration9* Decl = nullptr;
 	ID3DXBuffer* pShaderBuffer = nullptr;
+	IDirect3DVertexShader9* Shader = nullptr;
 
-	if (FAILED(D3DXCompileShader(VertexShaderCode, static_cast<UINT>(strlen(VertexShaderCode)), NULL, NULL, "vecpg", "vs_3_0", 0, &pShaderBuffer, NULL, &ShaderVecpg.Const))) { Wnd->GetErrorMessage(); }
-	pDevice->CreateVertexShader((DWORD*)pShaderBuffer->GetBufferPointer(), &ShaderVecpg.Shader);
+	if (FAILED(pDevice->CreateVertexDeclaration(ElementVecPointc, &Decl))) { Wnd->GetErrorMessage(); } ShaderVecPointc.Decl.reset(Decl);
+	if (FAILED(pDevice->CreateVertexDeclaration(ElementVecPointct, &Decl))) { Wnd->GetErrorMessage(); } ShaderVecPointct.Decl.reset(Decl);
+	if (FAILED(pDevice->CreateVertexDeclaration(ElementVec3t, &Decl))) { Wnd->GetErrorMessage(); } ShaderVec3t.Decl.reset(Decl);
+	if (FAILED(pDevice->CreateVertexDeclaration(ElementVec4t, &Decl))) { Wnd->GetErrorMessage(); } ShaderVec4t.Decl.reset(Decl);
+	if (FAILED(pDevice->CreateVertexDeclaration(ElementVec3n, &Decl))) { Wnd->GetErrorMessage(); } ShaderVec3n.Decl.reset(Decl);
+	if (FAILED(pDevice->CreateVertexDeclaration(ElementVec3nt, &Decl))) { Wnd->GetErrorMessage(); } ShaderVec3nt.Decl.reset(Decl);
+	if (FAILED(pDevice->CreateVertexDeclaration(ElementVec3c, &Decl))) { Wnd->GetErrorMessage(); } ShaderVec3c.Decl.reset(Decl);
+	if (FAILED(pDevice->CreateVertexDeclaration(ElementVec3cn, &Decl))) { Wnd->GetErrorMessage(); } ShaderVec3cn.Decl.reset(Decl);
+	if (FAILED(pDevice->CreateVertexDeclaration(ElementVec3ct, &Decl))) { Wnd->GetErrorMessage(); } ShaderVec3ct.Decl.reset(Decl);
+	if (FAILED(pDevice->CreateVertexDeclaration(ElementVec3cnt, &Decl))) { Wnd->GetErrorMessage(); } ShaderVec3cnt.Decl.reset(Decl);
+
+	if (FAILED(D3DXCompileShader(VertexShaderCode, static_cast<UINT>(strlen(VertexShaderCode)), NULL, NULL, "vecpc", "vs_3_0", 0, &pShaderBuffer, NULL, &Const))) { Wnd->GetErrorMessage(); }
+	pDevice->CreateVertexShader((DWORD*)pShaderBuffer->GetBufferPointer(), &Shader);
+	ShaderVecPointc.Const.reset(Const);
+	ShaderVecPointc.Shader.reset(Shader);
 	pShaderBuffer->Release();
 
-	if (FAILED(D3DXCompileShader(VertexShaderCode, static_cast<UINT>(strlen(VertexShaderCode)), NULL, NULL, "vecpgt", "vs_3_0", 0, &pShaderBuffer, NULL, &ShaderVecpgt.Const))) { Wnd->GetErrorMessage(); }
-	pDevice->CreateVertexShader((DWORD*)pShaderBuffer->GetBufferPointer(), &ShaderVecpgt.Shader);
+	if (FAILED(D3DXCompileShader(VertexShaderCode, static_cast<UINT>(strlen(VertexShaderCode)), NULL, NULL, "vecpct", "vs_3_0", 0, &pShaderBuffer, NULL, &Const))) { Wnd->GetErrorMessage(); }
+	pDevice->CreateVertexShader((DWORD*)pShaderBuffer->GetBufferPointer(), &Shader);
+	ShaderVecPointct.Const.reset(Const);
+	ShaderVecPointct.Shader.reset(Shader);
 	pShaderBuffer->Release();
 
-	if (FAILED(D3DXCompileShader(VertexShaderCode, static_cast<UINT>(strlen(VertexShaderCode)), NULL, NULL, "vec3t", "vs_3_0", 0, &pShaderBuffer, NULL, &ShaderVec3t.Const))) { Wnd->GetErrorMessage(); }
-	pDevice->CreateVertexShader((DWORD*)pShaderBuffer->GetBufferPointer(), &ShaderVec3t.Shader);
+	if (FAILED(D3DXCompileShader(VertexShaderCode, static_cast<UINT>(strlen(VertexShaderCode)), NULL, NULL, "vec3t", "vs_3_0", 0, &pShaderBuffer, NULL, &Const))) { Wnd->GetErrorMessage(); }
+	pDevice->CreateVertexShader((DWORD*)pShaderBuffer->GetBufferPointer(), &Shader);
+	ShaderVec3t.Const.reset(Const);
+	ShaderVec3t.Shader.reset(Shader);
 	pShaderBuffer->Release();
 
-	if (FAILED(D3DXCompileShader(VertexShaderCode, static_cast<UINT>(strlen(VertexShaderCode)), NULL, NULL, "vec4t", "vs_3_0", 0, &pShaderBuffer, NULL, &ShaderVec4t.Const))) { Wnd->GetErrorMessage(); }
-	pDevice->CreateVertexShader((DWORD*)pShaderBuffer->GetBufferPointer(), &ShaderVec4t.Shader);
+	if (FAILED(D3DXCompileShader(VertexShaderCode, static_cast<UINT>(strlen(VertexShaderCode)), NULL, NULL, "vec4t", "vs_3_0", 0, &pShaderBuffer, NULL, &Const))) { Wnd->GetErrorMessage(); }
+	pDevice->CreateVertexShader((DWORD*)pShaderBuffer->GetBufferPointer(), &Shader);
+	ShaderVec4t.Const.reset(Const);
+	ShaderVec4t.Shader.reset(Shader);
 	pShaderBuffer->Release();
 
-	if (FAILED(D3DXCompileShader(VertexShaderCode, static_cast<UINT>(strlen(VertexShaderCode)), NULL, NULL, "vec3n", "vs_3_0", 0, &pShaderBuffer, NULL, &ShaderVec3n.Const))) { Wnd->GetErrorMessage(); }
-	pDevice->CreateVertexShader((DWORD*)pShaderBuffer->GetBufferPointer(), &ShaderVec3n.Shader);
+	if (FAILED(D3DXCompileShader(VertexShaderCode, static_cast<UINT>(strlen(VertexShaderCode)), NULL, NULL, "vec3n", "vs_3_0", 0, &pShaderBuffer, NULL, &Const))) { Wnd->GetErrorMessage(); }
+	pDevice->CreateVertexShader((DWORD*)pShaderBuffer->GetBufferPointer(), &Shader);
+	ShaderVec3n.Const.reset(Const);
+	ShaderVec3n.Shader.reset(Shader);
 	pShaderBuffer->Release();
 
-	if (FAILED(D3DXCompileShader(VertexShaderCode, static_cast<UINT>(strlen(VertexShaderCode)), NULL, NULL, "vec3nt", "vs_3_0", 0, &pShaderBuffer, NULL, &ShaderVec3nt.Const))) { Wnd->GetErrorMessage(); }
-	pDevice->CreateVertexShader((DWORD*)pShaderBuffer->GetBufferPointer(), &ShaderVec3nt.Shader);
+	if (FAILED(D3DXCompileShader(VertexShaderCode, static_cast<UINT>(strlen(VertexShaderCode)), NULL, NULL, "vec3nt", "vs_3_0", 0, &pShaderBuffer, NULL, &Const))) { Wnd->GetErrorMessage(); }
+	pDevice->CreateVertexShader((DWORD*)pShaderBuffer->GetBufferPointer(), &Shader);
+	ShaderVec3nt.Const.reset(Const);
+	ShaderVec3nt.Shader.reset(Shader);
 	pShaderBuffer->Release();
 
-	if (FAILED(D3DXCompileShader(VertexShaderCode, static_cast<UINT>(strlen(VertexShaderCode)), NULL, NULL, "vec3g", "vs_3_0", 0, &pShaderBuffer, NULL, &ShaderVec3g.Const))) { Wnd->GetErrorMessage(); }
-	pDevice->CreateVertexShader((DWORD*)pShaderBuffer->GetBufferPointer(), &ShaderVec3g.Shader);
+	if (FAILED(D3DXCompileShader(VertexShaderCode, static_cast<UINT>(strlen(VertexShaderCode)), NULL, NULL, "vec3c", "vs_3_0", 0, &pShaderBuffer, NULL, &Const))) { Wnd->GetErrorMessage(); }
+	pDevice->CreateVertexShader((DWORD*)pShaderBuffer->GetBufferPointer(), &Shader);
+	ShaderVec3c.Const.reset(Const);
+	ShaderVec3c.Shader.reset(Shader);
 	pShaderBuffer->Release();
 
-	if (FAILED(D3DXCompileShader(VertexShaderCode, static_cast<UINT>(strlen(VertexShaderCode)), NULL, NULL, "vec3gn", "vs_3_0", 0, &pShaderBuffer, NULL, &ShaderVec3gn.Const))) { Wnd->GetErrorMessage(); }
-	pDevice->CreateVertexShader((DWORD*)pShaderBuffer->GetBufferPointer(), &ShaderVec3gn.Shader);
+	if (FAILED(D3DXCompileShader(VertexShaderCode, static_cast<UINT>(strlen(VertexShaderCode)), NULL, NULL, "vec3cn", "vs_3_0", 0, &pShaderBuffer, NULL, &Const))) { Wnd->GetErrorMessage(); }
+	pDevice->CreateVertexShader((DWORD*)pShaderBuffer->GetBufferPointer(), &Shader);
+	ShaderVec3cn.Const.reset(Const);
+	ShaderVec3cn.Shader.reset(Shader);
 	pShaderBuffer->Release();
 
-	if (FAILED(D3DXCompileShader(VertexShaderCode, static_cast<UINT>(strlen(VertexShaderCode)), NULL, NULL, "vec3gt", "vs_3_0", 0, &pShaderBuffer, NULL, &ShaderVec3gt.Const))) { Wnd->GetErrorMessage(); }
-	pDevice->CreateVertexShader((DWORD*)pShaderBuffer->GetBufferPointer(), &ShaderVec3gt.Shader);
+	if (FAILED(D3DXCompileShader(VertexShaderCode, static_cast<UINT>(strlen(VertexShaderCode)), NULL, NULL, "vec3ct", "vs_3_0", 0, &pShaderBuffer, NULL, &Const))) { Wnd->GetErrorMessage(); }
+	pDevice->CreateVertexShader((DWORD*)pShaderBuffer->GetBufferPointer(), &Shader);
+	ShaderVec3ct.Const.reset(Const);
+	ShaderVec3ct.Shader.reset(Shader);
 	pShaderBuffer->Release();
 
-	if (FAILED(D3DXCompileShader(VertexShaderCode, static_cast<UINT>(strlen(VertexShaderCode)), NULL, NULL, "vec3gnt", "vs_3_0", 0, &pShaderBuffer, NULL, &ShaderVec3gnt.Const))) { Wnd->GetErrorMessage(); }
-	pDevice->CreateVertexShader((DWORD*)pShaderBuffer->GetBufferPointer(), &ShaderVec3gnt.Shader);
+	if (FAILED(D3DXCompileShader(VertexShaderCode, static_cast<UINT>(strlen(VertexShaderCode)), NULL, NULL, "vec3cnt", "vs_3_0", 0, &pShaderBuffer, NULL, &Const))) { Wnd->GetErrorMessage(); }
+	pDevice->CreateVertexShader((DWORD*)pShaderBuffer->GetBufferPointer(), &Shader);
+	ShaderVec3cnt.Const.reset(Const);
+	ShaderVec3cnt.Shader.reset(Shader);
 	pShaderBuffer->Release();
 }
 
-
-/*
-	Initialize
-*/
 bool Standard_DirectX_9::Initialize(std::shared_ptr<Standard_Window> StdWnd, UINT Width, UINT Height, bool NativeResolution)
 {
 	if (b_Ready) { return true; }
@@ -330,77 +290,90 @@ bool Standard_DirectX_9::Initialize(std::shared_ptr<Standard_Window> StdWnd, UIN
 
 	SetWindowSubclass(Wnd->Get(), DirectX9WndProc, 0, (DWORD_PTR)this);
 
-	if (FAILED(Direct3DCreate9Ex(D3D_SDK_VERSION, &pD3D))) { Wnd->GetErrorMessage(); }
+	IDirect3D9Ex* Direct3D9Ex = nullptr;
+	if (FAILED(Direct3DCreate9Ex(D3D_SDK_VERSION, &Direct3D9Ex))) { Wnd->GetErrorMessage(); }
+	pD3D.reset(Direct3D9Ex);
 
-	if (FAILED(pD3D->GetDeviceCaps(D3DADAPTER_DEFAULT, D3DDEVTYPE_HAL, &DeviceCaps))) { Wnd->GetErrorMessage(); }
+	D3DCAPS9* DeviceCaps = new D3DCAPS9{};
+	if (FAILED(pD3D->GetDeviceCaps(D3DADAPTER_DEFAULT, D3DDEVTYPE_HAL, DeviceCaps))) { Wnd->GetErrorMessage(); }
+	m_DeviceCaps.reset(DeviceCaps);
 
-	if (FAILED(pD3D->GetAdapterIdentifier(D3DADAPTER_DEFAULT, NULL, &AdapterIdentifier))) { Wnd->GetErrorMessage(); }
+	D3DADAPTER_IDENTIFIER9* AdapterIdentifier = new D3DADAPTER_IDENTIFIER9{};
+	if (FAILED(pD3D->GetAdapterIdentifier(D3DADAPTER_DEFAULT, NULL, AdapterIdentifier))) { Wnd->GetErrorMessage(); }
+	m_AdapterIdentifier.reset(AdapterIdentifier);
 
-	if (FAILED(pD3D->GetAdapterDisplayMode(D3DADAPTER_DEFAULT, &DisplayMode))) { Wnd->GetErrorMessage(); }
+	D3DDISPLAYMODE* DisplayMode = new D3DDISPLAYMODE{};
+	if (FAILED(pD3D->GetAdapterDisplayMode(D3DADAPTER_DEFAULT, DisplayMode))) { Wnd->GetErrorMessage(); }
+	m_DisplayMode.reset(DisplayMode);
 
-	if (FAILED(pD3D->CheckDeviceType(D3DADAPTER_DEFAULT, D3DDEVTYPE_HAL, DisplayMode.Format, DisplayMode.Format, TRUE))) { Wnd->GetErrorMessage(); }
+	if (FAILED(pD3D->CheckDeviceType(D3DADAPTER_DEFAULT, D3DDEVTYPE_HAL, m_DisplayMode->Format, m_DisplayMode->Format, TRUE))) { Wnd->GetErrorMessage(); }
 
-	if (FAILED(pD3D->CheckDeviceType(D3DADAPTER_DEFAULT, D3DDEVTYPE_HAL, DisplayMode.Format, DisplayMode.Format, FALSE))) { Wnd->GetErrorMessage(); }
+	if (FAILED(pD3D->CheckDeviceType(D3DADAPTER_DEFAULT, D3DDEVTYPE_HAL, m_DisplayMode->Format, m_DisplayMode->Format, FALSE))) { Wnd->GetErrorMessage(); }
+
+	D3DPRESENT_PARAMETERS* PresentParameters = new D3DPRESENT_PARAMETERS{};
+	m_PresentParameters.reset(PresentParameters);
 
 	if (b_AntiAliasing)
 	{
 		DWORD pQualityLevels = NULL;
-		if (SUCCEEDED(pD3D->CheckDeviceMultiSampleType(D3DADAPTER_DEFAULT, D3DDEVTYPE_HAL, DisplayMode.Format, FALSE, D3DMULTISAMPLE_NONMASKABLE, &pQualityLevels)))
+		if (SUCCEEDED(pD3D->CheckDeviceMultiSampleType(D3DADAPTER_DEFAULT, D3DDEVTYPE_HAL, m_DisplayMode->Format, FALSE, D3DMULTISAMPLE_NONMASKABLE, &pQualityLevels)))
 		{
 			b_AntiAliasing = true;
-			PresentParameters.MultiSampleType = D3DMULTISAMPLE_NONMASKABLE;
-			PresentParameters.MultiSampleQuality = pQualityLevels - 1;
+			m_PresentParameters->MultiSampleType = D3DMULTISAMPLE_NONMASKABLE;
+			m_PresentParameters->MultiSampleQuality = pQualityLevels - 1;
 		}
 	}
 	else
 	{
-		PresentParameters.MultiSampleType = D3DMULTISAMPLE_NONE;
-		PresentParameters.MultiSampleQuality = NULL;
+		m_PresentParameters->MultiSampleType = D3DMULTISAMPLE_NONE;
+		m_PresentParameters->MultiSampleQuality = NULL;
 	}
 
 	if (b_NativeResolution)
 	{
-		PresentParameters.BackBufferWidth = Width;
-		PresentParameters.BackBufferHeight = Height;
+		m_PresentParameters->BackBufferWidth = Width;
+		m_PresentParameters->BackBufferHeight = Height;
 	}
 	else
 	{
-		PresentParameters.BackBufferWidth = NULL;
-		PresentParameters.BackBufferHeight = NULL;
+		m_PresentParameters->BackBufferWidth = NULL;
+		m_PresentParameters->BackBufferHeight = NULL;
 	}
 
-	m_NativeWidth = static_cast<float>(PresentParameters.BackBufferWidth);
-	m_NativeHeight = static_cast<float>(PresentParameters.BackBufferHeight);
+	m_NativeWidth = static_cast<float>(m_PresentParameters->BackBufferWidth);
+	m_NativeHeight = static_cast<float>(m_PresentParameters->BackBufferHeight);
 
-	PresentParameters.BackBufferFormat = D3DFMT_UNKNOWN;
-	PresentParameters.BackBufferCount = 1;
-	PresentParameters.SwapEffect = D3DSWAPEFFECT_DISCARD;
-	PresentParameters.hDeviceWindow = Wnd->Get();
-	PresentParameters.Windowed = TRUE;
-	PresentParameters.EnableAutoDepthStencil = TRUE;
-	PresentParameters.AutoDepthStencilFormat = D3DFMT_D24S8;
-	PresentParameters.Flags = NULL;
-	PresentParameters.FullScreen_RefreshRateInHz = D3DPRESENT_RATE_DEFAULT;
-	PresentParameters.PresentationInterval = D3DPRESENT_INTERVAL_DEFAULT;
+	m_PresentParameters->BackBufferFormat = D3DFMT_UNKNOWN;
+	m_PresentParameters->BackBufferCount = 1;
+	m_PresentParameters->SwapEffect = D3DSWAPEFFECT_DISCARD;
+	m_PresentParameters->hDeviceWindow = Wnd->Get();
+	m_PresentParameters->Windowed = TRUE;
+	m_PresentParameters->EnableAutoDepthStencil = TRUE;
+	m_PresentParameters->AutoDepthStencilFormat = D3DFMT_D24S8;
+	m_PresentParameters->Flags = NULL;
+	m_PresentParameters->FullScreen_RefreshRateInHz = D3DPRESENT_RATE_DEFAULT;
+	m_PresentParameters->PresentationInterval = D3DPRESENT_INTERVAL_DEFAULT;
 
 	/*if (b_Fullscreen)
 	{
-		PresentParameters.BackBufferWidth = DisplayMode.Width;
-		PresentParameters.BackBufferHeight = DisplayMode.Height;
+		m_PresentParameters->BackBufferWidth = m_DisplayMode->Width;
+		m_PresentParameters->BackBufferHeight = m_DisplayMode->Height;
 		D3DDISPLAYMODEEX FullScreenDisplayMode{};
 		D3DDISPLAYROTATION DisplayRotation = D3DDISPLAYROTATION_IDENTITY;
 		if (FAILED(pD3D->GetAdapterDisplayModeEx(D3DADAPTER_DEFAULT, &FullScreenDisplayMode, &DisplayRotation))) { Wnd->GetErrorMessage(); }
 	}*/
 
-	if (FAILED(pD3D->CreateDeviceEx(D3DADAPTER_DEFAULT, D3DDEVTYPE_HAL, PresentParameters.hDeviceWindow,
+	IDirect3DDevice9Ex* Direct3DDevice9Ex = nullptr;
+	if (FAILED(pD3D->CreateDeviceEx(D3DADAPTER_DEFAULT, D3DDEVTYPE_HAL, m_PresentParameters->hDeviceWindow,
 		D3DCREATE_FPU_PRESERVE | D3DCREATE_MULTITHREADED | D3DCREATE_HARDWARE_VERTEXPROCESSING | D3DCREATE_ENABLE_PRESENTSTATS,
-		&PresentParameters, NULL, &pDevice))) { Wnd->GetErrorMessage(); }
+		m_PresentParameters.get(), NULL, &Direct3DDevice9Ex))) { Wnd->GetErrorMessage(); }
+	pDevice.reset(Direct3DDevice9Ex);
 
-	if (FAILED(pDevice->CreateAdditionalSwapChain(&PresentParameters, (IDirect3DSwapChain9**)&pSwapChain))) { Wnd->GetErrorMessage(); }
+	if (FAILED(pDevice->CreateAdditionalSwapChain(m_PresentParameters.get(), (IDirect3DSwapChain9**)&pSwapChain))) { Wnd->GetErrorMessage(); }
 
-	if (DeviceCaps.PixelShaderVersion >= D3DPS_VERSION(3, 0))
+	if (m_DeviceCaps->PixelShaderVersion >= D3DPS_VERSION(3, 0))
 	{
-		pDevice->SetRenderState(D3DRS_POINTSIZE_MAX, reinterpret_cast<DWORD&>(DeviceCaps.MaxPointSize));
+		pDevice->SetRenderState(D3DRS_POINTSIZE_MAX, reinterpret_cast<DWORD&>(m_DeviceCaps->MaxPointSize));
 	}
 	else
 	{
@@ -422,10 +395,6 @@ bool Standard_DirectX_9::Initialize(std::shared_ptr<Standard_Window> StdWnd, UIN
 	return b_Ready = b_Active = true;
 }
 
-
-/*
-	Update device state
-*/
 void Standard_DirectX_9::Test(void)
 {
 	if (!pDevice) { return; }
@@ -443,7 +412,7 @@ void Standard_DirectX_9::Test(void)
 	}
 	else if (hRes == D3DERR_DEVICENOTRESET)
 	{
-		Reset(&PresentParameters);
+		Reset(m_PresentParameters.get());
 	}
 	else if (hRes == D3DERR_DRIVERINTERNALERROR)
 	{
@@ -452,20 +421,16 @@ void Standard_DirectX_9::Test(void)
 	}
 }
 
-
-/*
-	Reset device state
-*/
 void Standard_DirectX_9::Reset(D3DPRESENT_PARAMETERS* Present)
 {
 	if (Present)
 	{
-		PresentParameters = *Present;
+		m_PresentParameters.reset(Present);
 	}
 
 	if (!pDevice) { return; }
 
-	HRESULT hRes = pDevice->Reset(&PresentParameters);
+	HRESULT hRes = pDevice->Reset(m_PresentParameters.get());
 
 	if (hRes == D3D_OK)
 	{
@@ -493,40 +458,77 @@ void Standard_DirectX_9::Reset(D3DPRESENT_PARAMETERS* Present)
 	}
 }
 
-
-/*
-	Get Device Caps
-*/
 D3DCAPS9* Standard_DirectX_9::GetDeviceCaps(void)
 {
-	if (FAILED(pD3D->GetDeviceCaps(D3DADAPTER_DEFAULT, D3DDEVTYPE_HAL, &DeviceCaps))) { Wnd->GetErrorMessage(); }
-	return &DeviceCaps;
+	D3DCAPS9* DeviceCaps = new D3DCAPS9{};
+	if (FAILED(pD3D->GetDeviceCaps(D3DADAPTER_DEFAULT, D3DDEVTYPE_HAL, DeviceCaps))) { Wnd->GetErrorMessage(); }
+	m_DeviceCaps.reset(DeviceCaps);
+	return m_DeviceCaps.get();
 }
 
-
-/*
-	Get Adapter Identifier
-*/
 D3DADAPTER_IDENTIFIER9* Standard_DirectX_9::GetAdapterId(void)
 {
-	if (FAILED(pD3D->GetAdapterIdentifier(D3DADAPTER_DEFAULT, NULL, &AdapterIdentifier))) { Wnd->GetErrorMessage(); }
-	return &AdapterIdentifier;
+	D3DADAPTER_IDENTIFIER9* AdapterIdentifier = new D3DADAPTER_IDENTIFIER9{};
+	if (FAILED(pD3D->GetAdapterIdentifier(D3DADAPTER_DEFAULT, NULL, AdapterIdentifier))) { Wnd->GetErrorMessage(); }
+	m_AdapterIdentifier.reset(AdapterIdentifier);
+	return m_AdapterIdentifier.get();
 }
 
-
-/*
-	Get Display Mode
-*/
 D3DDISPLAYMODE* Standard_DirectX_9::GetDisplayMode(void)
 {
-	if (FAILED(pD3D->GetAdapterDisplayMode(D3DADAPTER_DEFAULT, &DisplayMode))) { Wnd->GetErrorMessage(); }
-	return &DisplayMode;
+	D3DDISPLAYMODE* DisplayMode = new D3DDISPLAYMODE{};
+	if (FAILED(pD3D->GetAdapterDisplayMode(D3DADAPTER_DEFAULT, DisplayMode))) { Wnd->GetErrorMessage(); }
+	m_DisplayMode.reset(DisplayMode);
+	return m_DisplayMode.get();
 }
 
+IDirect3DSurface9* Standard_DirectX_9::CreateRenderSurface(std::uint16_t Width, std::uint16_t Height, D3DFORMAT Format)
+{
+	if (e_DeviceState != D3DDEVICE_STATE::NORMAL) { return nullptr; }
 
-/*
-	Create Texture
-*/
+	IDirect3DSurface9* pSurface = nullptr;
+
+	if (FAILED(pDevice->CreateRenderTarget(Width, Height, Format, m_PresentParameters->MultiSampleType, m_PresentParameters->MultiSampleQuality, FALSE, &pSurface, NULL))) { Wnd->GetErrorMessage(); }
+
+	return pSurface;
+}
+
+IDirect3DTexture9* Standard_DirectX_9::CreateTexture(std::uint16_t Width, std::uint16_t Height, DWORD Usage)
+{
+	if (e_DeviceState != D3DDEVICE_STATE::NORMAL) { return nullptr; }
+
+	IDirect3DTexture9* pTexture = nullptr;
+
+	D3DLOCKED_RECT LockedRect{};
+
+	RECT Area = { 0, 0, Width, Height };
+
+	if (FAILED(D3DXCreateTexture(pDevice.get(), Width, Height, D3DX_DEFAULT, Usage, D3DFMT_A8R8G8B8, D3DPOOL_DEFAULT, &pTexture))) { Wnd->GetErrorMessage(); }
+
+	if (Usage != D3DUSAGE_RENDERTARGET)
+	{
+		if (FAILED(pTexture->LockRect(0, &LockedRect, &Area, NULL)))
+		{
+			Wnd->GetErrorMessage(false);
+			pTexture->Release();
+			return nullptr;
+		}
+
+		BYTE* Bits = static_cast<BYTE*>(LockedRect.pBits);
+
+		if (Bits) { std::memset(Bits, 0xFF, (size_t)(Width * Height * 4)); }
+
+		if (FAILED(pTexture->UnlockRect(0)))
+		{
+			Wnd->GetErrorMessage(false);
+			pTexture->Release();
+			return nullptr;
+		}
+	}
+
+	return pTexture;
+}
+
 IDirect3DTexture9* Standard_DirectX_9::CreateTexture(std::unique_ptr<Standard_Image>& Image, bool b_Alpha, DWORD AlphaColor, std::uint8_t AlphaChannel)
 {
 	if (e_DeviceState != D3DDEVICE_STATE::NORMAL) { return nullptr; }
@@ -547,8 +549,8 @@ IDirect3DTexture9* Standard_DirectX_9::CreateTexture(std::unique_ptr<Standard_Im
 	D3DLOCKED_RECT LockedRect{};
 	D3DLOCKED_RECT LockedRectPow{};
 
-	if (FAILED(D3DXCreateTexture(pDevice, Image->GetWidth(), Image->GetHeight(), D3DX_DEFAULT, D3DUSAGE_DYNAMIC, D3DFMT_A8R8G8B8, D3DPOOL_DEFAULT, &pImage))) { Wnd->GetErrorMessage(); }
-	if (FAILED(D3DXCreateTexture(pDevice, PowWidth, PowHeight, D3DX_DEFAULT, D3DUSAGE_DYNAMIC, D3DFMT_A8R8G8B8, D3DPOOL_DEFAULT, &pImagePow))) { Wnd->GetErrorMessage(); }
+	if (FAILED(D3DXCreateTexture(pDevice.get(), Image->GetWidth(), Image->GetHeight(), D3DX_DEFAULT, D3DUSAGE_DYNAMIC, D3DFMT_A8R8G8B8, D3DPOOL_DEFAULT, &pImage))) { Wnd->GetErrorMessage(); }
+	if (FAILED(D3DXCreateTexture(pDevice.get(), PowWidth, PowHeight, D3DX_DEFAULT, D3DUSAGE_DYNAMIC, D3DFMT_A8R8G8B8, D3DPOOL_DEFAULT, &pImagePow))) { Wnd->GetErrorMessage(); }
 
 	if (FAILED(pImage->LockRect(0, &LockedRect, NULL, 0))) { Wnd->GetErrorMessage(); }
 	if (FAILED(pImagePow->LockRect(0, &LockedRectPow, NULL, 0))) { Wnd->GetErrorMessage(); }
@@ -567,23 +569,23 @@ IDirect3DTexture9* Standard_DirectX_9::CreateTexture(std::unique_ptr<Standard_Im
 				{
 					uint32_t iPixel = Y * Image->GetWidth() + X;
 					uint8_t iPalette = Image->GetData().data()[iPixel / 2];
-					RGBQUAD Color0 = Image->GetPalette().data()[iPalette >> 4];
-					RGBQUAD Color1 = Image->GetPalette().data()[iPalette & 0x0F];
+					Pixel_32bpp Color0 = Image->GetPalette().data()[iPalette >> 4];
+					Pixel_32bpp Color1 = Image->GetPalette().data()[iPalette & 0x0F];
 					uint8_t Alpha = 0xFF;
 
 					if (b_Alpha)
 					{
-						if ((Color0.rgbRed == GetRValue(AlphaColor)) && (Color0.rgbGreen == GetGValue(AlphaColor)) && (Color0.rgbBlue == GetBValue(AlphaColor))) { Alpha = AlphaChannel; }
+						if ((Color0.R == GetRValue(AlphaColor)) && (Color0.G == GetGValue(AlphaColor)) && (Color0.B == GetBValue(AlphaColor))) { Alpha = AlphaChannel; }
 					}
-					((uint32_t*)pBits)[i++] = (Alpha << 24) | (Color0.rgbRed << 16) | (Color0.rgbGreen << 8) | Color0.rgbBlue;
+					((uint32_t*)pBits)[i++] = (Alpha << 24) | (Color0.R << 16) | (Color0.G << 8) | Color0.B;
 
 					Alpha = 0xFF;
 
 					if (b_Alpha)
 					{
-						if ((Color1.rgbRed == GetRValue(AlphaColor)) && (Color1.rgbGreen == GetGValue(AlphaColor)) && (Color1.rgbBlue == GetBValue(AlphaColor))) { Alpha = AlphaChannel; }
+						if ((Color1.R == GetRValue(AlphaColor)) && (Color1.G == GetGValue(AlphaColor)) && (Color1.B == GetBValue(AlphaColor))) { Alpha = AlphaChannel; }
 					}
-					((uint32_t*)pBits)[i++] = (Alpha << 24) | (Color1.rgbRed << 16) | (Color1.rgbGreen << 8) | Color1.rgbBlue;
+					((uint32_t*)pBits)[i++] = (Alpha << 24) | (Color1.R << 16) | (Color1.G << 8) | Color1.B;
 				}
 			}
 		}
@@ -596,13 +598,13 @@ IDirect3DTexture9* Standard_DirectX_9::CreateTexture(std::unique_ptr<Standard_Im
 				{
 					uint32_t iPixel = Y * Image->GetWidth() + X;
 					uint8_t iPalette = Image->GetData().data()[iPixel];
-					RGBQUAD Color = Image->GetPalette().data()[iPalette];
+					Pixel_32bpp Color = Image->GetPalette().data()[iPalette];
 					uint8_t Alpha = 0xFF;
 					if (b_Alpha)
 					{
-						if ((Color.rgbRed == GetRValue(AlphaColor)) && (Color.rgbGreen == GetGValue(AlphaColor)) && (Color.rgbBlue == GetBValue(AlphaColor))) { Alpha = AlphaChannel; }
+						if ((Color.R == GetRValue(AlphaColor)) && (Color.G == GetGValue(AlphaColor)) && (Color.B == GetBValue(AlphaColor))) { Alpha = AlphaChannel; }
 					}
-					((uint32_t*)pBits)[i++] = (Alpha << 24) | (Color.rgbRed << 16) | (Color.rgbGreen << 8) | Color.rgbBlue;
+					((uint32_t*)pBits)[i++] = (Alpha << 24) | (Color.R << 16) | (Color.G << 8) | Color.B;
 				}
 			}
 		}
@@ -690,17 +692,16 @@ IDirect3DTexture9* Standard_DirectX_9::CreateTexture(std::unique_ptr<Standard_Im
 	return pImagePow;
 }
 
-
-/*
-	Create Texture from Sony PlayStation Texture (*.TIM)
-*/
-IDirect3DTexture9* Standard_DirectX_9::CreateTexture(std::unique_ptr<Sony_PlayStation_Texture>& TIM, uint16_t iPalette, Sony_Texture_Transparency Transparency, DWORD TransparencyColor)
+IDirect3DTexture9* Standard_DirectX_9::CreateTexture(std::unique_ptr<Sony_PlayStation_Texture>& TIM, uint16_t iPalette, Sony_Texture_Transparency Transparency, DWORD TransparencyColor,
+	bool b_VerticalFlip)
 {
 	if (e_DeviceState != D3DDEVICE_STATE::NORMAL) { return nullptr; }
 
+	Standard_String Str;
+
 	if (!TIM->IsOpen())
 	{
-		Str->Message(L"Direct-X: Error, Sony PlayStation Texture Image is not open");
+		Str.Message(L"Direct-X: Error, Sony PlayStation Texture Image is not open");
 		return nullptr;
 	}
 
@@ -807,7 +808,7 @@ IDirect3DTexture9* Standard_DirectX_9::CreateTexture(std::unique_ptr<Sony_PlaySt
 	UINT WidthPow = NextPowerOfTwo(Width);
 	UINT HeightPow = NextPowerOfTwo(Height);
 
-	if (FAILED(D3DXCreateTexture(pDevice, WidthPow, HeightPow, D3DX_DEFAULT, D3DUSAGE_DYNAMIC, D3DFMT_A8R8G8B8, D3DPOOL_DEFAULT, &pTexture)))
+	if (FAILED(D3DXCreateTexture(pDevice.get(), WidthPow, HeightPow, D3DX_DEFAULT, D3DUSAGE_DYNAMIC, D3DFMT_A8R8G8B8, D3DPOOL_DEFAULT, &pTexture)))
 	{
 		Wnd->GetErrorMessage(false);
 		return nullptr;
@@ -888,6 +889,22 @@ IDirect3DTexture9* Standard_DirectX_9::CreateTexture(std::unique_ptr<Sony_PlaySt
 		}
 	}
 
+	if (b_VerticalFlip && Bits)
+	{
+		std::vector<uint32_t> Temp(WidthPow * Height);
+		std::memcpy(Temp.data(), Bits, (std::size_t)WidthPow * Height * sizeof(uint32_t));
+
+		for (LONG Y = 0; Y < Height; Y++)
+		{
+			for (LONG X = 0; X < Width; X++)
+			{
+				std::size_t iSrc = (std::size_t)(Height - Y - 1) * WidthPow + X;
+				std::size_t iDst = (std::size_t)Y * WidthPow + X;
+				((uint32_t*)Bits)[iDst] = Temp[iSrc];
+			}
+		}
+	}
+
 	if (FAILED(pTexture->UnlockRect(0)))
 	{
 		Wnd->GetErrorMessage(false);
@@ -898,10 +915,6 @@ IDirect3DTexture9* Standard_DirectX_9::CreateTexture(std::unique_ptr<Sony_PlaySt
 	return pTexture;
 }
 
-
-/*
-	Save Texture (32bpp)
-*/
 bool Standard_DirectX_9::SaveTexture(IDirect3DTexture9* Texture, D3DXIMAGE_FILEFORMAT Format, const std::filesystem::path& Filename)
 {
 	if (!Texture) { return false; }
@@ -916,10 +929,6 @@ bool Standard_DirectX_9::SaveTexture(IDirect3DTexture9* Texture, D3DXIMAGE_FILEF
 	return true;
 }
 
-
-/*
-	Create index buffer
-*/
 IDirect3DIndexBuffer9* Standard_DirectX_9::CreateIndexBuffer(D3DFORMAT Format, std::size_t Length)
 {
 	if (e_DeviceState != D3DDEVICE_STATE::NORMAL) { return nullptr; }
@@ -933,10 +942,6 @@ IDirect3DIndexBuffer9* Standard_DirectX_9::CreateIndexBuffer(D3DFORMAT Format, s
 	return pIndexBuffer;
 }
 
-
-/*
-	Create index buffer
-*/
 IDirect3DIndexBuffer9* Standard_DirectX_9::CreateIndexBuffer(D3DFORMAT Format, void* pData, std::size_t Length)
 {
 	if ((Format != D3DFMT_INDEX16) && (Format != D3DFMT_INDEX32)) { return nullptr; }
@@ -948,10 +953,6 @@ IDirect3DIndexBuffer9* Standard_DirectX_9::CreateIndexBuffer(D3DFORMAT Format, v
 	return pIndexBuffer;
 }
 
-
-/*
-	Update index buffer
-*/
 void Standard_DirectX_9::UpdateIndexBuffer(IDirect3DIndexBuffer9* Buffer, void* pData)
 {
 	if (!Buffer) { return; }
@@ -972,10 +973,6 @@ void Standard_DirectX_9::UpdateIndexBuffer(IDirect3DIndexBuffer9* Buffer, void* 
 	if (FAILED(Buffer->Unlock())) { Wnd->GetErrorMessage(); }
 }
 
-
-/*
-	Create vertex buffer
-*/
 IDirect3DVertexBuffer9* Standard_DirectX_9::CreateVertexBuffer(DWORD FVF, std::size_t Length)
 {
 	if (e_DeviceState != D3DDEVICE_STATE::NORMAL) { return nullptr; }
@@ -987,10 +984,6 @@ IDirect3DVertexBuffer9* Standard_DirectX_9::CreateVertexBuffer(DWORD FVF, std::s
 	return pVertexBuffer;
 }
 
-
-/*
-	Create vertex buffer
-*/
 IDirect3DVertexBuffer9* Standard_DirectX_9::CreateVertexBuffer(DWORD FVF, void* pData, std::size_t Length)
 {
 	IDirect3DVertexBuffer9* pVertexBuffer = CreateVertexBuffer(FVF, Length);
@@ -1000,10 +993,6 @@ IDirect3DVertexBuffer9* Standard_DirectX_9::CreateVertexBuffer(DWORD FVF, void* 
 	return pVertexBuffer;
 }
 
-
-/*
-	Update vertex buffer
-*/
 void Standard_DirectX_9::UpdateVertexBuffer(IDirect3DVertexBuffer9* Buffer, void* pData)
 {
 	if (!Buffer) { return; }
@@ -1024,11 +1013,7 @@ void Standard_DirectX_9::UpdateVertexBuffer(IDirect3DVertexBuffer9* Buffer, void
 	if (FAILED(Buffer->Unlock())) { Wnd->GetErrorMessage(); }
 }
 
-
-/*
-	Create Point Vertex Buffer (Gouraud-shaded)
-*/
-IDirect3DVertexBuffer9* Standard_DirectX_9::CreatePoint(std::vector<vecpg> Data)
+IDirect3DVertexBuffer9* Standard_DirectX_9::CreatePoint(std::vector<vecpc> Data)
 {
 	if (Data.empty())
 	{
@@ -1036,15 +1021,15 @@ IDirect3DVertexBuffer9* Standard_DirectX_9::CreatePoint(std::vector<vecpg> Data)
 		return nullptr;
 	}
 
-	IDirect3DVertexBuffer9* Buffer = CreateVertexBuffer(D3DFVF_POINTG, Data.size() * sizeof(vecpg));
+	IDirect3DVertexBuffer9* Buffer = CreateVertexBuffer(D3DFVF_POINTC, Data.size() * sizeof(vecpc));
 
-	vecpg* pVertices = nullptr;
+	vecpc* pVertices = nullptr;
 
 	if (FAILED(Buffer->Lock(0, 0, (void**)&pVertices, 0))) { Wnd->GetErrorMessage(); }
 
 	try
 	{
-		std::memcpy(pVertices, Data.data(), Data.size() * sizeof(vecpg));
+		std::memcpy(pVertices, Data.data(), Data.size() * sizeof(vecpc));
 	}
 	catch (...) { std::cout << "CreatePoint: Memory copy failed" << std::endl; }
 
@@ -1053,117 +1038,7 @@ IDirect3DVertexBuffer9* Standard_DirectX_9::CreatePoint(std::vector<vecpg> Data)
 	return Buffer;
 }
 
-
-/*
-	Create Point Vertex Buffer (Gouraud-shaded)
-*/
-IDirect3DVertexBuffer9* Standard_DirectX_9::CreatePoint(std::vector<vec3> Vector, DWORD Color, float Size, D3DTRANSPARENCY_RATE TransparencyRate)
-{
-	if (Vector.empty())
-	{
-		std::cout << "CreatePoint: Vector is empty" << std::endl;
-		return nullptr;
-	}
-
-	Color = GetTransparency(Color, TransparencyRate);
-
-	IDirect3DVertexBuffer9* Buffer = CreateVertexBuffer(D3DFVF_POINTG, Vector.size() * sizeof(vecpg));
-
-	vecpg* pVertices = nullptr;
-
-	if (FAILED(Buffer->Lock(0, 0, (void**)&pVertices, 0))) { Wnd->GetErrorMessage(); }
-
-	for (std::size_t i = 0; i < Vector.size(); i++)
-	{
-		pVertices[i].vec = Vector[i];
-		pVertices[i].color = Color;
-		pVertices[i].size = Size;
-	}
-
-	if (FAILED(Buffer->Unlock())) { Wnd->GetErrorMessage(); }
-
-	return Buffer;
-}
-
-
-/*
-	Create Point Vertex Buffer (Gouraud-shaded)
-*/
-IDirect3DVertexBuffer9* Standard_DirectX_9::CreatePoint(std::vector<vec3> Vector, std::vector<DWORD> Color, float Size, D3DTRANSPARENCY_RATE TransparencyRate)
-{
-	if (Vector.empty() || Color.empty())
-	{
-		std::cout << "CreatePoint: Vector and/or Color is empty" << std::endl;
-		return nullptr;
-	}
-
-	if (Vector.size() != Color.size())
-	{
-		std::cout << "CreatePoint: Vector and Color sizes do not match" << std::endl;
-		return nullptr;
-	}
-
-	IDirect3DVertexBuffer9* Buffer = CreateVertexBuffer(D3DFVF_POINTG, Vector.size() * sizeof(vecpg));
-
-	vecpg* pVertices = nullptr;
-
-	if (FAILED(Buffer->Lock(0, 0, (void**)&pVertices, 0))) { Wnd->GetErrorMessage(); }
-
-	for (std::size_t i = 0; i < Vector.size(); i++)
-	{
-		pVertices[i].vec = Vector[i];
-
-		pVertices[i].color = GetTransparency(Color[i], TransparencyRate);
-
-		pVertices[i].size = Size;
-	}
-
-	if (FAILED(Buffer->Unlock())) { Wnd->GetErrorMessage(); }
-
-	return Buffer;
-}
-
-
-/*
-	Create Point Vertex Buffer (Gouraud-shaded)
-*/
-IDirect3DVertexBuffer9* Standard_DirectX_9::CreatePoint(std::vector<vec3> Vector, std::vector<DWORD> Color, std::vector<float> Size, D3DTRANSPARENCY_RATE TransparencyRate)
-{
-	if (Vector.empty() || Color.empty() || Size.empty())
-	{
-		std::cout << "CreatePoint: Vector, Color, and/or Size is empty" << std::endl;
-		return nullptr;
-	}
-
-	if ((Vector.size() != Color.size()) || (Vector.size() != Size.size()))
-	{
-		std::cout << "CreatePoint: Vector, Color, and Size sizes do not match" << std::endl;
-		return nullptr;
-	}
-
-	IDirect3DVertexBuffer9* Buffer = CreateVertexBuffer(D3DFVF_POINTG, Vector.size() * sizeof(vecpg));
-
-	vecpg* pVertices = nullptr;
-
-	if (FAILED(Buffer->Lock(0, 0, (void**)&pVertices, 0))) { Wnd->GetErrorMessage(); }
-
-	for (std::size_t i = 0; i < Vector.size(); i++)
-	{
-		pVertices[i].vec = Vector[i];
-		pVertices[i].color = GetTransparency(Color[i], TransparencyRate);
-		pVertices[i].size = Size[i];
-	}
-
-	if (FAILED(Buffer->Unlock())) { Wnd->GetErrorMessage(); }
-
-	return Buffer;
-}
-
-
-/*
-	Create Point Vertex Buffer (Gouraud-shaded w/ Texture)
-*/
-IDirect3DVertexBuffer9* Standard_DirectX_9::CreatePoint(std::vector<vecpgt> Data)
+IDirect3DVertexBuffer9* Standard_DirectX_9::CreatePoint(std::vector<vecpct> Data)
 {
 	if (Data.empty())
 	{
@@ -1171,15 +1046,15 @@ IDirect3DVertexBuffer9* Standard_DirectX_9::CreatePoint(std::vector<vecpgt> Data
 		return nullptr;
 	}
 
-	IDirect3DVertexBuffer9* Buffer = CreateVertexBuffer(D3DFVF_POINTGT, Data.size() * sizeof(vecpgt));
+	IDirect3DVertexBuffer9* Buffer = CreateVertexBuffer(D3DFVF_POINTCT, Data.size() * sizeof(vecpct));
 
-	vecpgt* pVertices = nullptr;
+	vecpct* pVertices = nullptr;
 
 	if (FAILED(Buffer->Lock(0, 0, (void**)&pVertices, 0))) { Wnd->GetErrorMessage(); }
 
 	try
 	{
-		std::memcpy(pVertices, Data.data(), Data.size() * sizeof(vecpgt));
+		std::memcpy(pVertices, Data.data(), Data.size() * sizeof(vecpct));
 	}
 	catch (...) { std::cout << "CreatePoint: Memory copy failed" << std::endl; }
 
@@ -1188,10 +1063,6 @@ IDirect3DVertexBuffer9* Standard_DirectX_9::CreatePoint(std::vector<vecpgt> Data
 	return Buffer;
 }
 
-
-/*
-	Create Texture Vertex Buffer
-*/
 IDirect3DVertexBuffer9* Standard_DirectX_9::CreateVec3t(std::vector<vec3t> Data)
 {
 	if (Data.empty())
@@ -1217,10 +1088,6 @@ IDirect3DVertexBuffer9* Standard_DirectX_9::CreateVec3t(std::vector<vec3t> Data)
 	return Buffer;
 }
 
-
-/*
-	Create Texture Vertex Buffer
-*/
 IDirect3DVertexBuffer9* Standard_DirectX_9::CreateVec3t(std::vector<vec3> Vector, std::vector<vec2> UV)
 {
 	if (Vector.size() != UV.size())
@@ -1252,10 +1119,6 @@ IDirect3DVertexBuffer9* Standard_DirectX_9::CreateVec3t(std::vector<vec3> Vector
 	return Buffer;
 }
 
-
-/*
-	Create Texture Vertex Buffer (W)
-*/
 IDirect3DVertexBuffer9* Standard_DirectX_9::CreateVec4t(std::vector<vec4t> Data)
 {
 	if (Data.empty())
@@ -1281,10 +1144,6 @@ IDirect3DVertexBuffer9* Standard_DirectX_9::CreateVec4t(std::vector<vec4t> Data)
 	return Buffer;
 }
 
-
-/*
-	Create Texture Vertex Buffer (W)
-*/
 IDirect3DVertexBuffer9* Standard_DirectX_9::CreateVec4t(std::vector<vec4> Vector, std::vector<vec2> UV)
 {
 	if (Vector.size() != UV.size())
@@ -1316,10 +1175,6 @@ IDirect3DVertexBuffer9* Standard_DirectX_9::CreateVec4t(std::vector<vec4> Vector
 	return Buffer;
 }
 
-
-/*
-	Create Vertex Buffer (w/ Normal)
-*/
 IDirect3DVertexBuffer9* Standard_DirectX_9::CreateVec3n(std::vector<vec3n> Data)
 {
 	if (Data.empty())
@@ -1345,10 +1200,6 @@ IDirect3DVertexBuffer9* Standard_DirectX_9::CreateVec3n(std::vector<vec3n> Data)
 	return Buffer;
 }
 
-
-/*
-	Create Vertex Buffer (w/ Normal)
-*/
 IDirect3DVertexBuffer9* Standard_DirectX_9::CreateVec3n(std::vector<vec3> Vector, std::vector<vec3> Normal)
 {
 	if (Vector.size() != Normal.size())
@@ -1380,10 +1231,6 @@ IDirect3DVertexBuffer9* Standard_DirectX_9::CreateVec3n(std::vector<vec3> Vector
 	return Buffer;
 }
 
-
-/*
-	Create Vertex Buffer (w/ UV)
-*/
 IDirect3DVertexBuffer9* Standard_DirectX_9::CreateVec3nt(std::vector<vec3nt> Data)
 {
 	if (Data.empty())
@@ -1409,10 +1256,6 @@ IDirect3DVertexBuffer9* Standard_DirectX_9::CreateVec3nt(std::vector<vec3nt> Dat
 	return Buffer;
 }
 
-
-/*
-	Create Vertex Buffer (w/ UV)
-*/
 IDirect3DVertexBuffer9* Standard_DirectX_9::CreateVec3nt(std::vector<vec3> Vector, std::vector<vec3> Normal, std::vector<vec2> UV)
 {
 	if ((Vector.size() != Normal.size()) || (Vector.size() != UV.size()) || (Normal.size() != UV.size()))
@@ -1445,52 +1288,44 @@ IDirect3DVertexBuffer9* Standard_DirectX_9::CreateVec3nt(std::vector<vec3> Vecto
 	return Buffer;
 }
 
-
-/*
-	Create Vertex Buffer (Gouraud-shaded)
-*/
-IDirect3DVertexBuffer9* Standard_DirectX_9::CreateVec3g(std::vector<vec3g> Data)
+IDirect3DVertexBuffer9* Standard_DirectX_9::CreateVec3c(std::vector<vec3c> Data)
 {
 	if (Data.empty())
 	{
-		std::cout << "CreateVec3g: Data is empty" << std::endl;
+		std::cout << "CreateVec3c: Data is empty" << std::endl;
 		return nullptr;
 	}
 
-	IDirect3DVertexBuffer9* Buffer = CreateVertexBuffer(D3DFVF_VERTG, Data.size() * sizeof(vec3g));
+	IDirect3DVertexBuffer9* Buffer = CreateVertexBuffer(D3DFVF_VERTC, Data.size() * sizeof(vec3c));
 
-	vec3g* pVertices = nullptr;
+	vec3c* pVertices = nullptr;
 
 	if (FAILED(Buffer->Lock(0, 0, (void**)&pVertices, 0))) { Wnd->GetErrorMessage(); }
 
 	try
 	{
-		std::memcpy(pVertices, Data.data(), Data.size() * sizeof(vec3g));
+		std::memcpy(pVertices, Data.data(), Data.size() * sizeof(vec3c));
 	}
-	catch (...) { std::cout << "CreateVec3g: Memory copy failed" << std::endl; }
+	catch (...) { std::cout << "CreateVec3c: Memory copy failed" << std::endl; }
 
 	if (FAILED(Buffer->Unlock())) { Wnd->GetErrorMessage(); }
 
 	return Buffer;
 }
 
-
-/*
-	Create Vertex Buffer (Gouraud-shaded)
-*/
-IDirect3DVertexBuffer9* Standard_DirectX_9::CreateVec3g(std::vector<vec3> Vector, DWORD Color, D3DTRANSPARENCY_RATE TransparencyRate)
+IDirect3DVertexBuffer9* Standard_DirectX_9::CreateVec3c(std::vector<vec3> Vector, DWORD Color, DWORD Transparency)
 {
 	if (Vector.empty())
 	{
-		std::cout << "CreateVec3g: Vector is empty" << std::endl;
+		std::cout << "CreateVec3c: Vector is empty" << std::endl;
 		return nullptr;
 	}
 
-	Color = GetTransparency(Color, TransparencyRate);
+	Color = GetTransparency(Color, Transparency);
 
-	IDirect3DVertexBuffer9* Buffer = CreateVertexBuffer(D3DFVF_VERTG, Vector.size() * sizeof(vec3g));
+	IDirect3DVertexBuffer9* Buffer = CreateVertexBuffer(D3DFVF_VERTC, Vector.size() * sizeof(vec3c));
 
-	vec3g* pVertices = nullptr;
+	vec3c* pVertices = nullptr;
 
 	if (FAILED(Buffer->Lock(0, 0, (void**)&pVertices, 0))) { Wnd->GetErrorMessage(); }
 
@@ -1505,58 +1340,50 @@ IDirect3DVertexBuffer9* Standard_DirectX_9::CreateVec3g(std::vector<vec3> Vector
 	return Buffer;
 }
 
-
-/*
-	Create Vertex Buffer (Gouraud-shaded w/ Normal)
-*/
-IDirect3DVertexBuffer9* Standard_DirectX_9::CreateVec3gn(std::vector<vec3gn> Data)
+IDirect3DVertexBuffer9* Standard_DirectX_9::CreateVec3cn(std::vector<vec3cn> Data)
 {
 	if (Data.empty())
 	{
-		std::cout << "CreateVec3gn: Data is empty" << std::endl;
+		std::cout << "CreateVec3cn: Data is empty" << std::endl;
 		return nullptr;
 	}
 
-	IDirect3DVertexBuffer9* Buffer = CreateVertexBuffer(D3DFVF_VERTGN, Data.size() * sizeof(vec3gn));
+	IDirect3DVertexBuffer9* Buffer = CreateVertexBuffer(D3DFVF_VERTCN, Data.size() * sizeof(vec3cn));
 
-	vec3gn* pVertices = nullptr;
+	vec3cn* pVertices = nullptr;
 
 	if (FAILED(Buffer->Lock(0, 0, (void**)&pVertices, 0))) { Wnd->GetErrorMessage(); }
 
 	try
 	{
-		std::memcpy(pVertices, Data.data(), Data.size() * sizeof(vec3gn));
+		std::memcpy(pVertices, Data.data(), Data.size() * sizeof(vec3cn));
 	}
-	catch (...) { std::cout << "CreateVec3gn: Memory copy failed" << std::endl; }
+	catch (...) { std::cout << "CreateVec3cn: Memory copy failed" << std::endl; }
 
 	if (FAILED(Buffer->Unlock())) { Wnd->GetErrorMessage(); }
 
 	return Buffer;
 }
 
-
-/*
-	Create Vertex Buffer (Gouraud-shaded w/ Normal)
-*/
-IDirect3DVertexBuffer9* Standard_DirectX_9::CreateVec3gn(std::vector<vec3> Vector, std::vector<vec3> Normal, DWORD Color, D3DTRANSPARENCY_RATE TransparencyRate)
+IDirect3DVertexBuffer9* Standard_DirectX_9::CreateVec3cn(std::vector<vec3> Vector, std::vector<vec3> Normal, DWORD Color, DWORD Transparency)
 {
 	if (Vector.size() != Normal.size())
 	{
-		std::cout << "CreateVec3gn: Vector and Normal sizes do not match" << std::endl;
+		std::cout << "CreateVec3cn: Vector and Normal sizes do not match" << std::endl;
 		return nullptr;
 	}
 
 	if (Vector.empty() || Normal.empty())
 	{
-		std::cout << "CreateVec3gn: Vector and/or Normal are empty" << std::endl;
+		std::cout << "CreateVec3cn: Vector and/or Normal are empty" << std::endl;
 		return nullptr;
 	}
 
-	Color = GetTransparency(Color, TransparencyRate);
+	Color = GetTransparency(Color, Transparency);
 
-	IDirect3DVertexBuffer9* Buffer = CreateVertexBuffer(D3DFVF_VERTGN, Vector.size() * sizeof(vec3gn));
+	IDirect3DVertexBuffer9* Buffer = CreateVertexBuffer(D3DFVF_VERTCN, Vector.size() * sizeof(vec3cn));
 
-	vec3gn* pVertices = nullptr;
+	vec3cn* pVertices = nullptr;
 
 	if (FAILED(Buffer->Lock(0, 0, (void**)&pVertices, 0))) { Wnd->GetErrorMessage(); }
 
@@ -1572,58 +1399,50 @@ IDirect3DVertexBuffer9* Standard_DirectX_9::CreateVec3gn(std::vector<vec3> Vecto
 	return Buffer;
 }
 
-
-/*
-	Create Vertex Buffer (Gouraud-shaded w/ UV)
-*/
-IDirect3DVertexBuffer9* Standard_DirectX_9::CreateVec3gt(std::vector<vec3gt> Data)
+IDirect3DVertexBuffer9* Standard_DirectX_9::CreateVec3ct(std::vector<vec3ct> Data)
 {
 	if (Data.empty())
 	{
-		std::cout << "CreateVec3gt: Data is empty" << std::endl;
+		std::cout << "CreateVec3ct: Data is empty" << std::endl;
 		return nullptr;
 	}
 
-	IDirect3DVertexBuffer9* Buffer = CreateVertexBuffer(D3DFVF_VERTGT, Data.size() * sizeof(vec3gt));
+	IDirect3DVertexBuffer9* Buffer = CreateVertexBuffer(D3DFVF_VERTCT, Data.size() * sizeof(vec3ct));
 
-	vec3gt* pVertices = nullptr;
+	vec3ct* pVertices = nullptr;
 
 	if (FAILED(Buffer->Lock(0, 0, (void**)&pVertices, 0))) { Wnd->GetErrorMessage(); }
 
 	try
 	{
-		std::memcpy(pVertices, Data.data(), Data.size() * sizeof(vec3gt));
+		std::memcpy(pVertices, Data.data(), Data.size() * sizeof(vec3ct));
 	}
-	catch (...) { std::cout << "CreateVec3gt: Memory copy failed" << std::endl; }
+	catch (...) { std::cout << "CreateVec3ct: Memory copy failed" << std::endl; }
 
 	if (FAILED(Buffer->Unlock())) { Wnd->GetErrorMessage(); }
 
 	return Buffer;
 }
 
-
-/*
-	Create Vertex Buffer (Gouraud-shaded w/ UV)
-*/
-IDirect3DVertexBuffer9* Standard_DirectX_9::CreateVec3gt(std::vector<vec3> Vector, DWORD Color, std::vector<vec2> UV, D3DTRANSPARENCY_RATE TransparencyRate)
+IDirect3DVertexBuffer9* Standard_DirectX_9::CreateVec3ct(std::vector<vec3> Vector, DWORD Color, std::vector<vec2> UV, DWORD Transparency)
 {
 	if (Vector.size() != UV.size())
 	{
-		std::cout << "CreateVec3gt: Vector and UV sizes do not match" << std::endl;
+		std::cout << "CreateVec3ct: Vector and UV sizes do not match" << std::endl;
 		return nullptr;
 	}
 
 	if (Vector.empty() || UV.empty())
 	{
-		std::cout << "CreateVec3gt: Vector and/or UV are empty" << std::endl;
+		std::cout << "CreateVec3ct: Vector and/or UV are empty" << std::endl;
 		return nullptr;
 	}
 
-	Color = GetTransparency(Color, TransparencyRate);
+	Color = GetTransparency(Color, Transparency);
 
-	IDirect3DVertexBuffer9* Buffer = CreateVertexBuffer(D3DFVF_VERTGT, Vector.size() * sizeof(vec3gt));
+	IDirect3DVertexBuffer9* Buffer = CreateVertexBuffer(D3DFVF_VERTCT, Vector.size() * sizeof(vec3ct));
 
-	vec3gt* pVertices = nullptr;
+	vec3ct* pVertices = nullptr;
 
 	if (FAILED(Buffer->Lock(0, 0, (void**)&pVertices, 0))) { Wnd->GetErrorMessage(); }
 
@@ -1639,58 +1458,50 @@ IDirect3DVertexBuffer9* Standard_DirectX_9::CreateVec3gt(std::vector<vec3> Vecto
 	return Buffer;
 }
 
-
-/*
-	Create Vertex Buffer (Gouraud-shaded w/ Normal and UV)
-*/
-IDirect3DVertexBuffer9* Standard_DirectX_9::CreateVec3gnt(std::vector<vec3gnt> Data)
+IDirect3DVertexBuffer9* Standard_DirectX_9::CreateVec3cnt(std::vector<vec3cnt> Data)
 {
 	if (Data.empty())
 	{
-		std::cout << "CreateVec3gnt: Data is empty" << std::endl;
+		std::cout << "CreateVec3cnt: Data is empty" << std::endl;
 		return nullptr;
 	}
 
-	IDirect3DVertexBuffer9* Buffer = CreateVertexBuffer(D3DFVF_VERTGNT, Data.size() * sizeof(vec3gnt));
+	IDirect3DVertexBuffer9* Buffer = CreateVertexBuffer(D3DFVF_VERTCNT, Data.size() * sizeof(vec3cnt));
 
-	vec3gnt* pVertices = nullptr;
+	vec3cnt* pVertices = nullptr;
 
 	if (FAILED(Buffer->Lock(0, 0, (void**)&pVertices, 0))) { Wnd->GetErrorMessage(); }
 
 	try
 	{
-		std::memcpy(pVertices, Data.data(), Data.size() * sizeof(vec3gnt));
+		std::memcpy(pVertices, Data.data(), Data.size() * sizeof(vec3cnt));
 	}
-	catch (...) { std::cout << "CreateVec3gnt: Memory copy failed" << std::endl; }
+	catch (...) { std::cout << "CreateVec3cnt: Memory copy failed" << std::endl; }
 
 	if (FAILED(Buffer->Unlock())) { Wnd->GetErrorMessage(); }
 
 	return Buffer;
 }
 
-
-/*
-	Create Vertex Buffer (Gouraud-shaded w/ Normal and UV)
-*/
-IDirect3DVertexBuffer9* Standard_DirectX_9::CreateVec3gnt(std::vector<vec3> Vector, std::vector<vec3> Normal, DWORD Color, std::vector<vec2> UV, D3DTRANSPARENCY_RATE TransparencyRate)
+IDirect3DVertexBuffer9* Standard_DirectX_9::CreateVec3cnt(std::vector<vec3> Vector, std::vector<vec3> Normal, DWORD Color, std::vector<vec2> UV, DWORD Transparency)
 {
 	if ((Vector.size() != Normal.size()) || (Vector.size() != UV.size()) || (Normal.size() != UV.size()))
 	{
-		std::cout << "CreateVec3gnt: Vector, Normal, and/or UV sizes do not match" << std::endl;
+		std::cout << "CreateVec3cnt: Vector, Normal, and/or UV sizes do not match" << std::endl;
 		return nullptr;
 	}
 
 	if (Vector.empty() || Normal.empty() || UV.empty())
 	{
-		std::cout << "CreateVec3gnt: Vector, Normal, and/or UV are empty" << std::endl;
+		std::cout << "CreateVec3cnt: Vector, Normal, and/or UV are empty" << std::endl;
 		return nullptr;
 	}
 
-	Color = GetTransparency(Color, TransparencyRate);
+	Color = GetTransparency(Color, Transparency);
 
-	IDirect3DVertexBuffer9* Buffer = CreateVertexBuffer(D3DFVF_VERTGNT, Vector.size() * sizeof(vec3gnt));
+	IDirect3DVertexBuffer9* Buffer = CreateVertexBuffer(D3DFVF_VERTCNT, Vector.size() * sizeof(vec3cnt));
 
-	vec3gnt* pVertices = nullptr;
+	vec3cnt* pVertices = nullptr;
 
 	if (FAILED(Buffer->Lock(0, 0, (void**)&pVertices, 0))) { Wnd->GetErrorMessage(); }
 
@@ -1707,10 +1518,6 @@ IDirect3DVertexBuffer9* Standard_DirectX_9::CreateVec3gnt(std::vector<vec3> Vect
 	return Buffer;
 }
 
-
-/*
-	Create pixel shader
-*/
 IDirect3DPixelShader9* Standard_DirectX_9::CreatePixelShader(const char* Code, const char* FunctionName, const char* Profile)
 {
 	//if (e_DeviceState != D3DDEVICE_STATE::NORMAL) { return nullptr; }
@@ -1728,69 +1535,63 @@ IDirect3DPixelShader9* Standard_DirectX_9::CreatePixelShader(const char* Code, c
 	return pShader;
 }
 
-
-/*
-	Set vertex shader + matrix
-*/
-void Standard_DirectX_9::SetVertexShader(DWORD FVF)
+void Standard_DirectX_9::SetVertexShader(DWORD FVF, bool b_CustomMat, D3DXMATRIX World, D3DXMATRIX View, D3DXMATRIX Projection)
 {
-	D3DXMATRIX World, View, Projection, Matrix;
-
 	ID3DXConstantTable* Const = nullptr;
 	IDirect3DVertexDeclaration9* Decl = nullptr;
 	IDirect3DVertexShader9* Shader = nullptr;
 
 	switch (FVF)
 	{
-	case D3DFVF_POINTG:
-		Const = ShaderVecpg.Const;
-		Decl = ShaderVecpg.Decl;
-		Shader = ShaderVecpg.Shader;
+	case D3DFVF_POINTC:
+		Const = ShaderVecPointc.Const.get();
+		Decl = ShaderVecPointc.Decl.get();
+		Shader = ShaderVecPointc.Shader.get();
 		break;
-	case D3DFVF_POINTGT:
-		Const = ShaderVecpgt.Const;
-		Decl = ShaderVecpgt.Decl;
-		Shader = ShaderVecpgt.Shader;
+	case D3DFVF_POINTCT:
+		Const = ShaderVecPointct.Const.get();
+		Decl = ShaderVecPointct.Decl.get();
+		Shader = ShaderVecPointct.Shader.get();
 		break;
 	case D3DFVF_TEX3D:
-		Const = ShaderVec3t.Const;
-		Decl = ShaderVec3t.Decl;
-		Shader = ShaderVec3t.Shader;
+		Const = ShaderVec3t.Const.get();
+		Decl = ShaderVec3t.Decl.get();
+		Shader = ShaderVec3t.Shader.get();
 		break;
 	case D3DFVF_TEX4D:
-		Const = ShaderVec4t.Const;
-		Decl = ShaderVec4t.Decl;
-		Shader = ShaderVec4t.Shader;
+		Const = ShaderVec4t.Const.get();
+		Decl = ShaderVec4t.Decl.get();
+		Shader = ShaderVec4t.Shader.get();
 		break;
 	case D3DFVF_VERTN:
-		Const = ShaderVec3n.Const;
-		Decl = ShaderVec3n.Decl;
-		Shader = ShaderVec3n.Shader;
+		Const = ShaderVec3n.Const.get();
+		Decl = ShaderVec3n.Decl.get();
+		Shader = ShaderVec3n.Shader.get();
 		break;
 	case D3DFVF_VERTNT:
-		Const = ShaderVec3nt.Const;
-		Decl = ShaderVec3nt.Decl;
-		Shader = ShaderVec3nt.Shader;
+		Const = ShaderVec3nt.Const.get();
+		Decl = ShaderVec3nt.Decl.get();
+		Shader = ShaderVec3nt.Shader.get();
 		break;
-	case D3DFVF_VERTG:
-		Const = ShaderVec3g.Const;
-		Decl = ShaderVec3g.Decl;
-		Shader = ShaderVec3g.Shader;
+	case D3DFVF_VERTC:
+		Const = ShaderVec3c.Const.get();
+		Decl = ShaderVec3c.Decl.get();
+		Shader = ShaderVec3c.Shader.get();
 		break;
-	case D3DFVF_VERTGN:
-		Const = ShaderVec3gn.Const;
-		Decl = ShaderVec3gn.Decl;
-		Shader = ShaderVec3gn.Shader;
+	case D3DFVF_VERTCN:
+		Const = ShaderVec3cn.Const.get();
+		Decl = ShaderVec3cn.Decl.get();
+		Shader = ShaderVec3cn.Shader.get();
 		break;
-	case D3DFVF_VERTGT:
-		Const = ShaderVec3gt.Const;
-		Decl = ShaderVec3gt.Decl;
-		Shader = ShaderVec3gt.Shader;
+	case D3DFVF_VERTCT:
+		Const = ShaderVec3ct.Const.get();
+		Decl = ShaderVec3ct.Decl.get();
+		Shader = ShaderVec3ct.Shader.get();
 		break;
-	case D3DFVF_VERTGNT:
-		Const = ShaderVec3gnt.Const;
-		Decl = ShaderVec3gnt.Decl;
-		Shader = ShaderVec3gnt.Shader;
+	case D3DFVF_VERTCNT:
+		Const = ShaderVec3cnt.Const.get();
+		Decl = ShaderVec3cnt.Decl.get();
+		Shader = ShaderVec3cnt.Shader.get();
 		break;
 	default:
 		pDevice->SetVertexShader(NULL);
@@ -1800,125 +1601,124 @@ void Standard_DirectX_9::SetVertexShader(DWORD FVF)
 
 	pDevice->SetVertexDeclaration(Decl);
 
-	pDevice->GetTransform(D3DTS_WORLD, &World);
-	pDevice->GetTransform(D3DTS_VIEW, &View);
-	pDevice->GetTransform(D3DTS_PROJECTION, &Projection);
+	if (!b_CustomMat)
+	{
+		pDevice->GetTransform(D3DTS_WORLD, &World);
+		pDevice->GetTransform(D3DTS_VIEW, &View);
+		pDevice->GetTransform(D3DTS_PROJECTION, &Projection);
+	}
 
-	Matrix = World * View * Projection;
+	D3DXHANDLE pWorld = Const->GetConstantByName(NULL, "World");
+	D3DXHANDLE pView = Const->GetConstantByName(NULL, "View");
+	D3DXHANDLE pProjection = Const->GetConstantByName(NULL, "Projection");
 
-	D3DXHANDLE pWorldViewProjectionMatrix = Const->GetConstantByName(NULL, "WorldViewProjectionMatrix");
-	D3DXHANDLE pWorldMatrix = Const->GetConstantByName(NULL, "WorldMatrix");
-
-	HRESULT hRes0 = Const->SetMatrix(pDevice, pWorldViewProjectionMatrix, &Matrix);
-	HRESULT hRes1 = Const->SetMatrix(pDevice, pWorldMatrix, &World);
-
-	if (FAILED(hRes0)) std::cout << "WorldViewProjectionMatrix failed" << std::endl;
-	if (FAILED(hRes1)) std::cout << "WorldMatrix failed" << std::endl;
+	if (FAILED(Const->SetMatrix(pDevice.get(), pWorld, &World))) { std::cout << "SetVertexShader: SetMatrix (World) failed" << std::endl; }
+	if (FAILED(Const->SetMatrix(pDevice.get(), pView, &View))) { std::cout << "SetVertexShader: SetMatrix (View) failed" << std::endl; }
+	if (FAILED(Const->SetMatrix(pDevice.get(), pProjection, &Projection))) { std::cout << "SetVertexShader: SetMatrix (Projection) failed" << std::endl; }
 
 	pDevice->SetVertexShader(Shader);
 }
 
-
-/*
-	Draw
-*/
 void Standard_DirectX_9::Draw(D3DDRAWPACKET Packet)
 {
 	float Width = 0.0f;
 	float Height = 0.0f;
+	float ScaleX = 0.0f;
+	float ScaleY = 0.0f;
 
 	if (e_DeviceState != D3DDEVICE_STATE::NORMAL) { return; }
 
-	if (!Packet.Vertices) { return; }
+	if (!Packet.Vertices || FAILED(Packet.Vertices->GetDesc(&VertexBufferDesc))) { return; }
 
-	if (FAILED(Packet.Vertices->GetDesc(&VertexBufferDesc))) { return; }
+	if (!Packet.PixelShader) { Packet.PixelShader = PassthroughPixelShader.get(); }
 
-	if (Packet.Indices)
-	{
-		if (FAILED(Packet.Indices->GetDesc(&IndexBufferDesc))) { return; }
-	}
-
-	if (Packet.FillMode == D3DFILL_WIREFRAME)
-	{
-		Lighting(FALSE);
-		Packet.Texture = nullptr;
-	}
-	else
-	{
-		Lighting(VertexBufferDesc.FVF & D3DFVF_NORMAL ? TRUE : FALSE);
-	}
+	if (Packet.Primitive.Fill == D3DFILL_WIREFRAME) { Packet.Texture = nullptr; }
 
 	if (Packet.Texture)
 	{
 		if (!FAILED(Packet.Texture->GetLevelDesc(0, &TextureDesc)))
 		{
-			Width = static_cast<float>(TextureDesc.Width);
-			Height = static_cast<float>(TextureDesc.Height);
+			Width = (float)TextureDesc.Width;
+			Height = (float)TextureDesc.Height;
+			if (Packet.TextureAttr.Width && Width > Packet.TextureAttr.Width) { ScaleX = Packet.TextureAttr.Width / Width; }
+			if (Packet.TextureAttr.Height && Height > Packet.TextureAttr.Height) { ScaleY = Packet.TextureAttr.Height / Height; }
 		}
 	}
 
-	ZBuffer(Packet.bZBuffer, Packet.ZType, Packet.ZFunc);
+	Lighting(Packet.Primitive.Fill == D3DFILL_WIREFRAME ? FALSE : VertexBufferDesc.FVF & D3DFVF_NORMAL ? TRUE : FALSE);
+
+	ZBuffer(Packet.ZBuffer.Active, Packet.ZBuffer.Type, Packet.ZBuffer.Func);
 
 	SetVertexShader(VertexBufferDesc.FVF);
 
 	pDevice->SetPixelShaderConstantF(0, &Width, 1);
 	pDevice->SetPixelShaderConstantF(1, &Height, 1);
+	pDevice->SetPixelShaderConstantF(2, &ScaleX, 1);
+	pDevice->SetPixelShaderConstantF(3, &ScaleY, 1);
 
 	pDevice->SetPixelShader(Packet.PixelShader);
 
-	pDevice->SetRenderState(D3DRS_FILLMODE, Packet.FillMode);
-	pDevice->SetRenderState(D3DRS_SHADEMODE, (VertexBufferDesc.FVF & D3DFVF_DIFFUSE) ? D3DSHADE_GOURAUD : D3DSHADE_FLAT);
-	pDevice->SetRenderState(D3DRS_COLORVERTEX, (VertexBufferDesc.FVF & D3DFVF_DIFFUSE) ? TRUE : FALSE);
-	pDevice->SetRenderState(D3DRS_NORMALIZENORMALS, (VertexBufferDesc.FVF & D3DFVF_NORMAL) ? TRUE : FALSE);
+	pDevice->SetRenderState(D3DRS_FILLMODE, Packet.Primitive.Fill);
 
-	pDevice->SetStreamSource(0, Packet.Vertices, 0, Packet.Stride);
-	pDevice->SetIndices(Packet.Indices);
+	pDevice->SetStreamSource(0, Packet.Vertices, 0, Packet.Primitive.Stride);
+
 	pDevice->SetTexture(0, Packet.Texture);
-	pDevice->SetFVF(VertexBufferDesc.FVF);
 
 	if (Packet.Indices)
 	{
-		pDevice->DrawIndexedPrimitive(Packet.PrimitiveType, 0, 0, VertexBufferDesc.Size, 0, IndexBufferDesc.Size);
+		pDevice->SetIndices(Packet.Indices);
+		if (FAILED(Packet.Indices->GetDesc(&IndexBufferDesc))) { return; }
+
+		UINT IndexSize = (IndexBufferDesc.Format == D3DFMT_INDEX16) ? sizeof(WORD) : sizeof(DWORD);
+		UINT NumIndices = IndexBufferDesc.Size / IndexSize;
+
+		switch (Packet.Primitive.Type)
+		{
+		case D3DFILL_POINT:
+			pDevice->DrawIndexedPrimitive(Packet.Primitive.Type, 0, 0, VertexBufferDesc.Size / Packet.Primitive.Stride, 0, NumIndices);
+			break;
+		case D3DPT_LINELIST:
+			pDevice->DrawIndexedPrimitive(Packet.Primitive.Type, 0, 0, VertexBufferDesc.Size / Packet.Primitive.Stride / 2, 0, NumIndices / 2);
+			break;
+		case D3DPT_LINESTRIP:
+			pDevice->DrawIndexedPrimitive(Packet.Primitive.Type, 0, 0, VertexBufferDesc.Size / Packet.Primitive.Stride - 1, 0, NumIndices - 1);
+			break;
+		case D3DPT_TRIANGLELIST:
+			pDevice->DrawIndexedPrimitive(Packet.Primitive.Type, 0, 0, VertexBufferDesc.Size / Packet.Primitive.Stride / 3, 0, NumIndices / 3);
+			break;
+		case D3DPT_TRIANGLESTRIP:
+		case D3DPT_TRIANGLEFAN:
+			pDevice->DrawIndexedPrimitive(Packet.Primitive.Type, 0, 0, VertexBufferDesc.Size / Packet.Primitive.Stride - 2, 0, NumIndices - 2);
+			break;
+		}
 	}
 	else
 	{
-		switch (Packet.FillMode)
+		pDevice->SetFVF(VertexBufferDesc.FVF);
+
+		switch (Packet.Primitive.Type)
 		{
 		case D3DFILL_POINT:
-			pDevice->DrawPrimitive(D3DPT_POINTLIST, 0, VertexBufferDesc.Size / Packet.Stride);
+			pDevice->DrawPrimitive(Packet.Primitive.Type, 0, VertexBufferDesc.Size / Packet.Primitive.Stride);
 			break;
-		case D3DFILL_WIREFRAME:
-			switch (Packet.PrimitiveType)
-			{
-			case D3DPT_LINELIST:
-				pDevice->DrawPrimitive(Packet.PrimitiveType, 0, VertexBufferDesc.Size / Packet.Stride / 2);
-				break;
-			case D3DPT_LINESTRIP:
-				pDevice->DrawPrimitive(Packet.PrimitiveType, 0, VertexBufferDesc.Size / Packet.Stride - 1);
-				break;
-			}
+		case D3DPT_LINELIST:
+			pDevice->DrawPrimitive(Packet.Primitive.Type, 0, VertexBufferDesc.Size / Packet.Primitive.Stride / 2);
 			break;
-		case D3DFILL_SOLID:
-			switch (Packet.PrimitiveType)
-			{
-			case D3DPT_TRIANGLELIST:
-				pDevice->DrawPrimitive(Packet.PrimitiveType, 0, VertexBufferDesc.Size / Packet.Stride / 3);
-				break;
-			case D3DPT_TRIANGLESTRIP:
-			case D3DPT_TRIANGLEFAN:
-				pDevice->DrawPrimitive(Packet.PrimitiveType, 0, VertexBufferDesc.Size / Packet.Stride - 2);
-				break;
-			}
+		case D3DPT_LINESTRIP:
+			pDevice->DrawPrimitive(Packet.Primitive.Type, 0, VertexBufferDesc.Size / Packet.Primitive.Stride - 1);
+			break;
+		case D3DPT_TRIANGLELIST:
+			pDevice->DrawPrimitive(Packet.Primitive.Type, 0, VertexBufferDesc.Size / Packet.Primitive.Stride / 3);
+			break;
+		case D3DPT_TRIANGLESTRIP:
+		case D3DPT_TRIANGLEFAN:
+			pDevice->DrawPrimitive(Packet.Primitive.Type, 0, VertexBufferDesc.Size / Packet.Primitive.Stride - 2);
 			break;
 		}
 	}
 }
 
-
-/*
-	Draw Texture Vertex Buffer (W)
-*/
-void Standard_DirectX_9::DrawVec4t(IDirect3DVertexBuffer9* Buffer, IDirect3DTexture9* Texture, IDirect3DPixelShader9* PixelShader)
+void Standard_DirectX_9::DrawVec4t(IDirect3DVertexBuffer9* Buffer, IDirect3DTexture9* Texture, IDirect3DPixelShader9* Shader, float Width, float Height)
 {
 	if (e_DeviceState != D3DDEVICE_STATE::NORMAL) { return; }
 
@@ -1932,16 +1732,15 @@ void Standard_DirectX_9::DrawVec4t(IDirect3DVertexBuffer9* Buffer, IDirect3DText
 	pDevice->SetRenderState(D3DRS_CULLMODE, D3DCULL_NONE);
 	pDevice->SetRenderState(D3DRS_CLIPPING, FALSE);
 
-	Draw({ Buffer, nullptr, Texture, PixelShader ? PixelShader : PassthroughPixelShader, sizeof(vec4t), true, D3DZB_USEW, D3DCMP_EQUAL, D3DFILL_SOLID, D3DPT_TRIANGLESTRIP });
+	Draw({ Buffer, nullptr, Texture, Shader,
+		{ TRUE, D3DZB_USEW, D3DCMP_EQUAL },
+		{ sizeof(vec4t), D3DFILL_SOLID, D3DPT_TRIANGLESTRIP },
+		{ Width, Height } });
 
 	pDevice->SetRenderState(D3DRS_CULLMODE, CullMode);
 	pDevice->SetRenderState(D3DRS_CLIPPING, Clipping);
 }
 
-
-/*
-	Set world matrix
-*/
 D3DXMATRIX Standard_DirectX_9::SetWorld(float X, float Y, float Z, float RX, float RY, float RZ, float SX, float SY, float SZ)
 {
 	D3DXMATRIX World, Translation, RotX, RotY, RotZ, Scale;
@@ -1961,10 +1760,6 @@ D3DXMATRIX Standard_DirectX_9::SetWorld(float X, float Y, float Z, float RX, flo
 	return World;
 }
 
-
-/*
-	Enable/Disable Anti-Aliasing
-*/
 void Standard_DirectX_9::AntiAliasing(bool OnOff)
 {
 	if (e_DeviceState != D3DDEVICE_STATE::NORMAL) { return; }
@@ -1974,26 +1769,22 @@ void Standard_DirectX_9::AntiAliasing(bool OnOff)
 	if (b_AntiAliasing)
 	{
 		DWORD pQualityLevels = NULL;
-		if (SUCCEEDED(pD3D->CheckDeviceMultiSampleType(D3DADAPTER_DEFAULT, D3DDEVTYPE_HAL, DisplayMode.Format, FALSE, D3DMULTISAMPLE_NONMASKABLE, &pQualityLevels)))
+		if (SUCCEEDED(pD3D->CheckDeviceMultiSampleType(D3DADAPTER_DEFAULT, D3DDEVTYPE_HAL, m_DisplayMode->Format, FALSE, D3DMULTISAMPLE_NONMASKABLE, &pQualityLevels)))
 		{
 			b_AntiAliasing = true;
-			PresentParameters.MultiSampleType = D3DMULTISAMPLE_NONMASKABLE;
-			PresentParameters.MultiSampleQuality = pQualityLevels - 1;
+			m_PresentParameters->MultiSampleType = D3DMULTISAMPLE_NONMASKABLE;
+			m_PresentParameters->MultiSampleQuality = pQualityLevels - 1;
 		}
 	}
 	else
 	{
-		PresentParameters.MultiSampleType = D3DMULTISAMPLE_NONE;
-		PresentParameters.MultiSampleQuality = NULL;
+		m_PresentParameters->MultiSampleType = D3DMULTISAMPLE_NONE;
+		m_PresentParameters->MultiSampleQuality = NULL;
 	}
 
 	pDevice->SetRenderState(D3DRS_MULTISAMPLEANTIALIAS, b_AntiAliasing);
 }
 
-
-/*
-	Enable/Disable Texture Filtering
-*/
 void Standard_DirectX_9::TextureFiltering(D3DTEXTUREFILTERTYPE Type)
 {
 	if (e_DeviceState != D3DDEVICE_STATE::NORMAL) { return; }
@@ -2005,10 +1796,16 @@ void Standard_DirectX_9::TextureFiltering(D3DTEXTUREFILTERTYPE Type)
 	pDevice->SetSamplerState(0, D3DSAMP_MIPFILTER, m_TextureFilter);
 }
 
+void Standard_DirectX_9::AlphaBlending(BOOL OnOff, D3DBLEND SrcBlend, D3DBLEND DestBlend, D3DBLENDOP BlendOp)
+{
+	if (e_DeviceState != D3DDEVICE_STATE::NORMAL) { return; }
 
-/*
-	Enable/Disable Lighting
-*/
+	pDevice->SetRenderState(D3DRS_ALPHABLENDENABLE, OnOff);
+	pDevice->SetRenderState(D3DRS_SRCBLEND, SrcBlend);
+	pDevice->SetRenderState(D3DRS_DESTBLEND, DestBlend);
+	pDevice->SetRenderState(D3DRS_BLENDOP, BlendOp);
+}
+
 void Standard_DirectX_9::Lighting(bool OnOff)
 {
 	if (e_DeviceState != D3DDEVICE_STATE::NORMAL) { return; }
@@ -2020,10 +1817,7 @@ void Standard_DirectX_9::Lighting(bool OnOff)
 		pDevice->SetRenderState(D3DRS_AMBIENT, AmbientColor);
 		pDevice->SetRenderState(D3DRS_AMBIENTMATERIALSOURCE, D3DMCS_MATERIAL);
 
-		pDevice->SetRenderState(D3DRS_ALPHABLENDENABLE, TRUE);
-		pDevice->SetRenderState(D3DRS_SRCBLEND, D3DBLEND_SRCALPHA);
-		pDevice->SetRenderState(D3DRS_DESTBLEND, D3DBLEND_INVSRCALPHA);
-		pDevice->SetRenderState(D3DRS_BLENDOP, D3DBLENDOP_ADD);
+		AlphaBlending(TRUE, D3DBLEND_SRCALPHA, D3DBLEND_INVSRCALPHA, D3DBLENDOP_ADD);
 
 		pDevice->SetRenderState(D3DRS_DIFFUSEMATERIALSOURCE, D3DMCS_COLOR1);
 
@@ -2049,53 +1843,27 @@ void Standard_DirectX_9::Lighting(bool OnOff)
 	}
 	else
 	{
-		pDevice->SetRenderState(D3DRS_ALPHABLENDENABLE, FALSE);
-		pDevice->SetRenderState(D3DRS_SRCBLEND, D3DBLEND_ZERO);
-		pDevice->SetRenderState(D3DRS_DESTBLEND, D3DBLEND_ZERO);
-		pDevice->SetRenderState(D3DRS_BLENDOP, D3DBLEND_ZERO);
+		//pDevice->SetRenderState(D3DRS_ALPHABLENDENABLE, FALSE);
+		//pDevice->SetRenderState(D3DRS_SRCBLEND, D3DBLEND_ZERO);
+		//pDevice->SetRenderState(D3DRS_DESTBLEND, D3DBLEND_ZERO);
+		//pDevice->SetRenderState(D3DRS_BLENDOP, D3DBLEND_ZERO);
 
 		//pDevice->SetTextureStageState(1, D3DTSS_COLOROP, D3DTOP_DISABLE);
 		//pDevice->SetTextureStageState(1, D3DTSS_ALPHAOP, D3DTOP_DISABLE);
 	}
 }
 
-
-/*
-	Enable/Disable Z-Buffer
-*/
-void Standard_DirectX_9::ZBuffer(bool OnOff, D3DZBUFFERTYPE Type, D3DCMPFUNC Func)
-{
-	if (e_DeviceState != D3DDEVICE_STATE::NORMAL) { return; }
-
-	pDevice->SetRenderState(D3DRS_ZWRITEENABLE, OnOff);
-
-	if (OnOff)
-	{
-		pDevice->SetRenderState(D3DRS_ZENABLE, Type);
-	}
-	else
-	{
-		pDevice->SetRenderState(D3DRS_ZENABLE, D3DZB_FALSE);
-	}
-
-	pDevice->SetRenderState(D3DRS_ZFUNC, Func);
-}
-
-
-/*
-	Create Axis grid
-*/
 void Standard_DirectX_9::CreateAxisGrid(void)
 {
 	if (AxisGrid) { return; }
 
-	AxisGrid = CreateVertexBuffer(D3DFVF_VERTG, 68 * sizeof(vec3g));
+	AxisGrid.reset(CreateVertexBuffer(D3DFVF_VERTC, 68 * sizeof(vec3c)));
 
 	if (!AxisGrid) { return; }
 
-	vec3g* pVertices = nullptr;
+	vec3c* pVertices = nullptr;
 
-	if (FAILED(AxisGrid->Lock(0, 68 * sizeof(vec3g), reinterpret_cast<void**>(&pVertices), 0))) { Wnd->GetErrorMessage(); }
+	if (FAILED(AxisGrid->Lock(0, 68 * sizeof(vec3c), reinterpret_cast<void**>(&pVertices), 0))) { Wnd->GetErrorMessage(); }
 
 	size_t n = 0;
 	for (FLOAT i = -8.0f; i < 8.000001f; i += 1.0f, n += 2)
@@ -2113,18 +1881,18 @@ void Standard_DirectX_9::CreateAxisGrid(void)
 
 	if (FAILED(AxisGrid->Unlock())) { Wnd->GetErrorMessage(); }
 
-	XyzAxis = CreateVertexBuffer(D3DFVF_VERTG, 6 * sizeof(vec3g));
+	Xyz.reset(CreateVertexBuffer(D3DFVF_VERTC, 6 * sizeof(vec3c)));
 
-	if (!XyzAxis) { return; }
+	if (!Xyz) { return; }
 
-	if (FAILED(XyzAxis->Lock(0, 6 * sizeof(vec3g), reinterpret_cast<void**>(&pVertices), 0))) { Wnd->GetErrorMessage(); }
+	if (FAILED(Xyz->Lock(0, 6 * sizeof(vec3c), reinterpret_cast<void**>(&pVertices), 0))) { Wnd->GetErrorMessage(); }
 
-	pVertices[0].vec.Set(0.0f, 0.01f, 0.0f);
-	pVertices[1].vec.Set(-8.0f, 0.0f, 0.0f);
-	pVertices[2].vec.Set(0.0f, 0.01f, 0.0f);
-	pVertices[3].vec.Set(0.0f, 8.0f, 0.0f);
-	pVertices[4].vec.Set(0.0f, 0.01f, 0.0f);
-	pVertices[5].vec.Set(0.0f, 0.0f, -8.0f);
+	pVertices[0].vec.Set(0.0f, 0.0f, 0.0f);
+	pVertices[1].vec.Set(8.0f, 0.0f, 0.0f);
+	pVertices[2].vec.Set(0.0f, 0.0f, 0.0f);
+	pVertices[3].vec.Set(0.0f, -8.0f, 0.0f);
+	pVertices[4].vec.Set(0.0f, 0.0f, 0.0f);
+	pVertices[5].vec.Set(0.0f, 0.0f, 8.0f);
 
 	pVertices[0].color = D3DCOLOR_XRGB(255, 0, 0);
 	pVertices[1].color = D3DCOLOR_XRGB(255, 0, 0);
@@ -2133,13 +1901,9 @@ void Standard_DirectX_9::CreateAxisGrid(void)
 	pVertices[4].color = D3DCOLOR_XRGB(0, 0, 255);
 	pVertices[5].color = D3DCOLOR_XRGB(0, 0, 255);
 
-	if (FAILED(XyzAxis->Unlock())) { Wnd->GetErrorMessage(); }
+	if (FAILED(Xyz->Unlock())) { Wnd->GetErrorMessage(); }
 }
 
-
-/*
-	Save screenshot
-*/
 bool Standard_DirectX_9::SaveScreenshot(D3DXIMAGE_FILEFORMAT Format, std::filesystem::path Output)
 {
 	if (e_DeviceState != D3DDEVICE_STATE::NORMAL) { return false; }

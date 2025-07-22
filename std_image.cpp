@@ -8,6 +8,7 @@
 
 #ifdef LIB_JPEG
 #include <stdio.h>
+#include <cstdio>
 #include <jpeglib.h>
 #include <setjmp.h>
 #pragma comment(lib, "jpeg-static.lib")
@@ -16,6 +17,7 @@
 
 #ifdef LIB_PNG
 #include <stdio.h>
+#include <cstdio>
 #include <png.h>
 #endif
 
@@ -37,14 +39,14 @@ void Standard_Image::SetPalette(std::size_t iColor, DWORD Color)
 {
 	if (iColor < m_Palette.size())
 	{
-		m_Palette[iColor].rgbBlue = (Color & 0xFF);
-		m_Palette[iColor].rgbGreen = ((Color >> 8) & 0xFF);
-		m_Palette[iColor].rgbRed = ((Color >> 16) & 0xFF);
-		m_Palette[iColor].rgbReserved = ((Color >> 24) & 0xFF);
+		m_Palette[iColor].B = (Color & 0xFF);
+		m_Palette[iColor].G = ((Color >> 8) & 0xFF);
+		m_Palette[iColor].R = ((Color >> 16) & 0xFF);
+		m_Palette[iColor].A = ((Color >> 24) & 0xFF);
 	}
 }
 
-void Standard_Image::SetPalette(std::size_t iColor, RGBQUAD Color)
+void Standard_Image::SetPalette(std::size_t iColor, Pixel_32bpp Color)
 {
 	if (iColor < m_Palette.size())
 	{
@@ -635,7 +637,7 @@ bool Standard_Image::SaveJPG(std::filesystem::path Path, std::uintmax_t pSource,
 		return false;
 	}
 #else
-	File = fopen(Path.string().c_str(), b_Truncate ? L"wb" : L"rb+"))
+	File = fopen(Path.string().c_str(), b_Truncate ? "wb" : "rb+");
 	if (!File)
 	{
 		Str.Message(L"Standard Image Error: could not save \"%ws\"", Path.filename().wstring().c_str());
@@ -690,11 +692,11 @@ bool Standard_Image::SaveJPG(std::filesystem::path Path, std::uintmax_t pSource,
 
 			if (m_Depth == 4 || m_Depth == 8)
 			{
-				RGBQUAD Color = m_Palette[Pixel];
-				RowBuffer[i] = Color.rgbRed;
-				RowBuffer[i + 1] = Color.rgbGreen;
-				RowBuffer[i + 2] = Color.rgbBlue;
-				RowBuffer[i + 3] = Color.rgbReserved;
+				Pixel_32bpp Color = m_Palette[Pixel];
+				RowBuffer[i] = Color.R;
+				RowBuffer[i + 1] = Color.G;
+				RowBuffer[i + 2] = Color.B;
+				RowBuffer[i + 3] = Color.A;
 			}
 			else if (m_Depth == 16)
 			{
@@ -745,7 +747,7 @@ static void PNG_Warning_Handler(png_structp png_ptr, png_const_charp warning_msg
 	throw std::runtime_error(warning_msg);
 }
 
-bool Standard_Image::DecompressPNG(const std::vector<uint8_t>&Input, std::vector<uint8_t>&OutPixels, std::vector<RGBQUAD> OutPalette) try
+bool Standard_Image::DecompressPNG(const std::vector<uint8_t>&Input, std::vector<uint8_t>&OutPixels, std::vector<Pixel_32bpp> OutPalette) try
 {
 	OutPalette.clear();
 
@@ -778,10 +780,10 @@ bool Standard_Image::DecompressPNG(const std::vector<uint8_t>&Input, std::vector
 
 		for (std::size_t i = 0; i < OutPalette.size(); i++)
 		{
-			OutPalette[i].rgbBlue = Palette[i * 3 + 0];
-			OutPalette[i].rgbGreen = Palette[i * 3 + 1];
-			OutPalette[i].rgbRed = Palette[i * 3 + 2];
-			OutPalette[i].rgbReserved = 0;
+			OutPalette[i].B = Palette[i * 3 + 0];
+			OutPalette[i].G = Palette[i * 3 + 1];
+			OutPalette[i].R = Palette[i * 3 + 2];
+			OutPalette[i].A = 0;
 		}
 	}
 
@@ -925,14 +927,14 @@ bool Standard_Image::OpenPNG(std::filesystem::path Path, std::uintmax_t pSource)
 			return false;
 		}
 
-		m_Palette.resize(nColors * sizeof(RGBQUAD));
+		m_Palette.resize(nColors * sizeof(Pixel_32bpp));
 
 		for (int i = 0; i < nColors; i++)
 		{
-			m_Palette[i].rgbBlue = Palette[i].blue;
-			m_Palette[i].rgbGreen = Palette[i].green;
-			m_Palette[i].rgbRed = Palette[i].red;
-			m_Palette[i].rgbReserved = 0xFF;
+			m_Palette[i].B = Palette[i].blue;
+			m_Palette[i].G = Palette[i].green;
+			m_Palette[i].R = Palette[i].red;
+			m_Palette[i].A = 0xFF;
 		}
 	}
 
@@ -1013,7 +1015,7 @@ bool Standard_Image::SavePNG(std::filesystem::path Path, std::uintmax_t pSource,
 		return false;
 	}
 #else
-	File = fopen(Path.string().c_str(), b_Truncate ? L"wb" : L"rb+"))
+	File = fopen(Path.string().c_str(), b_Truncate ? "wb" : "rb+");
 	if (!File)
 	{
 		Str.Message(L"Standard Image Error: could not create \"%ws\"", Path.filename().wstring().c_str());
@@ -1061,11 +1063,11 @@ bool Standard_Image::SavePNG(std::filesystem::path Path, std::uintmax_t pSource,
 		std::cout << sizeof(Palette) << std::endl;
 		for (std::size_t i = 0; i < m_Palette.size(); i++)
 		{
-			Palette[i].red = m_Palette[i].rgbRed;
-			Palette[i].green = m_Palette[i].rgbGreen;
-			Palette[i].blue = m_Palette[i].rgbBlue;
+			Palette[i].red = m_Palette[i].R;
+			Palette[i].green = m_Palette[i].G;
+			Palette[i].blue = m_Palette[i].B;
 		}
-		png_set_PLTE(PNG, Header, Palette, (int)m_Palette.size() / sizeof(RGBQUAD));
+		png_set_PLTE(PNG, Header, Palette, (int)m_Palette.size() / sizeof(Pixel_32bpp));
 		delete[] Palette;
 	}
 
@@ -1196,10 +1198,10 @@ bool Standard_Image::Create(WORD Depth, LONG Width, LONG Height, DWORD CanvasCol
 	switch (m_Depth)
 	{
 	case 4:
-		m_Palette.resize(16 * sizeof(RGBQUAD));
+		m_Palette.resize(16 * sizeof(Pixel_32bpp));
 		break;
 	case 8:
-		m_Palette.resize(256 * sizeof(RGBQUAD));
+		m_Palette.resize(256 * sizeof(Pixel_32bpp));
 		break;
 	}
 
@@ -1252,30 +1254,30 @@ bool Standard_Image::SaveBMP(std::filesystem::path Path, std::uintmax_t pSource,
 		return false;
 	}
 
-	BITMAPINFOHEADER InfoHeader{};
-	InfoHeader.biSize = sizeof(BITMAPINFOHEADER);
-	InfoHeader.biWidth = m_Width;
-	InfoHeader.biHeight = m_Height;
-	InfoHeader.biPlanes = 1;
-	InfoHeader.biBitCount = m_Depth;
-	InfoHeader.biCompression = BI_RGB;
-	InfoHeader.biSizeImage = m_Depth == 4 ? (m_Width * m_Height) / 2 : m_Width * m_Height * GetPixelSize();
-	InfoHeader.biXPelsPerMeter = 0;
-	InfoHeader.biYPelsPerMeter = 0;
-	InfoHeader.biClrUsed = (DWORD)m_Palette.size();
-	InfoHeader.biClrImportant = 0;
+	Bitmap_Info Info{};
+	Info.Size = sizeof(Bitmap_Info);
+	Info.Width = m_Width;
+	Info.Height = m_Height;
+	Info.Planes = 1;
+	Info.Depth = m_Depth;
+	Info.Compression = Bitmap_Compression::RGB;
+	Info.PixelSize = m_Depth == 4 ? (m_Width * m_Height) / 2 : m_Width * m_Height * GetPixelSize();
+	Info.MeterWidth = 0;
+	Info.MeterHeight = 0;
+	Info.PaletteColors = (DWORD)m_Palette.size();
+	Info.MaxColors = 0;
 
-	BITMAPFILEHEADER FileHeader{};
-	FileHeader.bfType = 0x4D42;
-	FileHeader.bfOffBits = sizeof(BITMAPFILEHEADER) + sizeof(BITMAPINFOHEADER) + (DWORD)m_Palette.size();
-	FileHeader.bfSize = sizeof(BITMAPFILEHEADER) + sizeof(BITMAPINFOHEADER) + (DWORD)m_Palette.size() + InfoHeader.biSizeImage;
-	FileHeader.bfReserved1 = 0;
-	FileHeader.bfReserved2 = 0;
+	Bitmap_Header Header{};
+	Header.BM = 0x4D42;
+	Header.PixelPtr = sizeof(Bitmap_Header) + sizeof(Bitmap_Info) + (DWORD)m_Palette.size();
+	Header.Size = sizeof(Bitmap_Header) + sizeof(Bitmap_Info) + (DWORD)m_Palette.size() + Info.PixelSize;
+	Header.reserved0 = 0;
+	Header.reserved1 = 0;
 	
-	m_Input.Write(pSource, &FileHeader, sizeof(BITMAPFILEHEADER));
-	m_Input.Write(pSource + sizeof(BITMAPFILEHEADER), &InfoHeader, sizeof(BITMAPINFOHEADER));
-	m_Input.Write(pSource + sizeof(BITMAPFILEHEADER) + sizeof(BITMAPINFOHEADER), m_Palette.data(), m_Palette.size());
-	m_Input.Write(pSource + sizeof(BITMAPFILEHEADER) + sizeof(BITMAPINFOHEADER) + m_Palette.size(), m_Pixels.data(), m_Pixels.size());
+	m_Input.Write(pSource, &Header, sizeof(Bitmap_Header));
+	m_Input.Write(pSource + sizeof(Bitmap_Header), &Info, sizeof(Bitmap_Info));
+	m_Input.Write(pSource + sizeof(Bitmap_Header) + sizeof(Bitmap_Info), m_Palette.data(), m_Palette.size());
+	m_Input.Write(pSource + sizeof(Bitmap_Header) + sizeof(Bitmap_Info) + m_Palette.size(), m_Pixels.data(), m_Pixels.size());
 
 	return true;
 }
@@ -1289,136 +1291,136 @@ bool Standard_Image::OpenBMP(std::filesystem::path Path, std::uintmax_t pSource)
 		return false;
 	}
 
-	BITMAPFILEHEADER FileHeader{};
-	File.Read(pSource, &FileHeader, sizeof(BITMAPFILEHEADER));
+	Bitmap_Header Header{};
+	File.Read(pSource, &Header, sizeof(Bitmap_Header));
 
-	if (FileHeader.bfType != 0x4D42)
+	if (Header.BM != 0x4D42)
 	{
-		Str.Message(L"Standard Image Error: invalid bitmap file header type (0x%04X)", FileHeader.bfType);
+		Str.Message(L"Standard Image Error: invalid bitmap file header type (0x%04X)", Header.BM);
 		return false;
 	}
 
-	if (!FileHeader.bfOffBits || FileHeader.bfOffBits > File.Size())
+	if (!Header.PixelPtr || Header.PixelPtr > File.Size())
 	{
-		Str.Message(L"Standard Image Error: invalid bitmap file header offset (0x%08X)", FileHeader.bfOffBits);
+		Str.Message(L"Standard Image Error: invalid bitmap file header offset (0x%08X)", Header.PixelPtr);
 		return false;
 	}
 
-	if (!FileHeader.bfSize || FileHeader.bfSize > File.Size())
+	if (!Header.Size || Header.Size > File.Size())
 	{
-		Str.Message(L"Standard Image Error: invalid bitmap file size (0x%08X)", FileHeader.bfSize);
+		Str.Message(L"Standard Image Error: invalid bitmap file size (0x%08X)", Header.Size);
 		return false;
 	}
 
-	if (FileHeader.bfReserved1 || FileHeader.bfReserved2)
+	if (Header.reserved0 || Header.reserved1)
 	{
-		Str.Message(L"Standard Image Error: invalid bitmap file header reserved values (0x%04X, 0x%04X)", FileHeader.bfReserved1, FileHeader.bfReserved2);
+		Str.Message(L"Standard Image Error: invalid bitmap file header reserved values (0x%04X, 0x%04X)", Header.reserved0, Header.reserved1);
 		return false;
 	}
 
-	BITMAPINFOHEADER InfoHeader{};
-	File.Read(pSource + sizeof(BITMAPFILEHEADER), &InfoHeader, sizeof(BITMAPINFOHEADER));
+	Bitmap_Info Info{};
+	File.Read(pSource + sizeof(Bitmap_Header), &Info, sizeof(Bitmap_Info));
 
-	if (InfoHeader.biSize != sizeof(BITMAPINFOHEADER))
+	if (Info.Size != sizeof(Bitmap_Info))
 	{
-		Str.Message(L"Standard Image Error: invalid bitmap info header size (%d)", InfoHeader.biSize);
+		Str.Message(L"Standard Image Error: invalid bitmap info header size (%d)", Info.Size);
 		return false;
 	}
 
-	if (InfoHeader.biPlanes != 1)
+	if (Info.Planes != 1)
 	{
-		Str.Message(L"Standard Image Error: invalid bitmap planes (%d)", InfoHeader.biPlanes);
+		Str.Message(L"Standard Image Error: invalid bitmap planes (%d)", Info.Planes);
 		return false;
 	}
 
-	if (InfoHeader.biBitCount != 4 && InfoHeader.biBitCount != 8 && InfoHeader.biBitCount != 16 && InfoHeader.biBitCount != 24 && InfoHeader.biBitCount != 32)
+	if (Info.Depth != 4 && Info.Depth != 8 && Info.Depth != 16 && Info.Depth != 24 && Info.Depth != 32)
 	{
-		Str.Message(L"Standard Image Error: unsupported bitmap bit count (%d)", InfoHeader.biBitCount);
+		Str.Message(L"Standard Image Error: unsupported bitmap bit count (%d)", Info.Depth);
 		return false;
 	}
 
-	if ((InfoHeader.biCompression != BI_RGB) &&
-		(InfoHeader.biCompression != BI_RLE8) &&
-		(InfoHeader.biCompression != BI_RLE4) &&
-		(InfoHeader.biCompression != BI_BITFIELDS)
+	if ((Info.Compression != Bitmap_Compression::RGB) &&
+		(Info.Compression != Bitmap_Compression::RLE8) &&
+		(Info.Compression != Bitmap_Compression::RLE4) &&
+		(Info.Compression != Bitmap_Compression::BITFIELDS)
 #ifdef LIB_JPEG
-		&& (InfoHeader.biCompression != BI_JPEG)
+		&& (Info.Compression != Bitmap_Compression::JPEG)
 #endif
 #ifdef LIB_PNG
-		&& (InfoHeader.biCompression != BI_PNG)
+		&& (Info.Compression != Bitmap_Compression::PNG)
 #endif
 		)
 	{
 		Str.Message(L"Standard Image Error: unsupported bitmap compression: %ws",
 #ifndef LIB_JPEG
-			InfoHeader.biCompression == BI_JPEG ? L"JPEG" :
+			Info.Compression == Bitmap_Compression::JPEG ? L"JPEG" :
 #endif
 #ifndef LIB_JPEG
-			InfoHeader.biCompression == BI_PNG ? L"PNG" :
+			Info.Compression == Bitmap_Compression::PNG ? L"PNG" :
 #endif
-			InfoHeader.biCompression == 0x000B ? L"CMYK" :
-			InfoHeader.biCompression == 0x000C ? L"BI_CMYKRLE8" :
-			InfoHeader.biCompression == 0x000D ? L"BI_CMYKRLE4" :
-			std::to_wstring(InfoHeader.biCompression));
+			Info.Compression == Bitmap_Compression::CMYK ? L"CMYK" :
+			Info.Compression == Bitmap_Compression::CMYKRLE8 ? L"CMYKRLE8" :
+			Info.Compression == Bitmap_Compression::CMYKRLE4 ? L"CMYKRLE4" :
+			Str.FormatCStyle(L"0x%08X", std::to_underlying(Info.Compression)).c_str());
 		return false;
 	}
 
-	if (InfoHeader.biBitCount == 4 || InfoHeader.biBitCount == 8)
+	if (Info.Depth == 4 || Info.Depth == 8)
 	{
-		DWORD nMaxColors = InfoHeader.biBitCount == 4 ? 16 * sizeof(RGBQUAD) : 256 * sizeof(RGBQUAD);
+		DWORD nMaxColors = Info.Depth == 4 ? 16 * sizeof(Pixel_32bpp) : 256 * sizeof(Pixel_32bpp);
 
-		if (!InfoHeader.biClrUsed || InfoHeader.biClrUsed > nMaxColors)
+		if (!Info.PaletteColors || Info.PaletteColors > nMaxColors)
 		{
-			Str.Message(L"Standard Image Error: invalid bitmap palette color count (%d)", InfoHeader.biClrUsed);
+			Str.Message(L"Standard Image Error: invalid bitmap palette color count (%d)", Info.PaletteColors);
 			return false;
 		}
 	}
 
 	Close();
 
-	m_Depth = InfoHeader.biBitCount;
+	m_Depth = Info.Depth;
 
-	m_Width = (uint16_t)InfoHeader.biWidth;
-	m_Height = (uint16_t)InfoHeader.biHeight;
+	m_Width = (uint16_t)Info.Width;
+	m_Height = (uint16_t)Info.Height;
 
-	m_Palette.resize(InfoHeader.biClrUsed);
+	m_Palette.resize(Info.PaletteColors);
 
-	File.Read(pSource + sizeof(BITMAPFILEHEADER) + sizeof(BITMAPINFOHEADER), m_Palette.data(), m_Palette.size());
+	File.Read(pSource + sizeof(Bitmap_Header) + sizeof(Bitmap_Info), m_Palette.data(), m_Palette.size());
 
 	uint32_t Size = m_Depth == 4 ? (m_Width * m_Height) / 2 : m_Width * m_Height * GetPixelSize();
 
 	m_Pixels.resize(Size);
 
-	File.Read(pSource + FileHeader.bfOffBits, m_Pixels.data(), m_Pixels.size());
+	File.Read(pSource + Header.PixelPtr, m_Pixels.data(), m_Pixels.size());
 
-	if (InfoHeader.biCompression == BI_RLE8)
+	if (Info.Compression == Bitmap_Compression::RLE8)
 	{
 		DecompressRLE(8, m_Width, m_Height, m_Pixels, m_Pixels);
 	}
-	else if (InfoHeader.biCompression == BI_RLE4)
+	else if (Info.Compression == Bitmap_Compression::RLE4)
 	{
 		DecompressRLE(4, m_Width, m_Height, m_Pixels, m_Pixels);
 	}
-	else if (InfoHeader.biCompression == BI_BITFIELDS)
+	else if (Info.Compression == Bitmap_Compression::BITFIELDS)
 	{
 		uint32_t Red, Green, Blue, Alpha = 0xFF000000;
-		File.Read(pSource + sizeof(BITMAPFILEHEADER) + sizeof(BITMAPINFOHEADER) + m_Palette.size(), &Red, sizeof(uint32_t));
-		File.Read(pSource + sizeof(BITMAPFILEHEADER) + sizeof(BITMAPINFOHEADER) + m_Palette.size() + sizeof(uint32_t), &Green, sizeof(uint32_t));
-		File.Read(pSource + sizeof(BITMAPFILEHEADER) + sizeof(BITMAPINFOHEADER) + m_Palette.size() + 2 * sizeof(uint32_t), &Blue, sizeof(uint32_t));
-		if (InfoHeader.biBitCount == 32)
+		File.Read(pSource + sizeof(Bitmap_Header) + sizeof(Bitmap_Info) + m_Palette.size(), &Red, sizeof(uint32_t));
+		File.Read(pSource + sizeof(Bitmap_Header) + sizeof(Bitmap_Info) + m_Palette.size() + sizeof(uint32_t), &Green, sizeof(uint32_t));
+		File.Read(pSource + sizeof(Bitmap_Header) + sizeof(Bitmap_Info) + m_Palette.size() + 2 * sizeof(uint32_t), &Blue, sizeof(uint32_t));
+		if (Info.Depth == 32)
 		{
-			File.Read(pSource + sizeof(BITMAPFILEHEADER) + sizeof(BITMAPINFOHEADER) + m_Palette.size() + 3 * sizeof(uint32_t), &Alpha, sizeof(uint32_t));
+			File.Read(pSource + sizeof(Bitmap_Header) + sizeof(Bitmap_Info) + m_Palette.size() + 3 * sizeof(uint32_t), &Alpha, sizeof(uint32_t));
 		}
 		DecompressBitfields(m_Depth, m_Width, m_Height, m_Pixels, m_Pixels, Red, Green, Blue, Alpha);
 	}
 #ifdef LIB_JPEG
-	else if (InfoHeader.biCompression == BI_JPEG)
+	else if (Info.Compression == Bitmap_Compression::JPEG)
 	{
 		DecompressJPEG(m_Pixels, m_Pixels, m_Depth, m_Width, m_Height);
 	}
 #endif
 #ifdef LIB_PNG
-	else if (InfoHeader.biCompression == BI_PNG)
+	else if (Info.Compression == Bitmap_Compression::PNG)
 	{
 		DecompressPNG(m_Pixels, m_Pixels, m_Palette);
 	}
@@ -1445,7 +1447,7 @@ void Standard_Image::SavePAL(std::filesystem::path Path)
 	Microsoft_RIFF_Palette Header{};
 
 	std::memcpy(Header.RIFF, "RIFF", 4);
-	Header.FileSize = (m_Depth == 4 ? 16 * 4 + 4 : 256 * 4 + 4) + 0x0A;
+	Header.Size = (m_Depth == 4 ? 16 * 4 + 4 : 256 * 4 + 4) + 0x0A;
 	std::memcpy(Header.PAL, "PAL ", 4);
 	std::memcpy(Header.data, "data", 4);
 	Header.DataSize = (uint16_t)m_Depth == 4 ? 16 * 4 + 4 : 256 * 4 + 4;
@@ -1454,6 +1456,6 @@ void Standard_Image::SavePAL(std::filesystem::path Path)
 
 	for (std::size_t i = 0; i < m_Palette.size(); i++)
 	{
-		File.Write(0x16 + (i * sizeof(RGBQUAD)), &m_Palette[i], sizeof(RGBQUAD));
+		File.Write(0x16 + (i * sizeof(Pixel_32bpp)), &m_Palette[i], sizeof(Pixel_32bpp));
 	}
 }

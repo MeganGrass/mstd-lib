@@ -3,18 +3,12 @@
 *	Megan Grass
 *	January 01, 2024
 *
-*
-*	TODO:
-*
 */
 
 
 #include "std_filesystem.h"
 
 
-/*
-	Test Path for File Name
-*/
 bool Standard_FileSystem::TestForFileName(std::filesystem::path _Path) try
 {
 	if (_Path.empty()) { return false; }
@@ -24,10 +18,6 @@ bool Standard_FileSystem::TestForFileName(std::filesystem::path _Path) try
 }
 catch (...) { Exception(std::current_exception()); return false; }
 
-
-/*
-	Clean Directory Path
-*/
 std::filesystem::path Standard_FileSystem::CleanDirectoryPath(std::filesystem::path _Path) try
 {
 	if (_Path.empty()) { return ""; }
@@ -44,10 +34,6 @@ std::filesystem::path Standard_FileSystem::CleanDirectoryPath(std::filesystem::p
 }
 catch (...) { Exception(std::current_exception()); return ""; }
 
-
-/*
-	Clean Path
-*/
 std::filesystem::path Standard_FileSystem::CleanPath(std::filesystem::path _Path) try
 {
 	if (_Path.empty()) { return _Path; }
@@ -62,10 +48,6 @@ std::filesystem::path Standard_FileSystem::CleanPath(std::filesystem::path _Path
 }
 catch (...) { Exception(std::current_exception()); return ""; }
 
-
-/*
-	Exists
-*/
 bool Standard_FileSystem::Exists(std::filesystem::path _Path) try
 {
 	if (_Path.empty()) { return false; }
@@ -73,10 +55,6 @@ bool Standard_FileSystem::Exists(std::filesystem::path _Path) try
 }
 catch (...) { Exception(std::current_exception()); return false; }
 
-
-/*
-	Determine if a filesystem path is a directory
-*/
 [[nodiscard]] bool Standard_FileSystem::IsDirectory(std::filesystem::path _Path) try
 {
 	if (_Path.empty()) { return false; }
@@ -84,10 +62,6 @@ catch (...) { Exception(std::current_exception()); return false; }
 }
 catch (...) { Exception(std::current_exception()); return false; }
 
-
-/*
-	Determine if a filesystem path is a regular file
-*/
 [[nodiscard]] bool Standard_FileSystem::IsFile(std::filesystem::path _Path) try
 {
 	if (_Path.empty()) { return false; }
@@ -95,10 +69,6 @@ catch (...) { Exception(std::current_exception()); return false; }
 }
 catch (...) { Exception(std::current_exception()); return false; }
 
-
-/*
-	File Size
-*/
 std::uintmax_t Standard_FileSystem::FileSize(std::filesystem::path _Path) try
 {
 	if (!Exists(_Path)) { return 0; }
@@ -106,10 +76,6 @@ std::uintmax_t Standard_FileSystem::FileSize(std::filesystem::path _Path) try
 }
 catch (...) { Exception(std::current_exception()); return 0; }
 
-
-/*
-	Resize File
-*/
 bool Standard_FileSystem::ResizeFile(std::filesystem::path _Path, std::uintmax_t _Size) try
 {
 	if (!Exists(_Path) || !TestForFileName(_Path)) { return false; }
@@ -118,10 +84,6 @@ bool Standard_FileSystem::ResizeFile(std::filesystem::path _Path, std::uintmax_t
 }
 catch (...) { Exception(std::current_exception()); return false; }
 
-
-/*
-	Create Directory
-*/
 bool Standard_FileSystem::CreateDirectory(std::filesystem::path _Path) try
 {
 	_Path = CleanDirectoryPath(_Path);
@@ -133,10 +95,6 @@ bool Standard_FileSystem::CreateDirectory(std::filesystem::path _Path) try
 }
 catch (...) { Exception(std::current_exception()); return false; }
 
-
-/*
-	Rename File or Directory
-*/
 bool Standard_FileSystem::Rename(std::filesystem::path& _Path, std::filesystem::path _NewName, bool bPathMustExist) try
 {
 	if (_Path.empty() || _NewName.empty()) { return false; }
@@ -146,10 +104,6 @@ bool Standard_FileSystem::Rename(std::filesystem::path& _Path, std::filesystem::
 }
 catch (...) { Exception(std::current_exception()); return false; }
 
-
-/*
-	Set Current Working Directory
-*/
 bool Standard_FileSystem::SetCurrentWorkingDir(std::filesystem::path& _Path, bool bCreateIfDoesntExist) try
 {
 	_Path = CleanDirectoryPath(_Path);
@@ -160,10 +114,6 @@ bool Standard_FileSystem::SetCurrentWorkingDir(std::filesystem::path& _Path, boo
 }
 catch (...) { Exception(std::current_exception()); return false; }
 
-
-/*
-	Copy file
-*/
 bool Standard_FileSystem::Copy(std::filesystem::path _Source, std::filesystem::path _Destination, bool bOverwrite) try
 {
 	if (!IsFile(_Source)) { return false; }
@@ -172,10 +122,6 @@ bool Standard_FileSystem::Copy(std::filesystem::path _Source, std::filesystem::p
 }
 catch (...) { Exception(std::current_exception()); return false; }
 
-
-/*
-	Get list of regular files in directory
-*/
 std::vector<std::filesystem::path> Standard_FileSystem::GetFileList(std::filesystem::path _Path) try
 {
 	std::filesystem::path Dir = CleanDirectoryPath(_Path);
@@ -193,10 +139,6 @@ std::vector<std::filesystem::path> Standard_FileSystem::GetFileList(std::filesys
 }
 catch (...) { Exception(std::current_exception()); return {}; }
 
-
-/*
-	Get/Set File Name
-*/
 std::filesystem::path Standard_FileSystem::GetFileName(std::filesystem::path _Path) try
 {
 	if (TestForFileName(_Path)) { return _Path.filename(); }
@@ -213,10 +155,6 @@ bool Standard_FileSystem::SetFileName(std::filesystem::path& _Path, std::filesys
 }
 catch (...) { Exception(std::current_exception()); return false; }
 
-
-/*
-	Get File Stem (File Namebase)
-*/
 std::filesystem::path Standard_FileSystem::GetFileStem(std::filesystem::path _Path) try
 {
 	if (TestForFileName(_Path)) { return _Path.stem(); }
@@ -224,10 +162,6 @@ std::filesystem::path Standard_FileSystem::GetFileStem(std::filesystem::path _Pa
 }
 catch (...) { Exception(std::current_exception()); return ""; }
 
-
-/*
-	Get/Set File Extension
-*/
 std::filesystem::path Standard_FileSystem::GetFileExtension(std::filesystem::path _Path) try
 {
 	if (TestForFileName(_Path)) { return _Path.extension(); }
@@ -244,10 +178,6 @@ bool Standard_FileSystem::SetFileExtension(std::filesystem::path& _Path, std::fi
 }
 catch (...) { Exception(std::current_exception()); return false; }
 
-
-/*
-	Set File Date
-*/
 void Standard_FileSystem::SetFileDate(std::filesystem::path _Path, std::chrono::time_point<std::chrono::system_clock, std::chrono::duration<long long, std::micro>> _FileTime) try
 {
 	if (!Exists(_Path)) { return; }

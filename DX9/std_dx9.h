@@ -3,9 +3,6 @@
 *	Megan Grass
 *	April 12, 2024
 *
-*
-*	TODO:
-*		Draw is now broken because texture dimensions are pow2
 */
 
 
@@ -33,16 +30,16 @@ extern const char* PixelShaderCode;
 extern const char* PlayStationDitherShaderCode;
 
 /*
-	Point (Gouraud-shaded)
-	 - vecp
+	Point (w/ Color)
+	 - vecpc
 */
-#define D3DFVF_POINTG (D3DFVF_XYZ | D3DFVF_DIFFUSE | D3DFVF_PSIZE)
+#define D3DFVF_POINTC (D3DFVF_XYZ | D3DFVF_DIFFUSE | D3DFVF_PSIZE)
 
 /*
-	Point (Gouraud-shaded w/ Texture)
+	Point (w/ Color and Texture)
 	 - vecpt
 */
-#define D3DFVF_POINTGT (D3DFVF_XYZ | D3DFVF_DIFFUSE | D3DFVF_PSIZE | D3DFVF_TEX1)
+#define D3DFVF_POINTCT (D3DFVF_XYZ | D3DFVF_DIFFUSE | D3DFVF_PSIZE | D3DFVF_TEX1)
 
 /*
 	Texture
@@ -69,28 +66,28 @@ extern const char* PlayStationDitherShaderCode;
 #define D3DFVF_VERTNT (D3DFVF_XYZ | D3DFVF_NORMAL | D3DFVF_TEX1)
 
 /*
-	Vertex (Gouraud-shaded)
-	 - vec3g
+	Vertex (w/ Color)
+	 - vec3c
 */
-#define D3DFVF_VERTG (D3DFVF_XYZ | D3DFVF_DIFFUSE)
+#define D3DFVF_VERTC (D3DFVF_XYZ | D3DFVF_DIFFUSE)
 
 /*
-	Vertex (Gouraud-shaded w/ Normal)
-	 - vec3gn
+	Vertex (w/ Normal and Color)
+	 - vec3cn
 */
-#define D3DFVF_VERTGN (D3DFVF_XYZ | D3DFVF_NORMAL | D3DFVF_DIFFUSE)
+#define D3DFVF_VERTCN (D3DFVF_XYZ | D3DFVF_NORMAL | D3DFVF_DIFFUSE)
 
 /*
-	Vertex (Gouraud-shaded w/ UV)
-	 - vec3gt
+	Vertex (w/ Color and UV)
+	 - vec3ct
 */
-#define D3DFVF_VERTGT (D3DFVF_XYZ | D3DFVF_DIFFUSE | D3DFVF_TEX1)
+#define D3DFVF_VERTCT (D3DFVF_XYZ | D3DFVF_DIFFUSE | D3DFVF_TEX1)
 
 /*
-	Vertex (Gouraud-shaded w/ Normal and UV)
-	 - vec3gnt
+	Vertex (w/ Normal, Color and UV)
+	 - vec3cnt
 */
-#define D3DFVF_VERTGNT (D3DFVF_XYZ | D3DFVF_NORMAL | D3DFVF_DIFFUSE | D3DFVF_TEX1)
+#define D3DFVF_VERTCNT (D3DFVF_XYZ | D3DFVF_NORMAL | D3DFVF_DIFFUSE | D3DFVF_TEX1)
 
 /*
 	16-bit depth buffer
@@ -113,6 +110,22 @@ const D3DFORMAT D3DFMT_INTZ = ((D3DFORMAT)(MAKEFOURCC('I', 'N', 'T', 'Z')));
 const D3DFORMAT D3DFMT_NULL = ((D3DFORMAT)(MAKEFOURCC('N', 'U', 'L', 'L')));
 
 /*
+	Direct-X 9 smart pointer deleter
+*/
+template <typename T>
+struct IDirect3DDelete9
+{
+	void operator()(T* ptr) const
+	{
+		if (ptr)
+		{
+			ptr->Release();
+			ptr = nullptr;
+		}
+	}
+};
+
+/*
 	Direct-X 9 Device State
 */
 enum class D3DDEVICE_STATE : int32_t
@@ -126,30 +139,13 @@ enum class D3DDEVICE_STATE : int32_t
 };
 
 /*
-	Direct-X 9 Transparency Rate
-*/
-enum class D3DTRANSPARENCY_RATE : uint8_t
-{
-	NONE = 255,					// No transparency
-	SIXTH = 192,                // 100%back + 16.67%polygon
-	QUARTER = 160,				// 100%back + 25%polygon
-	THIRD = 170,				// 100%back + 33.3%polygon
-	HALF = 128,					// 50%back + 50%polygon
-	TWO_THIRDS = 85,			// 100%back + 66.6%polygon
-	THREE_QUARTER = 64,			// 100%back + 75%polygon
-	SEVEN_EIGHTHS = 32,			// 100%back + 87.5%polygon
-	FULL = 0,					// 100%back + 100%polygon
-	INVERSE = 192				// 100%back - 100%polygon
-};
-
-/*
-	Direct-X 9 Shader Packet
+	Direct-X 9 Vertex Shader Packet
 */
 struct D3DSHADERPACKET final
 {
-	ID3DXConstantTable* Const;
-	IDirect3DVertexDeclaration9* Decl;
-	IDirect3DVertexShader9* Shader;
+	std::unique_ptr<ID3DXConstantTable, IDirect3DDelete9<ID3DXConstantTable>> Const;
+	std::unique_ptr<IDirect3DVertexDeclaration9, IDirect3DDelete9<IDirect3DVertexDeclaration9>> Decl;
+	std::unique_ptr<IDirect3DVertexShader9, IDirect3DDelete9<IDirect3DVertexShader9>> Shader;
 };
 
 /*
@@ -161,27 +157,23 @@ struct D3DDRAWPACKET final
 	IDirect3DIndexBuffer9* Indices;
 	IDirect3DTexture9* Texture;
 	IDirect3DPixelShader9* PixelShader;
-	UINT Stride;
-	bool bZBuffer;
-	D3DZBUFFERTYPE ZType;
-	D3DCMPFUNC ZFunc;
-	D3DFILLMODE FillMode;
-	D3DPRIMITIVETYPE PrimitiveType;
-};
-
-/*
-	Direct-X 9 Texture custom deleter for smart pointers
-*/
-struct IDirect3DTexture9Delete
-{
-	void operator()(IDirect3DTexture9* texture) const
+	struct Z_BUFFER
 	{
-		if (texture)
-		{
-			texture->Release();
-			texture = nullptr;
-		}
-	}
+		BOOL Active;
+		D3DZBUFFERTYPE Type;
+		D3DCMPFUNC Func;
+	} ZBuffer{};
+	struct PRIMITIVE
+	{
+		UINT Stride;
+		D3DFILLMODE Fill;
+		D3DPRIMITIVETYPE Type;
+	} Primitive{};
+	struct TEXTURE
+	{
+		float Width;
+		float Height;
+	} TextureAttr{};
 };
 
 /*
@@ -193,19 +185,19 @@ private:
 
 	std::shared_ptr<Standard_Window> Wnd;
 
-	IDirect3D9Ex* pD3D;
+	std::unique_ptr<IDirect3D9Ex, IDirect3DDelete9<IDirect3D9Ex>> pD3D;
 
-	IDirect3DDevice9Ex* pDevice;
+	std::unique_ptr<IDirect3DDevice9Ex, IDirect3DDelete9<IDirect3DDevice9Ex>> pDevice;
 
-	IDirect3DSwapChain9Ex* pSwapChain;
+	std::unique_ptr<IDirect3DSwapChain9Ex, IDirect3DDelete9<IDirect3DSwapChain9Ex>> pSwapChain;
 
-	D3DCAPS9 DeviceCaps;
+	std::unique_ptr<D3DCAPS9> m_DeviceCaps;
+	
+	std::unique_ptr<D3DADAPTER_IDENTIFIER9> m_AdapterIdentifier;
 
-	D3DADAPTER_IDENTIFIER9 AdapterIdentifier;
+	std::unique_ptr<D3DDISPLAYMODE> m_DisplayMode;
 
-	D3DDISPLAYMODE DisplayMode;
-
-	D3DPRESENT_PARAMETERS PresentParameters;
+	std::unique_ptr<D3DPRESENT_PARAMETERS> m_PresentParameters;
 
 	D3DDEVICE_STATE e_DeviceState;
 
@@ -215,9 +207,9 @@ private:
 
 	D3DSURFACE_DESC TextureDesc;
 
-	IDirect3DVertexBuffer9* AxisGrid;
+	std::unique_ptr<IDirect3DVertexBuffer9, IDirect3DDelete9<IDirect3DVertexBuffer9>> AxisGrid;
 
-	IDirect3DVertexBuffer9* XyzAxis;
+	std::unique_ptr<IDirect3DVertexBuffer9, IDirect3DDelete9<IDirect3DVertexBuffer9>> Xyz;
 
 	bool b_Ready;
 
@@ -243,11 +235,11 @@ private:
 
 	void InitShaders(void);
 
-	D3DSHADERPACKET ShaderVecp;
+	D3DSHADERPACKET ShaderVecPoint;
 
-	D3DSHADERPACKET ShaderVecpg;
+	D3DSHADERPACKET ShaderVecPointc;
 
-	D3DSHADERPACKET ShaderVecpgt;
+	D3DSHADERPACKET ShaderVecPointct;
 
 	D3DSHADERPACKET ShaderVec3t;
 
@@ -257,13 +249,13 @@ private:
 
 	D3DSHADERPACKET ShaderVec3nt;
 
-	D3DSHADERPACKET ShaderVec3g;
+	D3DSHADERPACKET ShaderVec3c;
 
-	D3DSHADERPACKET ShaderVec3gn;
+	D3DSHADERPACKET ShaderVec3cn;
 
-	D3DSHADERPACKET ShaderVec3gt;
+	D3DSHADERPACKET ShaderVec3ct;
 
-	D3DSHADERPACKET ShaderVec3gnt;
+	D3DSHADERPACKET ShaderVec3cnt;
 
 public:
 
@@ -274,28 +266,28 @@ public:
 		 - solid white used when texture is not bound and diffuse does not exist
 		 - this shader is used for generic draw functions when no other shader is specified
 	*/
-	IDirect3DPixelShader9* PassthroughPixelShader;
+	std::unique_ptr<IDirect3DPixelShader9, IDirect3DDelete9<IDirect3DPixelShader9>> PassthroughPixelShader;
 
 	/*
 		Sony PlayStation (1994) Dithering Pixel Shader
 	*/
-	IDirect3DPixelShader9* PS1DitherPixelShader;
+	std::unique_ptr<IDirect3DPixelShader9, IDirect3DDelete9<IDirect3DPixelShader9>> PS1DitherPixelShader;
 
 	explicit Standard_DirectX_9(void) :
 		Wnd(nullptr),
 		pD3D(nullptr),
 		pDevice(nullptr),
 		pSwapChain(nullptr),
-		DeviceCaps(),
-		AdapterIdentifier(),
-		DisplayMode(),
-		PresentParameters(),
+		m_DeviceCaps(nullptr),
+		m_AdapterIdentifier(nullptr),
+		m_DisplayMode(nullptr),
+		m_PresentParameters(nullptr),
 		e_DeviceState(D3DDEVICE_STATE::UNKNOWN),
 		IndexBufferDesc(),
 		VertexBufferDesc(),
 		TextureDesc(),
 		AxisGrid(nullptr),
-		XyzAxis(nullptr),
+		Xyz(nullptr),
 		b_Ready(false),
 		b_Abort(false),
 		b_Active(false),
@@ -308,75 +300,82 @@ public:
 		AmbientColor(0xFF808080),
 		PassthroughPixelShader(nullptr),
 		PS1DitherPixelShader(nullptr),
-		ShaderVecp{},
-		ShaderVecpg{},
-		ShaderVecpgt{},
+		ShaderVecPoint{},
+		ShaderVecPointc{},
+		ShaderVecPointct{},
 		ShaderVec3t{},
 		ShaderVec4t{},
 		ShaderVec3n{},
 		ShaderVec3nt{},
-		ShaderVec3g{},
-		ShaderVec3gn{},
-		ShaderVec3gt{},
-		ShaderVec3gnt{}
+		ShaderVec3c{},
+		ShaderVec3cn{},
+		ShaderVec3ct{},
+		ShaderVec3cnt{}
 	{
 		ThreadPoolInit(1);
 		ThreadPoolEnqueue([this]() { Update(); });
 	}
 	virtual ~Standard_DirectX_9(void)
 	{
-		Shutdown();
+		b_Abort = true;
+		b_Active = false;
+		e_DeviceState = D3DDEVICE_STATE::UNKNOWN;
 
 		while (!b_Complete)
 		{
 			std::this_thread::sleep_for(std::chrono::milliseconds(100));
 		}
 
-		if (AxisGrid) { AxisGrid->Release(); AxisGrid = nullptr; }
+		AxisGrid.reset();
+		Xyz.reset();
 
-		if (ShaderVecpg.Decl) { ShaderVecpg.Decl->Release(); ShaderVecpg.Decl = nullptr; }
-		if (ShaderVecpg.Shader) { ShaderVecpg.Shader->Release(); ShaderVecpg.Shader = nullptr; }
-		if (ShaderVecpg.Const) { ShaderVecpg.Const->Release(); ShaderVecpg.Const = nullptr; }
+		ShaderVecPointc.Decl.reset();
+		ShaderVecPointc.Shader.reset();
+		ShaderVecPointc.Const.reset();
 
-		if (ShaderVecpgt.Decl) { ShaderVecpgt.Decl->Release(); ShaderVecpgt.Decl = nullptr; }
-		if (ShaderVecpgt.Shader) { ShaderVecpgt.Shader->Release(); ShaderVecpgt.Shader = nullptr; }
-		if (ShaderVecpgt.Const) { ShaderVecpgt.Const->Release(); ShaderVecpgt.Const = nullptr; }
+		ShaderVecPointct.Decl.reset();
+		ShaderVecPointct.Shader.reset();
+		ShaderVecPointct.Const.reset();
 
-		if (ShaderVec3t.Decl) { ShaderVec3t.Decl->Release(); ShaderVec3t.Decl = nullptr; }
-		if (ShaderVec3t.Shader) { ShaderVec3t.Shader->Release(); ShaderVec3t.Shader = nullptr; }
-		if (ShaderVec3t.Const) { ShaderVec3t.Const->Release(); ShaderVec3t.Const = nullptr; }
+		ShaderVec3t.Decl.reset();
+		ShaderVec3t.Shader.reset();
+		ShaderVec3t.Const.reset();
 
-		if (ShaderVec4t.Decl) { ShaderVec4t.Decl->Release(); ShaderVec4t.Decl = nullptr; }
-		if (ShaderVec4t.Shader) { ShaderVec4t.Shader->Release(); ShaderVec4t.Shader = nullptr; }
-		if (ShaderVec4t.Const) { ShaderVec4t.Const->Release(); ShaderVec4t.Const = nullptr; }
+		ShaderVec4t.Decl.reset();
+		ShaderVec4t.Shader.reset();
+		ShaderVec4t.Const.reset();
 
-		if (ShaderVec3n.Decl) { ShaderVec3n.Decl->Release(); ShaderVec3n.Decl = nullptr; }
-		if (ShaderVec3n.Shader) { ShaderVec3n.Shader->Release(); ShaderVec3n.Shader = nullptr; }
-		if (ShaderVec3n.Const) { ShaderVec3n.Const->Release(); ShaderVec3n.Const = nullptr; }
+		ShaderVec3n.Decl.reset();
+		ShaderVec3n.Shader.reset();
+		ShaderVec3n.Const.reset();
 
-		if (ShaderVec3nt.Decl) { ShaderVec3nt.Decl->Release(); ShaderVec3nt.Decl = nullptr; }
-		if (ShaderVec3nt.Shader) { ShaderVec3nt.Shader->Release(); ShaderVec3nt.Shader = nullptr; }
-		if (ShaderVec3nt.Const) { ShaderVec3nt.Const->Release(); ShaderVec3nt.Const = nullptr; }
+		ShaderVec3nt.Decl.reset();
+		ShaderVec3nt.Shader.reset();
+		ShaderVec3nt.Const.reset();
 
-		if (ShaderVec3g.Decl) { ShaderVec3g.Decl->Release(); ShaderVec3g.Decl = nullptr; }
-		if (ShaderVec3g.Shader) { ShaderVec3g.Shader->Release(); ShaderVec3g.Shader = nullptr; }
-		if (ShaderVec3g.Const) { ShaderVec3g.Const->Release(); ShaderVec3g.Const = nullptr; }
+		ShaderVec3c.Decl.reset();
+		ShaderVec3c.Shader.reset();
+		ShaderVec3c.Const.reset();
 
-		if (ShaderVec3gn.Decl) { ShaderVec3gn.Decl->Release(); ShaderVec3gn.Decl = nullptr; }
-		if (ShaderVec3gn.Shader) { ShaderVec3gn.Shader->Release(); ShaderVec3gn.Shader = nullptr; }
-		if (ShaderVec3gn.Const) { ShaderVec3gn.Const->Release(); ShaderVec3gn.Const = nullptr; }
+		ShaderVec3cn.Decl.reset();
+		ShaderVec3cn.Shader.reset();
+		ShaderVec3cn.Const.reset();
 
-		if (ShaderVec3gt.Decl) { ShaderVec3gt.Decl->Release(); ShaderVec3gt.Decl = nullptr; }
-		if (ShaderVec3gt.Shader) { ShaderVec3gt.Shader->Release(); ShaderVec3gt.Shader = nullptr; }
-		if (ShaderVec3gt.Const) { ShaderVec3gt.Const->Release(); ShaderVec3gt.Const = nullptr; }
+		ShaderVec3ct.Decl.reset();
+		ShaderVec3ct.Shader.reset();
+		ShaderVec3ct.Const.reset();
 
-		if (ShaderVec3gnt.Decl) { ShaderVec3gnt.Decl->Release(); ShaderVec3gnt.Decl = nullptr; }
-		if (ShaderVec3gnt.Shader) { ShaderVec3gnt.Shader->Release(); ShaderVec3gnt.Shader = nullptr; }
-		if (ShaderVec3gnt.Const) { ShaderVec3gnt.Const->Release(); ShaderVec3gnt.Const = nullptr; }
+		ShaderVec3cnt.Decl.reset();
+		ShaderVec3cnt.Shader.reset();
+		ShaderVec3cnt.Const.reset();
 
-		if (pSwapChain) { pSwapChain->Release(); pSwapChain = nullptr; }
-		if (pDevice) { pDevice->Release(); pDevice = nullptr; }
-		if (pD3D) { pD3D->Release(); pD3D = nullptr; }
+		m_DeviceCaps.reset();
+		m_AdapterIdentifier.reset();
+		m_DisplayMode.reset();
+		m_PresentParameters.reset();
+		pSwapChain.reset();
+		pDevice.reset();
+		pD3D.reset();
 	}
 
 	/*
@@ -416,12 +415,12 @@ public:
 	/*
 		Get D3D
 	*/
-	[[nodiscard]] IDirect3D9Ex* D3D(void) const { return pD3D; }
+	[[nodiscard]] IDirect3D9Ex* D3D(void) const { return pD3D.get(); }
 
 	/*
 		Get Device
 	*/
-	[[nodiscard]] IDirect3DDevice9Ex* Device(void) const { return pDevice; }
+	[[nodiscard]] IDirect3DDevice9Ex* Device(void) const { return pDevice.get(); }
 
 	/*
 		Get device state
@@ -431,7 +430,7 @@ public:
 	/*
 		Get Swap Chain (additional)
 	*/
-	[[nodiscard]] IDirect3DSwapChain9Ex* SwapChain(void) const { return pSwapChain; }
+	[[nodiscard]] IDirect3DSwapChain9Ex* SwapChain(void) const { return pSwapChain.get(); }
 
 	/*
 		Get Device Caps
@@ -451,7 +450,7 @@ public:
 	/*
 		Get Present Parameters
 	*/
-	[[nodiscard]] D3DPRESENT_PARAMETERS* GetPresentParameters(void) { return &PresentParameters; }
+	[[nodiscard]] D3DPRESENT_PARAMETERS* GetPresentParameters(void) { return m_PresentParameters.get(); }
 
 	/*
 		Is render target format supported?
@@ -502,6 +501,16 @@ public:
 	}
 
 	/*
+		Create Canvas Render Surface (32bpp)
+	*/
+	[[nodiscard]] IDirect3DSurface9* CreateRenderSurface(std::uint16_t Width, std::uint16_t Height, D3DFORMAT Format = D3DFMT_A8R8G8B8);
+
+	/*
+		Create Canvas Texture (32bpp)
+	*/
+	[[nodiscard]] IDirect3DTexture9* CreateTexture(std::uint16_t Width, std::uint16_t Height, DWORD Usage = D3DUSAGE_DYNAMIC);
+
+	/*
 		Create Texture (32bpp)
 		 - 4bpp/8bpp/16bpp/24bpp/32bpp supported
 		 - Width and Height are automatically adjusted to power of two
@@ -522,7 +531,8 @@ public:
 		std::unique_ptr<Sony_PlayStation_Texture>& TIM,
 		uint16_t iPalette = 0,
 		Sony_Texture_Transparency TransparencyFlags = Sony_Texture_Transparency::None,
-		DWORD TransparencyColor = 0xFF00FF);
+		DWORD TransparencyColor = 0xFF00FF,
+		bool b_VerticalFlip = false);
 
 	/*
 		Save Texture (32bpp)
@@ -560,29 +570,14 @@ public:
 	void UpdateVertexBuffer(IDirect3DVertexBuffer9* Buffer, void* pData);
 
 	/*
-		Create Point Vertex Buffer (Gouraud-shaded)
+		Create Point Vertex Buffer (w/ Color)
 	*/
-	[[nodiscard]] IDirect3DVertexBuffer9* CreatePoint(std::vector<vecpg> Data);
+	[[nodiscard]] IDirect3DVertexBuffer9* CreatePoint(std::vector<vecpc> Data);
 
 	/*
-		Create Point Vertex Buffer (Gouraud-shaded)
+		Create Point Vertex Buffer (w/ Color and Texture)
 	*/
-	[[nodiscard]] IDirect3DVertexBuffer9* CreatePoint(std::vector<vec3> Vector, DWORD Color, float Size, D3DTRANSPARENCY_RATE TransparencyRate = D3DTRANSPARENCY_RATE::NONE);
-
-	/*
-		Create Point Vertex Buffer (Gouraud-shaded)
-	*/
-	[[nodiscard]] IDirect3DVertexBuffer9* CreatePoint(std::vector<vec3> Vector, std::vector<DWORD> Color, float Size, D3DTRANSPARENCY_RATE TransparencyRate = D3DTRANSPARENCY_RATE::NONE);
-
-	/*
-		Create Point Vertex Buffer (Gouraud-shaded)
-	*/
-	[[nodiscard]] IDirect3DVertexBuffer9* CreatePoint(std::vector<vec3> Vector, std::vector<DWORD> Color, std::vector<float> Size, D3DTRANSPARENCY_RATE TransparencyRate = D3DTRANSPARENCY_RATE::NONE);
-
-	/*
-		Create Point Vertex Buffer (Gouraud-shaded w/ Texture)
-	*/
-	[[nodiscard]] IDirect3DVertexBuffer9* CreatePoint(std::vector<vecpgt> Data);
+	[[nodiscard]] IDirect3DVertexBuffer9* CreatePoint(std::vector<vecpct> Data);
 
 	/*
 		Create Texture Vertex Buffer
@@ -625,44 +620,44 @@ public:
 	[[nodiscard]] IDirect3DVertexBuffer9* CreateVec3nt(std::vector<vec3> Vector, std::vector<vec3> Normal, std::vector<vec2> UV);
 
 	/*
-		Create Vertex Buffer (Gouraud-shaded)
+		Create Vertex Buffer (w/ Color)
 	*/
-	[[nodiscard]] IDirect3DVertexBuffer9* CreateVec3g(std::vector<vec3g> Data);
+	[[nodiscard]] IDirect3DVertexBuffer9* CreateVec3c(std::vector<vec3c> Data);
 
 	/*
-		Create Vertex Buffer (Gouraud-shaded)
+		Create Vertex Buffer (w/ Color)
 	*/
-	[[nodiscard]] IDirect3DVertexBuffer9* CreateVec3g(std::vector<vec3> Vector, DWORD Color, D3DTRANSPARENCY_RATE TransparencyRate = D3DTRANSPARENCY_RATE::NONE);
+	[[nodiscard]] IDirect3DVertexBuffer9* CreateVec3c(std::vector<vec3> Vector, DWORD Color, DWORD Transparency = 0xFF);
 
 	/*
-		Create Vertex Buffer (Gouraud-shaded w/ Normal)
+		Create Vertex Buffer (w/ Normal and Color)
 	*/
-	[[nodiscard]] IDirect3DVertexBuffer9* CreateVec3gn(std::vector<vec3gn> Data);
+	[[nodiscard]] IDirect3DVertexBuffer9* CreateVec3cn(std::vector<vec3cn> Data);
 
 	/*
-		Create Vertex Buffer (Gouraud-shaded w/ Normal)
+		Create Vertex Buffer (w/ Normal and Color)
 	*/
-	[[nodiscard]] IDirect3DVertexBuffer9* CreateVec3gn(std::vector<vec3> Vector, std::vector<vec3> Normal, DWORD Color, D3DTRANSPARENCY_RATE TransparencyRate = D3DTRANSPARENCY_RATE::NONE);
+	[[nodiscard]] IDirect3DVertexBuffer9* CreateVec3cn(std::vector<vec3> Vector, std::vector<vec3> Normal, DWORD Color, DWORD Transparency = 0xFF);
 
 	/*
-		Create Vertex Buffer (Gouraud-shaded w/ UV)
+		Create Vertex Buffer (w/ Color and UV)
 	*/
-	[[nodiscard]] IDirect3DVertexBuffer9* CreateVec3gt(std::vector<vec3gt> Data);
+	[[nodiscard]] IDirect3DVertexBuffer9* CreateVec3ct(std::vector<vec3ct> Data);
 
 	/*
-		Create Vertex Buffer (Gouraud-shaded w/ UV)
+		Create Vertex Buffer (w/ Color and UV)
 	*/
-	[[nodiscard]] IDirect3DVertexBuffer9* CreateVec3gt(std::vector<vec3> Vector, DWORD Color, std::vector<vec2> UV, D3DTRANSPARENCY_RATE TransparencyRate = D3DTRANSPARENCY_RATE::NONE);
+	[[nodiscard]] IDirect3DVertexBuffer9* CreateVec3ct(std::vector<vec3> Vector, DWORD Color, std::vector<vec2> UV, DWORD Transparency = 0xFF);
 
 	/*
-		Create Vertex Buffer (Gouraud-shaded w/ Normal and UV)
+		Create Vertex Buffer (w/ Normal, Color and UV)
 	*/
-	[[nodiscard]] IDirect3DVertexBuffer9* CreateVec3gnt(std::vector<vec3gnt> Data);
+	[[nodiscard]] IDirect3DVertexBuffer9* CreateVec3cnt(std::vector<vec3cnt> Data);
 
 	/*
-		Create Vertex Buffer (Gouraud-shaded w/ Normal and UV)
+		Create Vertex Buffer (w/ Normal, Color and UV)
 	*/
-	[[nodiscard]] IDirect3DVertexBuffer9* CreateVec3gnt(std::vector<vec3> Vector, std::vector<vec3> Normal, DWORD Color, std::vector<vec2> UV, D3DTRANSPARENCY_RATE TransparencyRate = D3DTRANSPARENCY_RATE::NONE);
+	[[nodiscard]] IDirect3DVertexBuffer9* CreateVec3cnt(std::vector<vec3> Vector, std::vector<vec3> Normal, DWORD Color, std::vector<vec2> UV, DWORD Transparency = 0xFF);
 
 	/*
 		Create pixel shader
@@ -673,7 +668,7 @@ public:
 		Set vertex shader + matrix
 		 - simplified version for pre-established shaders
 	*/
-	void SetVertexShader(DWORD FVF);
+	void SetVertexShader(DWORD FVF, bool b_CustomMat = false, D3DXMATRIX World = D3DXMATRIX(), D3DXMATRIX View = D3DXMATRIX(), D3DXMATRIX Projection = D3DXMATRIX());
 
 	/*
 		Draw
@@ -685,19 +680,25 @@ public:
 	void Draw(D3DDRAWPACKET Packet);
 
 	/*
-		Draw Point Vertex Buffer (Gouraud-shaded)
+		Draw Point Vertex Buffer (w/ Color)
 	*/
-	void DrawPointG(IDirect3DVertexBuffer9* Buffer, IDirect3DPixelShader9* PixelShader = nullptr)
+	void DrawPointC(IDirect3DVertexBuffer9* Buffer, IDirect3DPixelShader9* Shader = nullptr)
 	{
-		Draw({ Buffer, nullptr, nullptr, PixelShader ? PixelShader : PassthroughPixelShader, sizeof(vecpg), true, D3DZB_TRUE, D3DCMP_LESSEQUAL, D3DFILL_POINT, D3DPT_POINTLIST });
+		Draw({ Buffer, nullptr, nullptr, Shader,
+			{ TRUE, D3DZB_TRUE, D3DCMP_LESSEQUAL },
+			{ sizeof(vecpc), D3DFILL_POINT, D3DPT_POINTLIST },
+			{ 0.0f, 0.0f } });
 	}
 
 	/*
-		Draw Point Vertex Buffer (Gouraud-shaded w/ UV)
+		Draw Point Vertex Buffer (w/ Color and UV)
 	*/
-	void DrawPointGT(IDirect3DVertexBuffer9* Buffer, IDirect3DTexture9* Texture, IDirect3DPixelShader9* PixelShader = nullptr)
+	void DrawPointCT(IDirect3DVertexBuffer9* Buffer, IDirect3DTexture9* Texture, IDirect3DPixelShader9* Shader = nullptr, float Width = 0.0f, float Height = 0.0f )
 	{
-		Draw({ Buffer, nullptr, Texture, PixelShader ? PixelShader : PassthroughPixelShader, sizeof(vecpgt), true, D3DZB_TRUE, D3DCMP_LESSEQUAL, D3DFILL_POINT, D3DPT_POINTLIST });
+		Draw({ Buffer, nullptr, Texture, Shader,
+			{ TRUE, D3DZB_TRUE, D3DCMP_LESSEQUAL },
+			{ sizeof(vecpct), D3DFILL_POINT, D3DPT_POINTLIST },
+			{ Width, Height } });
 	}
 
 	/*
@@ -707,19 +708,24 @@ public:
 		IDirect3DVertexBuffer9* Buffer,
 		IDirect3DIndexBuffer9* Indices,
 		IDirect3DTexture9* Texture,
-		IDirect3DPixelShader9* PixelShader = nullptr,
+		IDirect3DPixelShader9* Shader = nullptr,
+		float Width = 0.0f, float Height = 0.0f,
 		D3DFILLMODE FillMode = D3DFILL_SOLID,
 		D3DPRIMITIVETYPE PrimitiveType = D3DPT_TRIANGLESTRIP,
+		BOOL b_ZBuffer = TRUE,
 		D3DCMPFUNC ZFunc = D3DCMP_LESSEQUAL)
 	{
-		Draw({ Buffer, Indices, Texture, PixelShader ? PixelShader : PassthroughPixelShader, sizeof(vec3t), true, D3DZB_TRUE, ZFunc, FillMode, PrimitiveType });
+		Draw({ Buffer, Indices, Texture, Shader,
+			{ b_ZBuffer, b_ZBuffer ? D3DZB_TRUE : D3DZB_FALSE, ZFunc },
+			{ sizeof(vec3t), FillMode, PrimitiveType },
+			{ Width, Height } });
 	}
 
 	/*
 		Draw Texture Vertex Buffer (W)
 		 - lighting will be disabled
 	*/
-	void DrawVec4t(IDirect3DVertexBuffer9* Buffer, IDirect3DTexture9* Texture, IDirect3DPixelShader9* PixelShader = nullptr);
+	void DrawVec4t(IDirect3DVertexBuffer9* Buffer, IDirect3DTexture9* Texture, IDirect3DPixelShader9* PixelShader = nullptr, float TexWidth = 0.0f, float TexHeight = 0.0f);
 
 	/*
 		Draw Vertex Buffer (w/ Normal)
@@ -727,12 +733,16 @@ public:
 	void DrawVec3n(
 		IDirect3DVertexBuffer9* Buffer,
 		IDirect3DIndexBuffer9* Indices,
-		IDirect3DPixelShader9* PixelShader = nullptr,
+		IDirect3DPixelShader9* Shader = nullptr,
 		D3DFILLMODE FillMode = D3DFILL_SOLID,
 		D3DPRIMITIVETYPE PrimitiveType = D3DPT_TRIANGLESTRIP,
+		BOOL b_ZBuffer = TRUE,
 		D3DCMPFUNC ZFunc = D3DCMP_LESSEQUAL)
 	{
-		Draw({ Buffer, Indices, nullptr, PixelShader ? PixelShader : PassthroughPixelShader, sizeof(vec3n), true, D3DZB_TRUE, ZFunc, FillMode, PrimitiveType });
+		Draw({ Buffer, Indices, nullptr, Shader,
+			{ b_ZBuffer, b_ZBuffer ? D3DZB_TRUE : D3DZB_FALSE, ZFunc },
+			{ sizeof(vec3n), FillMode, PrimitiveType },
+			{ 0.0f, 0.0f } });
 	}
 
 	/*
@@ -742,76 +752,115 @@ public:
 		IDirect3DVertexBuffer9* Buffer,
 		IDirect3DIndexBuffer9* Indices,
 		IDirect3DTexture9* Texture,
-		IDirect3DPixelShader9* PixelShader = nullptr,
+		IDirect3DPixelShader9* Shader = nullptr,
+		float Width = 0.0f, float Height = 0.0f,
 		D3DFILLMODE FillMode = D3DFILL_SOLID,
 		D3DPRIMITIVETYPE PrimitiveType = D3DPT_TRIANGLESTRIP,
+		BOOL b_ZBuffer = TRUE,
 		D3DCMPFUNC ZFunc = D3DCMP_LESSEQUAL)
 	{
-		Draw({ Buffer, Indices, Texture, PixelShader ? PixelShader : PassthroughPixelShader, sizeof(vec3nt), true, D3DZB_TRUE, ZFunc, FillMode, PrimitiveType });
+		Draw({ Buffer, Indices, Texture, Shader,
+			{ b_ZBuffer, b_ZBuffer ? D3DZB_TRUE : D3DZB_FALSE, ZFunc },
+			{ sizeof(vec3nt), FillMode, PrimitiveType },
+			{ Width, Height } });
 	}
 
 	/*
-		Draw Vertex Buffer (Gouraud-shaded)
+		Draw Vertex Buffer (w/ Color)
 	*/
-	void DrawVec3g(
+	void DrawVec3c(
 		IDirect3DVertexBuffer9* Buffer,
 		IDirect3DIndexBuffer9* Indices,
-		IDirect3DPixelShader9* PixelShader = nullptr,
+		IDirect3DPixelShader9* Shader = nullptr,
 		D3DFILLMODE FillMode = D3DFILL_SOLID,
 		D3DPRIMITIVETYPE PrimitiveType = D3DPT_TRIANGLESTRIP,
+		BOOL b_ZBuffer = TRUE,
 		D3DCMPFUNC ZFunc = D3DCMP_LESSEQUAL)
 	{
-		Draw({ Buffer, Indices, nullptr, PixelShader ? PixelShader : PassthroughPixelShader, sizeof(vec3g), true, D3DZB_TRUE, ZFunc, FillMode, PrimitiveType });
+		Draw({ Buffer, Indices, nullptr, Shader,
+			{ b_ZBuffer, b_ZBuffer ? D3DZB_TRUE : D3DZB_FALSE, ZFunc },
+			{ sizeof(vec3c), FillMode, PrimitiveType },
+			{ 0.0f, 0.0f } });
 	}
 
 	/*
-		Draw Vertex Buffer (Gouraud-shaded w/ Normal)
+		Draw Vertex Buffer (w/ Normal and Color)
 	*/
-	void DrawVec3gn(
+	void DrawVec3cn(
 		IDirect3DVertexBuffer9* Buffer,
 		IDirect3DIndexBuffer9* Indices,
-		IDirect3DPixelShader9* PixelShader = nullptr,
+		IDirect3DPixelShader9* Shader = nullptr,
 		D3DFILLMODE FillMode = D3DFILL_SOLID,
 		D3DPRIMITIVETYPE PrimitiveType = D3DPT_TRIANGLESTRIP,
+		BOOL b_ZBuffer = TRUE,
 		D3DCMPFUNC ZFunc = D3DCMP_LESSEQUAL)
 	{
-		Draw({ Buffer, Indices, nullptr, PixelShader ? PixelShader : PassthroughPixelShader, sizeof(vec3gn), true, D3DZB_TRUE, ZFunc, FillMode, PrimitiveType });
+		Draw({ Buffer, Indices, nullptr, Shader,
+			{ b_ZBuffer, b_ZBuffer ? D3DZB_TRUE : D3DZB_FALSE, ZFunc },
+			{ sizeof(vec3cn), FillMode, PrimitiveType },
+			{ 0.0f, 0.0f } });
 	}
 
 	/*
-		Draw Vertex Buffer (Gouraud-shaded w/ UV)
+		Draw Vertex Buffer (w/ Color and UV)
 	*/
-	void DrawVec3gt(
+	void DrawVec3ct(
 		IDirect3DVertexBuffer9* Buffer,
 		IDirect3DIndexBuffer9* Indices,
 		IDirect3DTexture9* Texture,
-		IDirect3DPixelShader9* PixelShader = nullptr,
+		IDirect3DPixelShader9* Shader = nullptr,
+		float Width = 0.0f, float Height = 0.0f,
 		D3DFILLMODE FillMode = D3DFILL_SOLID,
 		D3DPRIMITIVETYPE PrimitiveType = D3DPT_TRIANGLESTRIP,
+		BOOL b_ZBuffer = TRUE,
 		D3DCMPFUNC ZFunc = D3DCMP_LESSEQUAL)
 	{
-		Draw({ Buffer, Indices, Texture, PixelShader ? PixelShader : PassthroughPixelShader, sizeof(vec3gt), true, D3DZB_TRUE, ZFunc, FillMode, PrimitiveType });
+		Draw({ Buffer, Indices, Texture, Shader,
+			{ b_ZBuffer, b_ZBuffer ? D3DZB_TRUE : D3DZB_FALSE, ZFunc },
+			{ sizeof(vec3ct), FillMode, PrimitiveType },
+			{ Width, Height } });
 	}
 
 	/*
-		Draw Vertex Buffer (Gouraud-shaded w/ Normal and UV)
+		Draw Vertex Buffer (w/ Normal, Color and UV)
 	*/
-	void DrawVec3gnt(
+	void DrawVec3cnt(
 		IDirect3DVertexBuffer9* Buffer,
 		IDirect3DIndexBuffer9* Indices,
 		IDirect3DTexture9* Texture,
-		IDirect3DPixelShader9* PixelShader = nullptr,
+		IDirect3DPixelShader9* Shader = nullptr,
+		float Width = 0.0f, float Height = 0.0f,
 		D3DFILLMODE FillMode = D3DFILL_SOLID,
 		D3DPRIMITIVETYPE PrimitiveType = D3DPT_TRIANGLESTRIP,
+		BOOL b_ZBuffer = TRUE,
 		D3DCMPFUNC ZFunc = D3DCMP_LESSEQUAL)
 	{
-		Draw({ Buffer, Indices, Texture, PixelShader ? PixelShader : PassthroughPixelShader, sizeof(vec3gnt), true, D3DZB_TRUE, ZFunc, FillMode, PrimitiveType });
+		Draw({ Buffer, Indices, Texture, Shader,
+			{ b_ZBuffer, b_ZBuffer ? D3DZB_TRUE : D3DZB_FALSE, ZFunc },
+			{ sizeof(vec3cnt), FillMode, PrimitiveType },
+			{ Width, Height } });
 	}
 
 	/*
 		Get D3DXMATRIX from Standard_Matrix
 	*/
 	[[nodiscard]] D3DXMATRIX* GetMatrix(Standard_Matrix Matrix) { return (D3DXMATRIX*)&Matrix; }
+
+	/*
+		Reset world matrix
+	*/
+	void ResetWorld(void)
+	{
+		SetWorld(Standard_Matrix(vec3{ 0.0f, 0.0f, 0.0f }, vec3{ 0.0f, 0.0f, 0.0f }, vec3{ 1.0f, 1.0f, 1.0f }));
+	}
+
+	/*
+		Reset world matrix
+	*/
+	void ResetWorld(Standard_Matrix& Matrix)
+	{
+		SetWorld(Matrix = Standard_Matrix(vec3{ 0.0f, 0.0f, 0.0f }, vec3{ 0.0f, 0.0f, 0.0f }, vec3{ 1.0f, 1.0f, 1.0f }));
+	}
 
 	/*
 		Set world matrix
@@ -821,7 +870,20 @@ public:
 	/*
 		Set world matrix
 	*/
+	void SetWorld(const vec3& Translation, const vec3& Rotation, const vec3& Scale = vec3{ 1.0f, 1.0f, 1.0f })
+	{
+		SetWorld(Standard_Matrix(vec3{ Translation.x, Translation.y, Translation.z }, vec3{ Rotation.x, Rotation.y, Rotation.z }, vec3{ Scale.x, Scale.y, Scale.z }));
+	}
+
+	/*
+		Set world matrix
+	*/
 	void SetWorld(Standard_Matrix World) { pDevice->SetTransform(D3DTS_WORLD, (D3DXMATRIX*)&World); }
+
+	/*
+		Set world matrix
+	*/
+	void SetWorld(std::shared_ptr<Standard_Matrix> World) { pDevice->SetTransform(D3DTS_WORLD, (D3DXMATRIX*)World.get()); }
 
 	/*
 		Set view matrix
@@ -829,9 +891,19 @@ public:
 	void SetView(Standard_Matrix View) { pDevice->SetTransform(D3DTS_VIEW, (D3DXMATRIX*)&View); }
 
 	/*
+		Set view matrix
+	*/
+	void SetView(std::shared_ptr<Standard_Matrix> View) { pDevice->SetTransform(D3DTS_VIEW, (D3DXMATRIX*)View.get()); }
+
+	/*
 		Set projection matrix
 	*/
 	void SetProjection(Standard_Matrix Projection) { pDevice->SetTransform(D3DTS_PROJECTION, (D3DXMATRIX*)&Projection); }
+
+	/*
+		Set projection matrix
+	*/
+	void SetProjection(std::shared_ptr<Standard_Matrix> Projection) { pDevice->SetTransform(D3DTS_PROJECTION, (D3DXMATRIX*)Projection.get()); }
 
 	/*
 		Is the renderer in a normal state?
@@ -868,7 +940,7 @@ public:
 	/*
 		Set color transparency
 	*/
-	DWORD GetTransparency(DWORD Color, D3DTRANSPARENCY_RATE TransparencyRate) { return ((Color & 0xFFFFFF) | (std::to_underlying(TransparencyRate) << 24)); }
+	DWORD GetTransparency(DWORD Color, DWORD Transparency) { return ((Color & 0xFFFFFF) | Transparency << 24); }
 
 	/*
 		Enable/Disable Anti-Aliasing
@@ -882,6 +954,11 @@ public:
 	void TextureFiltering(D3DTEXTUREFILTERTYPE Type);
 
 	/*
+		Alpha Blending
+	*/
+	void AlphaBlending(BOOL OnOff, D3DBLEND SrcBlend = D3DBLEND_SRCALPHA, D3DBLEND DestBlend = D3DBLEND_INVSRCALPHA, D3DBLENDOP BlendOp = D3DBLENDOP_ADD);
+
+	/*
 		Enable/Disable Lighting
 	*/
 	void Lighting(bool OnOff);
@@ -889,7 +966,12 @@ public:
 	/*
 		Enable/Disable Z-Buffer
 	*/
-	void ZBuffer(bool OnOff, D3DZBUFFERTYPE Type, D3DCMPFUNC Func);
+	void ZBuffer(BOOL OnOff, D3DZBUFFERTYPE Type, D3DCMPFUNC Func)
+	{
+		pDevice->SetRenderState(D3DRS_ZWRITEENABLE, OnOff);
+		pDevice->SetRenderState(D3DRS_ZENABLE, Type);
+		pDevice->SetRenderState(D3DRS_ZFUNC, Func);
+	}
 
 	/*
 		Create Axis grid
@@ -901,8 +983,14 @@ public:
 	*/
 	void DrawAxisGrid(void)
 	{
-		Draw({ AxisGrid, nullptr, nullptr, PassthroughPixelShader, sizeof(vec3g), true, D3DZB_TRUE, D3DCMP_LESSEQUAL, D3DFILL_WIREFRAME, D3DPT_LINELIST });
-		Draw({ XyzAxis, nullptr, nullptr, PassthroughPixelShader, sizeof(vec3g), true, D3DZB_TRUE, D3DCMP_LESSEQUAL, D3DFILL_WIREFRAME, D3DPT_LINELIST });
+		Draw({ AxisGrid.get(), nullptr, nullptr, nullptr,
+			{ TRUE, D3DZB_TRUE, D3DCMP_LESSEQUAL },
+			{ sizeof(vec3c), D3DFILL_WIREFRAME, D3DPT_LINELIST },
+			{ 0.0f, 0.0f } });
+		Draw({ Xyz.get(), nullptr, nullptr, nullptr,
+			{ TRUE, D3DZB_TRUE, D3DCMP_LESSEQUAL },
+			{ sizeof(vec3c), D3DFILL_WIREFRAME, D3DPT_LINELIST },
+			{ 0.0f, 0.0f } });
 	}
 
 	/*

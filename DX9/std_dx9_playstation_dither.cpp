@@ -2,7 +2,7 @@
 *
 *	Megan Grass
 *	November 25, 2024
-* 
+*
 *	Dither Matrix: https://psx-spx.consoledev.net/graphicsprocessingunitgpu/#24bit-rgb-to-15bit-rgb-dithering-enabled-in-texpage-attribute
 *
 */
@@ -11,6 +11,8 @@ const char* PlayStationDitherShaderCode = R"(
 sampler2D TextureSampler : register(s0);
 float Width : register(c0);
 float Height : register(c1);
+float ScaleX : register(c2);
+float ScaleY : register(c3);
 
 struct INPUT
 {
@@ -31,6 +33,12 @@ static const float DitherMatrix[4][4] =
 
 float4 main(INPUT Input) : COLOR0
 {
+	if(ScaleX && ScaleY)
+	{
+		Input.TexCoord.x *= ScaleX;
+		Input.TexCoord.y *= ScaleY;
+	}
+
 	float4 color = tex2D(TextureSampler, Input.TexCoord);
 	
 	int2 Pixel = int2(Input.TexCoord.x * Width, Input.TexCoord.y * Height);

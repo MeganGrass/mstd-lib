@@ -3,11 +3,6 @@
 *	Megan Grass
 *	January 01, 2024
 *
-*
-*	TODO:
-* 
-*		toolbar and status bar sizing/placement broken due to MsgPositionChanged no longer being called
-*
 */
 
 
@@ -526,6 +521,16 @@ public:
 	HWND CreateTooltip(HWND hWndParent, ULONG ResourceID, StringW Tooltip);
 
 	/*
+		Is toolbar enabled?
+	*/
+	[[nodiscard]] bool IsToolBar(void) const { return b_Toolbar; }
+
+	/*
+		Toolbar handle
+	*/
+	[[nodiscard]] HWND GetToolBar(void) const { return h_ToolBar; }
+
+	/*
 		Set toolbar
 		- use AddToolBarIcon() after calling this function
 	*/
@@ -547,6 +552,21 @@ public:
 		Create Toolbar
 	*/
 	void CreateToolbar(DWORD Style = (TBSTYLE_TOOLTIPS | TBSTYLE_FLAT), DWORD StyleEx = TBSTYLE_EX_DOUBLEBUFFER, HIMAGELIST ImageList = nullptr, std::vector<TBBUTTON> Buttons = {});
+
+	/*
+		Is status bar enabled?
+	*/
+	[[nodiscard]] bool IsStatusBar(void) const { return b_StatusBar; }
+
+	/*
+		Status bar handle
+	*/
+	[[nodiscard]] HWND GetStatusBar(void) const { return h_StatusBar; }
+
+	/*
+		Status bar parts
+	*/
+	[[nodiscard]] INT GetStatusBarParts(void) const { return m_StatusBarParts; }
 
 	/*
 		Set status bar style and part count

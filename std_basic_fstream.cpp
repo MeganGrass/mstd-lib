@@ -3,18 +3,12 @@
 *	Megan Grass
 *	January 01, 2024
 *
-*
-*	TODO:
-*
 */
 
 
 #include "std_basic_fstream.h"
 
 
-/*
-	Get the file stream as an unsigned char vector
-*/
 [[nodiscard]] std::vector<std::uint8_t> Standard_Basic_FStream::buffer(void) try
 {
 	std::vector<std::uint8_t> _Buffer((size_t)(size(File())));
@@ -25,10 +19,6 @@
 }
 catch (...) { Exception(std::current_exception()); return std::vector<std::uint8_t>(); }
 
-
-/*
-	Open File Stream
-*/
 std::fstream Standard_Basic_FStream::open(std::filesystem::path _Filename, FileAccessMode e_Mode, bool b_Binary, bool b_Truncate) try
 {
 	// Error
@@ -103,10 +93,6 @@ std::fstream Standard_Basic_FStream::open(std::filesystem::path _Filename, FileA
 }
 catch (...) { Exception(std::current_exception()); return std::fstream(); }
 
-
-/*
-	Open File Stream
-*/
 bool Standard_Basic_FStream::Open(std::filesystem::path _Filename, FileAccessMode e_Mode, bool b_Binary, bool b_Truncate) try
 {
 	SetPath(CleanPath(_Filename));
@@ -123,10 +109,6 @@ bool Standard_Basic_FStream::Open(std::filesystem::path _Filename, FileAccessMod
 }
 catch (...) { Exception(std::current_exception()); return false; }
 
-
-/*
-	Reopen File Stream
-*/
 bool Standard_Basic_FStream::Reopen(FileAccessMode e_Mode, bool b_Binary, bool b_Truncate) try
 {
 	if (!validPath()) { return false; }
@@ -146,10 +128,6 @@ bool Standard_Basic_FStream::Reopen(FileAccessMode e_Mode, bool b_Binary, bool b
 }
 catch (...) { Exception(std::current_exception()); return false; }
 
-
-/*
-	Read
-*/
 std::uintmax_t Standard_Basic_FStream::read(std::fstream& _File, std::uintmax_t _Ptr, void* _Data, std::uintmax_t _ElementSize) try
 {
 #if FILEOPEN_CHECK
@@ -168,10 +146,6 @@ std::uintmax_t Standard_Basic_FStream::read(std::fstream& _File, std::uintmax_t 
 }
 catch (...) { Exception(std::current_exception()); return 0; }
 
-
-/*
-	Write
-*/
 std::uintmax_t Standard_Basic_FStream::write(std::fstream& _File, std::uintmax_t _Ptr, void* _Data, std::uintmax_t _ElementSize) try
 {
 #if FILEOPEN_CHECK
@@ -190,10 +164,6 @@ std::uintmax_t Standard_Basic_FStream::write(std::fstream& _File, std::uintmax_t
 }
 catch (...) { Exception(std::current_exception()); return 0; }
 
-
-/*
-	Read Next
-*/
 void Standard_Basic_FStream::readNext(std::fstream& _File, std::uintmax_t _Ptr, void* _Data, std::uintmax_t _ElementSize) try
 {
 	_File.seekg(_Ptr, std::ios_base::beg);
@@ -206,10 +176,6 @@ void Standard_Basic_FStream::readNext(std::fstream& _File, std::uintmax_t _Ptr, 
 }
 catch (...) { Exception(std::current_exception()); }
 
-
-/*
-	Write Next
-*/
 void Standard_Basic_FStream::writeNext(std::fstream& _File, std::uintmax_t _Ptr, void* _Data, std::uintmax_t _ElementSize) try
 {
 	_File.seekp(_Ptr, std::ios_base::beg);
@@ -222,10 +188,6 @@ void Standard_Basic_FStream::writeNext(std::fstream& _File, std::uintmax_t _Ptr,
 }
 catch (...) { Exception(std::current_exception()); }
 
-
-/*
-	Read String
-*/
 std::uintmax_t Standard_Basic_FStream::readStr(std::fstream& _File, std::uintmax_t _Ptr, String& _OutStr, UCharVec _DelimiterList) try
 {
 #if FILEOPEN_CHECK
@@ -387,10 +349,6 @@ std::uintmax_t Standard_Basic_FStream::readStr(std::fstream& _File, std::uintmax
 }
 catch (...) { Exception(std::current_exception()); return 0; }
 
-
-/*
-	Write String
-*/
 std::uintmax_t Standard_Basic_FStream::writeStr(std::fstream& _File, std::uintmax_t _Ptr, String _String, bool b_NullTerminator) try
 {
 #if FILEOPEN_CHECK
@@ -443,10 +401,6 @@ std::uintmax_t Standard_Basic_FStream::writeStr(std::fstream& _File, std::uintma
 }
 catch (...) { Exception(std::current_exception()); return 0; }
 
-
-/*
-	Find
-*/
 std::uintmax_t Standard_Basic_FStream::find(void* _Data, std::uintmax_t _ElementSize, std::uintmax_t _PtrStart, std::uintmax_t _PtrEnd) try
 {
 	if ((!validFile()) || (!_ElementSize)) { return -1; }
@@ -475,10 +429,6 @@ std::uintmax_t Standard_Basic_FStream::find(void* _Data, std::uintmax_t _Element
 }
 catch (...) { Exception(std::current_exception()); return -1; }
 
-
-/*
-	Create
-*/
 bool Standard_Basic_FStream::Create(std::filesystem::path _Filename, void* _Source, std::uintmax_t _ElementSize, bool b_OverwriteExisting)
 {
 	FileAccessMode e_Mode { FileAccessMode::Write };
@@ -494,10 +444,6 @@ bool Standard_Basic_FStream::Create(std::filesystem::path _Filename, void* _Sour
 	return true;
 }
 
-
-/*
-	File Size
-*/
 std::uintmax_t Standard_Basic_FStream::size(std::fstream& _File) try
 {
 #if FILEOPEN_CHECK
@@ -525,10 +471,6 @@ std::uintmax_t Standard_Basic_FStream::size(std::fstream& _File) try
 }
 catch (...) { Exception(std::current_exception()); return 0; }
 
-
-/*
-	File Position
-*/
 std::uintmax_t Standard_Basic_FStream::tell(std::fstream& _File) try
 {
 #if FILEOPEN_CHECK
@@ -554,10 +496,6 @@ std::uintmax_t Standard_Basic_FStream::tell(std::fstream& _File) try
 }
 catch (...) { Exception(std::current_exception()); return 0; }
 
-
-/*
-	Align File Size
-*/
 bool Standard_Basic_FStream::ResizeAlign(std::uintmax_t _BlockSize)
 {
 	std::uintmax_t _Size = FileSize(Path());
@@ -569,10 +507,6 @@ bool Standard_Basic_FStream::ResizeAlign(std::uintmax_t _BlockSize)
 	return ResizeFile(Path(), _Size + (_BlockSize - _Remainder));
 }
 
-
-/*
-	Align the file stream's position to a specified block size in bytes
-*/
 std::uintmax_t Standard_Basic_FStream::PosAlign(std::uintmax_t& _Ptr, std::uintmax_t BlockSize)
 {
 	if (_Ptr % BlockSize)
@@ -604,10 +538,6 @@ std::uintmax_t Standard_Basic_FStream::PosAlign(std::uintmax_t& _Ptr, std::uintm
 	return _Ptr;
 }
 
-
-/*
-	Get CRC32
-*/
 std::uint32_t Standard_Basic_FStream::CRC32(std::uintmax_t _Ptr, std::uintmax_t _ElementSize)
 {
 	if ((!validFile()) || (!_ElementSize)) { return 0; }

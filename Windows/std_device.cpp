@@ -19,18 +19,15 @@
 #pragma comment(lib, "Winmm.lib")
 
 
-/*
-	Initialize mice, keyboards, HID, joysticks and displays
-*/
-void Windows_Devices::Initialize(void)
+void Windows_Devices::Initialize(void) try
 {
 	// Get Device Count
 	UINT nDevices = 0;
-	if (GetRawInputDeviceList(0, &nDevices, sizeof(RAWINPUTDEVICELIST)) == (UINT)-1) { GetErrorMessage(); }
+	if (GetRawInputDeviceList(0, &nDevices, sizeof(RAWINPUTDEVICELIST)) == 0xFFFFFFFF) { GetErrorMessage(); }
 
 	// Get Raw Input Device List
 	std::vector<RAWINPUTDEVICELIST> InputDeviceList(nDevices);
-	if (GetRawInputDeviceList(InputDeviceList.data(), &nDevices, sizeof(RAWINPUTDEVICELIST)) == (UINT)-1) { GetErrorMessage(); }
+	if (GetRawInputDeviceList(InputDeviceList.data(), &nDevices, sizeof(RAWINPUTDEVICELIST)) == 0xFFFFFFFF) { GetErrorMessage(); }
 
 	// Parse and Register Raw Input Devices
 	UINT ID = 0;
@@ -66,12 +63,10 @@ void Windows_Devices::Initialize(void)
 	// Monitors
 	InitDisplayDevices();
 }
-
+catch (...) { Standard_Exception::Exception(std::current_exception()); }
 
 #ifdef _DEBUG
 /*
-	Get text report for display devices
-//
 #include "../std_text.h"
 void Windows_Devices::GetDisplayReport(void)
 {
@@ -204,10 +199,6 @@ void Windows_Devices::GetDisplayReport(void)
 }*/
 #endif
 
-
-/*
-	Update joystick state
-*/
 void Windows_Devices::UpdateJoysticks(void)
 {
 	for (auto& Joystick : Joysticks)
@@ -216,10 +207,6 @@ void Windows_Devices::UpdateJoysticks(void)
 	}
 }
 
-
-/*
-	Intended for use with WM_INPUT_DEVICE_CHANGE
-*/
 void Windows_Devices::AddDevice(HANDLE hDevice)
 {
 	// Input Device
@@ -286,10 +273,6 @@ void Windows_Devices::AddDevice(HANDLE hDevice)
 	if (!RegisterRawInputDevices(&InputDevice, 1, sizeof(RAWINPUTDEVICE))) { GetErrorMessage(); }
 }
 
-
-/*
-	Intended for use with WM_INPUT_DEVICE_CHANGE
-*/
 void Windows_Devices::RemoveDevice(HANDLE hDevice)
 {
 	// Mouse
@@ -323,10 +306,6 @@ void Windows_Devices::RemoveDevice(HANDLE hDevice)
 	}
 }
 
-
-/*
-	Intended for use with WM_ACTIVATE
-*/
 void Windows_Devices::MsgActivate(HWND hWnd, WPARAM wParam)
 {
 	if ((wParam & WA_ACTIVE) || (wParam & WA_CLICKACTIVE))
@@ -354,20 +333,12 @@ void Windows_Devices::MsgActivate(HWND hWnd, WPARAM wParam)
 	}
 }
 
-
-/*
-	Intended for use with WM_INPUT_DEVICE_CHANGE
-*/
 void Windows_Devices::MsgInputDeviceChange(WPARAM wParam, LPARAM lParam)
 {
 	if (wParam == GIDC_ARRIVAL) { AddDevice((HANDLE)lParam); }
 	else if (wParam & GIDC_REMOVAL) { RemoveDevice((HANDLE)lParam); }
 }
 
-
-/*
-	Intended for use with WM_INPUT
-*/
 void Windows_Devices::MsgInput(HWND hWnd, WPARAM wParam, LPARAM lParam)
 {
 	UINT Size = 0;
@@ -473,10 +444,6 @@ void Windows_Devices::MsgInput(HWND hWnd, WPARAM wParam, LPARAM lParam)
 
 }
 
-
-/*
-	Intended for use with WM_INPUT
-*/
 void Windows_Devices::MsgInputJoyStick(void)
 {
 	// Joysticks
@@ -486,10 +453,6 @@ void Windows_Devices::MsgInputJoyStick(void)
 	}
 }
 
-
-/*
-	Intended for use with WM_MOUSEWHEEL
-*/
 void Windows_Devices::MsgMouseWheel(WPARAM wParam)
 {
 	for (auto& Mouse : Mice)
@@ -498,10 +461,6 @@ void Windows_Devices::MsgMouseWheel(WPARAM wParam)
 	}
 }
 
-
-/*
-	Intended for use with WM_MOUSEHWHEEL
-*/
 void Windows_Devices::MsgMouseHWheel(WPARAM wParam)
 {
 	for (auto& Mouse : Mice)
@@ -510,10 +469,6 @@ void Windows_Devices::MsgMouseHWheel(WPARAM wParam)
 	}
 }
 
-
-/*
-	Is the mouse hovering over the client area?
-*/
 BOOL Windows_Devices::IsHovering(void) const
 {
 	for (auto& Mouse : Mice)
@@ -523,10 +478,6 @@ BOOL Windows_Devices::IsHovering(void) const
 	return FALSE;
 }
 
-
-/*
-	Is the mouse hovering over a position in the client area?
-*/
 BOOL Windows_Devices::IsHoveringPos(RECT Position) const
 {
 	for (auto& Mouse : Mice)
@@ -537,10 +488,6 @@ BOOL Windows_Devices::IsHoveringPos(RECT Position) const
 	return FALSE;
 }
 
-
-/*
-	Get hovering position in the client area
-*/
 POINT Windows_Devices::GetHoveringPosition(void) const
 {
 	for (auto& Mouse : Mice)
@@ -550,10 +497,6 @@ POINT Windows_Devices::GetHoveringPosition(void) const
 	return { 0 };
 }
 
-
-/*
-	Get mouse relative position to the client area
-*/
 POINT Windows_Devices::GetRelativePosition(void) const
 {
 	for (auto& Mouse : Mice)
@@ -564,10 +507,6 @@ POINT Windows_Devices::GetRelativePosition(void) const
 	return { 0 };
 }
 
-
-/*
-	Get mouse relative position to the previous frame
-*/
 POINT Windows_Devices::GetRelativeToPrevious(void) const
 {
 	for (auto& Mouse : Mice)
@@ -578,10 +517,6 @@ POINT Windows_Devices::GetRelativeToPrevious(void) const
 	return { 0 };
 }
 
-
-/*
-	Get state of mouse left button
-*/
 BOOL Windows_Devices::GetMouseLeft(void)
 {
 	if (b_MouseLeft) { return TRUE; }
@@ -592,10 +527,6 @@ BOOL Windows_Devices::GetMouseLeft(void)
 	return b_MouseLeft = FALSE;
 }
 
-
-/*
-	Get state of mouse right button
-*/
 BOOL Windows_Devices::GetMouseRight(void)
 {
 	if (b_MouseRight) { return TRUE; }
@@ -606,10 +537,6 @@ BOOL Windows_Devices::GetMouseRight(void)
 	return b_MouseRight = FALSE;
 }
 
-
-/*
-	Get state of mouse right button
-*/
 BOOL Windows_Devices::GetMouseMiddle(void)
 {
 	if (b_MouseMiddle) { return TRUE; }
@@ -620,10 +547,6 @@ BOOL Windows_Devices::GetMouseMiddle(void)
 	return b_MouseMiddle = FALSE;
 }
 
-
-/*
-	Get state of mouse button 4
-*/
 BOOL Windows_Devices::GetMouseButton4(void)
 {
 	if (b_MouseButton4) { return TRUE; }
@@ -634,10 +557,6 @@ BOOL Windows_Devices::GetMouseButton4(void)
 	return b_MouseButton4 = FALSE;
 }
 
-
-/*
-	Get state of mouse button 5
-*/
 BOOL Windows_Devices::GetMouseButton5(void)
 {
 	if (b_MouseButton5) { return TRUE; }
@@ -648,10 +567,6 @@ BOOL Windows_Devices::GetMouseButton5(void)
 	return b_MouseButton5 = FALSE;
 }
 
-
-/*
-	Get mouse vertical scroll wheel delta
-*/
 FLOAT Windows_Devices::GetMouseDeltaZ(void) const
 {
 	for (auto& Mouse : Mice)
@@ -662,10 +577,6 @@ FLOAT Windows_Devices::GetMouseDeltaZ(void) const
 	return 0.0f;
 }
 
-
-/*
-	Get mouse horizontal scroll wheel delta
-*/
 FLOAT Windows_Devices::GetMouseDeltaX(void) const
 {
 	for (auto& Mouse : Mice)
@@ -676,10 +587,6 @@ FLOAT Windows_Devices::GetMouseDeltaX(void) const
 	return 0.0f;
 }
 
-
-/*
-	Reset mouse horizontal scroll wheel delta
-*/
 void Windows_Devices::ResetMouseDeltaX(void)
 {
 	for (auto& Mouse : Mice)
@@ -688,11 +595,6 @@ void Windows_Devices::ResetMouseDeltaX(void)
 	}
 }
 
-
-
-/*
-	Reset mouse vertical scroll wheel delta
-*/
 void Windows_Devices::ResetMouseDeltaZ(void)
 {
 	for (auto& Mouse : Mice)
@@ -701,10 +603,6 @@ void Windows_Devices::ResetMouseDeltaZ(void)
 	}
 }
 
-
-/*
-	Get keyboard state
-*/
 BOOL Windows_Devices::GetKeyState(BYTE Key, BOOL* E0, BOOL* E1)
 {
 	for (auto& Keyboard : Keyboards)
@@ -719,10 +617,6 @@ BOOL Windows_Devices::GetKeyState(BYTE Key, BOOL* E0, BOOL* E1)
 	return FALSE;
 }
 
-
-/*
-	Get down state of keyboard key
-*/
 BOOL Windows_Devices::GetKeyDown(BYTE Key, BOOL* E0, BOOL* E1)
 {
 	BOOL State = GetKeyState(Key, E0, E1);

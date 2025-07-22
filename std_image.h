@@ -16,8 +16,8 @@
 #undef GetPalette
 #endif
 
-#ifdef SetGetPalette
-#undef SetGetPalette
+#ifdef SetPalette
+#undef SetPalette
 #endif
 
 #ifdef GetPixel
@@ -29,7 +29,42 @@
 #endif
 
 
+#if defined(_WIN64)
+typedef std::uint64_t ULONG_PTR, * PULONG_PTR;
+#else
+typedef unsigned long ULONG_PTR, * PULONG_PTR;
+#endif
+typedef ULONG_PTR DWORD_PTR, * PDWORD_PTR;
+
+typedef DWORD COLORREF;
+
+#define LOBYTE(w)           ((BYTE)(((DWORD_PTR)(w)) & 0xff))
+#define HIBYTE(w)           ((BYTE)((((DWORD_PTR)(w)) >> 8) & 0xff))
+#define RGB(r,g,b)          ((COLORREF)(((BYTE)(r)|((WORD)((BYTE)(g))<<8))|(((DWORD)(BYTE)(b))<<16)))
+#define GetRValue(rgb)		(LOBYTE(rgb))
+#define GetGValue(rgb)      (LOBYTE(((WORD)(rgb)) >> 8))
+#define GetBValue(rgb)		(LOBYTE((rgb)>>16))
+#define GetAValue(rgb)      (LOBYTE((rgb)>>24))
+
+
 #pragma pack(push, 1)
+
+
+typedef struct Pixel_4bpp Pixel_4bpp;
+
+typedef struct Pixel_8bpp Pixel_8bpp;
+
+typedef struct Pixel_16bpp Pixel_16bpp;
+
+typedef struct Pixel_24bpp Pixel_24bpp;
+
+typedef struct Pixel_32bpp Pixel_32bpp;
+
+typedef struct Pixel_16bppL Pixel_16bppL;
+
+typedef struct Pixel_24bppL Pixel_24bppL;
+
+typedef struct Pixel_32bppL Pixel_32bppL;
 
 
 struct Pixel_4bpp
@@ -52,7 +87,8 @@ struct Pixel_16bpp
 	std::uint16_t R : 5;
 	std::uint16_t A : 1;
 	explicit Pixel_16bpp(void) : B(0), G(0), R(0), A(0) {}
-	explicit Pixel_16bpp(uint16_t Pixel) : B(Pixel & 0x1F), G((Pixel & 0x7E0) >> 5), R((Pixel & 0xF800) >> 10), A((Pixel & 0x8000) >> 15) {}
+	explicit Pixel_16bpp(std::uint16_t R, std::uint16_t G, std::uint16_t B, std::uint16_t A) : B(B), G(G), R(R), A(A) {}
+	explicit Pixel_16bpp(std::uint16_t Pixel) : B(Pixel & 0x1F), G((Pixel & 0x7E0) >> 5), R((Pixel & 0xF800) >> 10), A((Pixel & 0x8000) >> 15) {}
 };
 
 
@@ -64,7 +100,7 @@ struct Pixel_16bppL
 	std::uint16_t A : 1;
 	explicit Pixel_16bppL(void) : R(0), G(0), B(0), A(0) {}
 	explicit Pixel_16bppL(std::uint16_t R, std::uint16_t G, std::uint16_t B, std::uint16_t A) : R(R), G(G), B(B), A(A) {}
-	explicit Pixel_16bppL(uint16_t Pixel) : R(Pixel & 0x1F), G((Pixel & 0x7E0) >> 5), B((Pixel & 0xF800) >> 10), A((Pixel & 0x8000) >> 15) {}
+	explicit Pixel_16bppL(std::uint16_t Pixel) : R(Pixel & 0x1F), G((Pixel & 0x7E0) >> 5), B((Pixel & 0xF800) >> 10), A((Pixel & 0x8000) >> 15) {}
 	bool operator ! (void) const { return !this->R && !this->G && !this->B && !this->A; }
 	bool operator = (const Pixel_16bppL& External) { std::memcpy(this, &External, sizeof(Pixel_16bppL)); return true; }
 	bool operator == (const Pixel_16bppL& External) const { return (this->R == External.R) && (this->G == External.G) && (this->B == External.B) && (this->A == External.A); }
@@ -112,36 +148,58 @@ struct Pixel_32bppL
 };
 
 
-typedef struct Pixel_4bpp Pixel_4bpp;
+enum class Bitmap_Compression : uint32_t
+{
+	RGB = 0,							// none
+	RLE8 = 1,							// 8-bit RLE
+	RLE4 = 2,							// 4-bit RLE
+	BITFIELDS = 3,						// bitfields
+	JPEG = 4,							// JPEG
+	PNG = 5,							// PNG
+	CMYK = 11,							// CMYK
+	CMYKRLE8 = 12,						// CMYK RLE8
+	CMYKRLE4 = 13,						// CMYK RLE4
+};
 
-typedef struct Pixel_8bpp Pixel_8bpp;
 
-typedef struct Pixel_16bpp Pixel_16bpp;
+struct Bitmap_Header
+{
+	std::uint16_t BM;					// "BM" (0x4D42)
+	std::uint32_t Size;					// total file size
+	std::uint16_t reserved0;			// always zero (0)
+	std::uint16_t reserved1;			// always zero (0)
+	std::uint32_t PixelPtr;				// pixel base pointer from file start
+};
 
-typedef struct Pixel_24bpp Pixel_24bpp;
-
-typedef struct Pixel_32bpp Pixel_32bpp;
-
-typedef struct Pixel_16bppL Pixel_16bppL;
-
-typedef struct Pixel_24bppL Pixel_24bppL;
-
-typedef struct Pixel_32bppL Pixel_32bppL;
-
+struct Bitmap_Info
+{
+	std::uint32_t Size;					// size of this structure
+	std::uint32_t Width;				// image width
+	std::uint32_t Height;				// image height
+	std::uint16_t Planes;				// color plane count (always 1)
+	std::uint16_t Depth;				// bits per pixel (1, 4, 8, 16, 24, 32)
+	Bitmap_Compression Compression;		// compression type (BI_RGB, BI_RLE8, BI_RLE4)
+	std::uint32_t PixelSize;			// total pixel data size
+	std::uint32_t MeterWidth;			// horizontal resolution in pixels per meter
+	std::uint32_t MeterHeight;			// vertical resolution in pixels per meter
+	std::uint32_t PaletteColors;		// palette color amount (16, 256)
+	std::uint32_t MaxColors;			// palette count (0 = use all)
+};
 
 struct Microsoft_RIFF_Palette
 {
-	std::int8_t RIFF[4];
-	std::uint32_t FileSize;
-	std::int8_t PAL[4];
-	std::int8_t data[4];
-	std::uint16_t DataSize;
-	std::uint16_t Version;
-	std::uint16_t nColors;
+	std::int8_t RIFF[4];				// "RIFF"
+	std::uint32_t Size;					// total file size
+	std::int8_t PAL[4];					// "PAL "
+	std::int8_t data[4];				// "data"
+	std::uint16_t DataSize;				// total data size
+	std::uint16_t Version;				// version (0x0300)
+	std::uint16_t nColors;				// palette color amount
 };
 
 
 #pragma pack(pop)
+
 
 enum class ImageType : int32_t
 {
@@ -155,7 +213,7 @@ enum class ImageType : int32_t
 #ifdef LIB_JPEG
 	JPG = (1 << 4),					// Joint Photographic Experts Group (*.JPEG)
 #endif
-	TM2 = (1 << 28),				// Sony PlayStation 2 Texture Map (*.TM2;*.CL2)
+	TM2 = (1 << 28),				// Sony PlayStation 2 Texture Image (*.TM2;*.CL2)
 	PXL = (1 << 29),				// Sony PlayStation Texture Pixels (*.PXL)
 	CLT = (1 << 30),				// Sony PlayStation Texture CLUT (*.CLT)
 	TIM = (1 << 31),				// Sony PlayStation Texture Image (*.TIM)
@@ -206,102 +264,20 @@ static ImageIO operator | (ImageIO _Mode0, ImageIO _Mode1)
 }
 
 
-#if defined(_WIN64)
-typedef std::uint64_t ULONG_PTR, * PULONG_PTR;
-#else
-typedef unsigned long ULONG_PTR, * PULONG_PTR;
-#endif
-typedef ULONG_PTR DWORD_PTR, * PDWORD_PTR;
-
-typedef DWORD COLORREF;
-
-#define LOBYTE(w)           ((BYTE)(((DWORD_PTR)(w)) & 0xff))
-#define HIBYTE(w)           ((BYTE)((((DWORD_PTR)(w)) >> 8) & 0xff))
-#define RGB(r,g,b)          ((COLORREF)(((BYTE)(r)|((WORD)((BYTE)(g))<<8))|(((DWORD)(BYTE)(b))<<16)))
-#define GetRValue(rgb)		(LOBYTE(rgb))
-#define GetGValue(rgb)      (LOBYTE(((WORD)(rgb)) >> 8))
-#define GetBValue(rgb)		(LOBYTE((rgb)>>16))
-#define GetAValue(rgb)      (LOBYTE((rgb)>>24))
-
-
 /*
 	Standard Image
 */
 class Standard_Image {
 private:
 
-	#pragma pack(push, 1)
-
-#ifndef _WINDOWS
-
-#define far
-#define FAR           far
-#define near
-#define NEAR          near
-#define BI_RGB        0L
-#define BI_RLE8       1L
-#define BI_RLE4       2L
-#define BI_BITFIELDS  3L
-#define BI_JPEG       4L
-#define BI_PNG        5L
-
-	#ifndef BITMAPFILEHEADER
-		struct BITMAPFILEHEADER {
-			WORD	bfType;
-			DWORD	bfSize;
-			WORD	bfReserved1;
-			WORD	bfReserved2;
-			DWORD	bfOffBits;
-		};
-	#endif
-
-	#ifndef BITMAPINFOHEADER
-		struct BITMAPINFOHEADER {
-			DWORD	biSize;
-			LONG	biWidth;
-			LONG	biHeight;
-			WORD	biPlanes;
-			WORD	biBitCount;
-			DWORD	biCompression;
-			DWORD	biSizeImage;
-			LONG	biXPelsPerMeter;
-			LONG	biYPelsPerMeter;
-			DWORD	biClrUsed;
-			DWORD	biClrImportant;
-		};
-	#endif
-
-	#ifndef RGBQUAD
-		struct RGBQUAD {
-			BYTE	rgbBlue;
-			BYTE	rgbGreen;
-			BYTE	rgbRed;
-			BYTE	rgbReserved;
-		};
-	#endif
-
-#ifndef PBITMAPINFO
-		typedef struct tagBITMAPINFO
-		{
-			BITMAPINFOHEADER    bmiHeader;
-			RGBQUAD             bmiColors[1];
-		} BITMAPINFO, FAR* LPBITMAPINFO, * PBITMAPINFO;
-#endif
-
-#endif
-
-	#pragma pack(pop)
-
 	WORD m_Depth;
 	LONG m_Width;
 	LONG m_Height;
-	std::vector<RGBQUAD> m_Palette;
+	std::vector<Pixel_32bpp> m_Palette;
 	std::vector<uint8_t> m_Pixels;
 
-	// Flag
 	bool b_Open;
 
-	// Get individual pixel size
 	[[nodiscard]] uint16_t GetPixelSize(void)
 	{
 		switch (m_Depth)
@@ -350,7 +326,7 @@ public:
 	/*
 		Does the texture have either palette or pixel data?
 	*/
-	bool IsValid(void) const { return !(m_Pixels.empty() && m_Palette.empty()); }
+	[[nodiscard]] bool IsValid(void) const { return !(m_Pixels.empty() && m_Palette.empty()); }
 
 	/*
 		Clear all data and declare texture as closed
@@ -375,7 +351,7 @@ public:
 	/*
 		Get/Set palette data
 	*/
-	[[nodiscard]] std::vector<RGBQUAD>& GetPalette(void) { return m_Palette; }
+	[[nodiscard]] std::vector<Pixel_32bpp>& GetPalette(void) { return m_Palette; }
 
 	/*
 		Get/Set pixel data
@@ -385,7 +361,7 @@ public:
 	/*
 		Get palette color
 	*/
-	RGBQUAD GetPaletteColor(std::size_t iColor) const { return iColor < m_Palette.size() ? m_Palette[iColor] : RGBQUAD(); }
+	[[nodiscard]] Pixel_32bpp GetPaletteColor(std::size_t iColor) const { return iColor < m_Palette.size() ? m_Palette[iColor] : Pixel_32bpp(); }
 
 	/*
 		Set palette color
@@ -396,7 +372,7 @@ public:
 	/*
 		Set palette color
 	*/
-	void SetPalette(std::size_t iColor, RGBQUAD Color);
+	void SetPalette(std::size_t iColor, Pixel_32bpp Color);
 
 	/*
 		Get pixel data
@@ -405,7 +381,7 @@ public:
 		  16bpp: BGRA (5:5:5:1)
 		  24bpp/32bpp: BGRA (8:8:8:8)
 	*/
-	DWORD GetPixel(uint32_t X, uint32_t Y);
+	[[nodiscard]] DWORD GetPixel(uint32_t X, uint32_t Y);
 
 	/*
 		Set pixel data
@@ -472,7 +448,7 @@ public:
 	/*
 		Decompress PNG data
 	*/
-	bool DecompressPNG(const std::vector<uint8_t>& Input, std::vector<uint8_t>& OutPixels, std::vector<RGBQUAD> OutPalette);
+	bool DecompressPNG(const std::vector<uint8_t>& Input, std::vector<uint8_t>& OutPixels, std::vector<Pixel_32bpp> OutPalette);
 
 	/*
 		Open Portable Network Graphics (*.PNG) file

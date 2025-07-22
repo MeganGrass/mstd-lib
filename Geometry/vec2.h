@@ -3,9 +3,6 @@
 *	Megan Grass
 *	November 13, 2024
 *
-*
-*	TODO:
-*
 */
 
 
@@ -27,153 +24,97 @@ private:
 
 public:
 
-	/*
-		Data
-	*/
+	// Data
 	float x, y;
 
-	/*
-		Construction
-	*/
-	explicit vec2(void) noexcept : x(0.0f), y(0.0f) {}
-	explicit vec2(float X, float Y) noexcept : x(X), y(Y) {}
-	explicit vec2(std::int32_t X, std::int32_t Y) noexcept : x(static_cast<float>(X)), y(static_cast<float>(Y)) {}
+	vec2(void) noexcept : x(0.0f), y(0.0f) {}
+	vec2(float X, float Y) noexcept : x(X), y(Y) {}
+	vec2(std::int32_t X, std::int32_t Y) noexcept : x(static_cast<float>(X)), y(static_cast<float>(Y)) {}
 
-	/*
-		Copy
-	*/
+	// Copy
 	vec2(const vec2& v) noexcept : x(v.x), y(v.y) {}
 	vec2& operator = (const vec2& v) noexcept { return *this = vec2(v); }
 
-	/*
-		Move
-	*/
+	// Move
 	vec2(vec2&& v) noexcept : x(std::exchange(v.x, 0.0f)), y(std::exchange(v.y, 0.0f)) {}
-	vec2& operator = (vec2&& v) noexcept
-	{
-		std::swap(x, v.x);
-		std::swap(y, v.y);
-		return *this;
-	}
+	vec2& operator = (vec2&& v) noexcept { std::swap(x, v.x); std::swap(y, v.y); return *this; }
 
-	/*
-		Unary
-	*/
+	// Get Integral X
+	[[nodiscard]] std::int32_t GetX(void) const noexcept { return static_cast<std::int32_t>(std::round(x)); }
+
+	// Get Integral Y
+	[[nodiscard]] std::int32_t GetY(void) const noexcept { return static_cast<std::int32_t>(std::round(y)); }
+
+	// Unary
 	vec2 operator - (void) const noexcept { return vec2(-x, -y); }
 
-	/*
-		Equality
-	*/
+	// Equality
 	bool operator == (const vec2& v) const noexcept { return x == v.x && y == v.y; }
 	bool operator != (const vec2& v) const noexcept { return !(*this == v); }
 
-	/*
-		Addition
-	*/
+	// Addition
 	vec2 operator + (const vec2& v) const noexcept { return vec2(x + v.x, y + v.y); }
 	vec2& operator += (const vec2& v) noexcept { return *this = *this + v; }
 
-	/*
-		Scalar Addition
-	*/
+	// Scalar Addition
 	vec2 operator + (float s) const noexcept { return vec2(x + s, y + s); }
 	vec2& operator += (float s) noexcept { return *this = *this + s; }
 
-	/*
-		Subtraction
-	*/
+	// Subtraction
 	vec2 operator - (const vec2& v) const noexcept { return vec2(x - v.x, y - v.y); }
 	vec2& operator -= (const vec2& v) noexcept { return *this = *this - v; }
 
-	/*
-		Scalar Subtraction
-	*/
+	// Scalar Subtraction
 	vec2 operator - (float s) const noexcept { return vec2(x - s, y - s); }
 	vec2& operator -= (float s) noexcept { return *this = *this - s; }
 
-	/*
-		Multiplication
-	*/
+	// Multiplication
 	vec2 operator * (const vec2& v) const noexcept { return vec2(x * v.x, y * v.y); }
 	vec2& operator *= (const vec2& v) noexcept { return *this = *this * v; }
 
-	/*
-		Scalar Multiplication
-	*/
+	// Scalar Multiplication
 	vec2 operator * (float s) const noexcept { return vec2(x * s, y * s); }
 	vec2& operator *= (float s) noexcept { return *this = *this * s; }
 
-	/*
-		Division
-	*/
+	// Division
 	vec2 operator / (const vec2& v) const noexcept { return vec2(x / v.x, y / v.y); }
 	vec2& operator /= (const vec2& v) noexcept { return *this = *this / v; }
 
-	/*
-		Scalar Division
-	*/
+	// Scalar Division
 	vec2 operator / (float s) const noexcept { return vec2(x / s, y / s); }
 	vec2& operator /= (float s) noexcept { return *this = *this / s; }
 
-	/*
-		Integral
-	*/
-	[[nodiscard]] std::int32_t GetX(void) const noexcept { return static_cast<std::int32_t>(std::round(x)); }
-	[[nodiscard]] std::int32_t GetY(void) const noexcept { return static_cast<std::int32_t>(std::round(y)); }
-
-	/*
-		Set
-	*/
+	// Set
 	void Set(float X, float Y) noexcept { x = X; y = Y; }
 
-	/*
-		Set
-	*/
+	// Set
 	void Set(const vec2& v) noexcept { x = v.x; y = v.y; }
 
-	/*
-		Scale
-	*/
+	// Scale
 	void Scale(float S) noexcept { x *= S; y *= S; }
 
-	/*
-		Scale
-	*/
+	// Scale
 	void Scale(float X, float Y, float Z) noexcept { x *= X; y *= Y; }
 
-	/*
-		Scale
-	*/
+	// Scale
 	void Scale(const vec2& v) noexcept { x *= v.x; y *= v.y; }
 
-	/*
-		Length 2D
-	*/
+	// Length
 	float Length(void) const noexcept { return sqrtf(x * x + y * y); }
 
-	/*
-		Dot
-	*/
+	// Dot
 	float Dot(const vec2& v) const noexcept { return x * v.x + y * v.y; }
 
-	/*
-		Cross
-	*/
+	// Cross
 	vec2 Cross(const vec2& v) const noexcept { return vec2(y * v.x - x * v.y, x * v.y - y * v.x); }
 
-	/*
-		Lerp
-	*/
+	// Lerp
 	vec2 Lerp(const vec2& v0, const vec2& v1, float t) const noexcept { return vec2(std::lerp(v0.x, v1.x, t), std::lerp(v0.y, v1.y, t)); }
 
-	/*
-		Lerp
-	*/
+	// Lerp
 	vec2 Lerp(const vec2& v, float t) noexcept { return *this = Lerp(*this, v, t); }
 
-	/*
-		Normalize
-	*/
+	// Normalize
 	vec2 Normalize(void) const noexcept
 	{
 		float Len = Length();
@@ -186,9 +127,7 @@ public:
 		return vec2(x * Len, y * Len);
 	}
 
-	/*
-		Rotate
-	*/
+	// Rotate
 	vec2 Rotate(float Angle, float X, float Y) const noexcept
 	{
 		float s = sinf(Angle);

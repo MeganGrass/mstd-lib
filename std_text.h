@@ -3,18 +3,11 @@
 *	Megan Grass
 *	January 01, 2024
 *
-*
-*	TODO: 
-* 
-*		Keep track of the file pointer for each line in the file
-*
 */
 
 
 #pragma once
 
-
-#include "std_exception.h"
 
 #include "std_string.h"
 

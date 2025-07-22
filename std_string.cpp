@@ -2,12 +2,7 @@
 *
 *	Megan Grass
 *	January 01, 2024
-*
-*
-*	TODO:
-*		CleanString maybe needs a rewrite
 * 
-*		Fix formatting for wide strings to handle Unicode characters
 */
 
 
@@ -22,15 +17,6 @@
 #include <iomanip>
 
 
-/*
-	Common String Functionality
-*/
-std::unique_ptr<Standard_String> Str = std::make_unique<Standard_String>();
-
-
-/*
-	Format C-Style String
-*/
 std::string Standard_String::FormatCStyle(const std::string _Format, ...)
 {
 	std::va_list _ArgList;
@@ -55,10 +41,6 @@ std::wstring Standard_String::FormatCStyle(const std::wstring _Format, ...)
 	return String.data();
 }
 
-
-/*
-	Get hexadecimal string from integer value
-*/
 String Standard_String::GetHex(std::uintmax_t _Value)
 {
 	std::stringstream StringStream;
@@ -66,10 +48,6 @@ String Standard_String::GetHex(std::uintmax_t _Value)
 	return StringStream.str();
 }
 
-
-/*
-	Empty String
-*/
 bool Standard_String::EmptyString(String _String)
 {
 	// Check for Whitespace
@@ -98,10 +76,6 @@ bool Standard_String::EmptyString(StringW _String)
 	return _String.empty();
 }
 
-
-/*
-	Empty String Vector
-*/
 bool Standard_String::EmptyStrVec(StrVec _StrVec)
 {
 	// Check for Whitespace
@@ -130,10 +104,6 @@ bool Standard_String::EmptyStrVec(StrVecW _StrVec)
 	return _StrVec.empty();
 }
 
-
-/*
-	To Upper
-*/
 String Standard_String::ToUpper(String& _String)
 {
 	std::transform(_String.cbegin(), _String.cend(), _String.begin(), [](std::uint8_t c) { return std::toupper(c); });
@@ -146,10 +116,6 @@ StringW Standard_String::ToUpper(StringW& _String)
 	return _String;
 }
 
-
-/*
-	To Lower
-*/
 String Standard_String::ToLower(String& _String)
 {
 	std::transform(_String.cbegin(), _String.cend(), _String.begin(), [](std::uint8_t c) { return std::tolower(c); });
@@ -162,10 +128,6 @@ StringW Standard_String::ToLower(StringW& _String)
 	return _String;
 }
 
-
-/*
-	Trim String
-*/
 void Standard_String::TrimString(String& _String) try
 {
 	// Reverse Erase Whitespaces
@@ -186,10 +148,6 @@ void Standard_String::TrimString(StringW& _String) try
 }
 catch (...) { Exception(std::current_exception()); }
 
-
-/*
-	Clean String
-*/
 void Standard_String::CleanString(String& _String, StrVec _CleanList) try
 {
 	for (auto& _List : _CleanList)
@@ -216,10 +174,6 @@ void Standard_String::CleanString(StringW& _String, StrVecW _CleanList) try
 }
 catch (...) { Exception(std::current_exception()); }
 
-
-/*
-	Clean String Vector
-*/
 void Standard_String::CleanStrVec(StrVec& _StrVec, StrVec _CleanList) try
 {
 	// Error
@@ -276,10 +230,6 @@ void Standard_String::CleanStrVec(StrVecW& _StrVec, StrVecW _CleanList) try
 }
 catch (...) { Exception(std::current_exception()); }
 
-
-/*
-	Get String Vector
-*/
 StrVec Standard_String::GetStrVec(String _String) try
 {
 	// Output Op
@@ -328,10 +278,6 @@ StrVec32 Standard_String::GetStrVec(String32 _String) try
 }
 catch (...) { Exception(std::current_exception()); return StrVec32(); }
 
-
-/*
-	Compare String Vector
-*/
 bool Standard_String::StrVecCompare(StrVec _StrVec0, StrVec _StrVec1) try
 {
 	// Error
@@ -364,10 +310,6 @@ bool Standard_String::StrVecCompare(StrVecW _StrVec0, StrVecW _StrVec1) try
 }
 catch (...) { Exception(std::current_exception()); return false; }
 
-
-/*
-	String Vector Assign
-*/
 void Standard_String::StrVecAssign(StrVec& _StrVec, std::size_t _Pos, String _String) try
 {
 	// Resize if Position is Out of Range
@@ -388,10 +330,6 @@ void Standard_String::StrVecAssign(StrVecW& _StrVec, std::size_t _Pos, StringW _
 }
 catch (...) { Exception(std::current_exception()); }
 
-
-/*
-	String Vector Insert
-*/
 void Standard_String::StrVecInsert(StrVec& _StrVec, std::size_t _Pos, String _String) try
 {
 	// Resize if Position is Greater than Vector Size
@@ -412,10 +350,6 @@ void Standard_String::StrVecInsert(StrVecW& _StrVec, std::size_t _Pos, StringW _
 }
 catch (...) { Exception(std::current_exception()); }
 
-
-/*
-	String Vector Insert Range
-*/
 void Standard_String::StrVecInsertRange(StrVec& _StrVec, std::size_t _Pos, StrVec _VecIn) try
 {
 	// Resize if Position is out of Range
@@ -438,10 +372,6 @@ void Standard_String::StrVecInsertRange(StrVecW& _StrVec, std::size_t _Pos, StrV
 }
 catch (...) { Exception(std::current_exception()); }
 
-
-/*
-	Message Box Window
-*/
 void Standard_String::Message(const std::string _Format, ...)
 {
 	std::va_list _ArgList;

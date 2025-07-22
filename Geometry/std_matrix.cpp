@@ -3,18 +3,12 @@
 *	Megan Grass
 *	April 11, 2024
 *
-*
-*	TODO:
-*
 */
 
 
 #include "std_matrix.h"
 
 
-/*
-	Translate
-*/
 Standard_Matrix Standard_Matrix::Translate(vec3 Vector) noexcept
 {
 	Standard_Matrix Matrix;
@@ -25,10 +19,6 @@ Standard_Matrix Standard_Matrix::Translate(vec3 Vector) noexcept
 	return *this;
 }
 
-
-/*
-	Scale
-*/
 Standard_Matrix Standard_Matrix::Scale(vec3 Vector) noexcept
 {
 	Standard_Matrix Matrix;
@@ -39,10 +29,6 @@ Standard_Matrix Standard_Matrix::Scale(vec3 Vector) noexcept
 	return *this;
 }
 
-
-/*
-	Rotate
-*/
 Standard_Matrix Standard_Matrix::Rotate(vec3 Vector) noexcept
 {
 	Standard_Matrix Matrix;
@@ -59,10 +45,6 @@ Standard_Matrix Standard_Matrix::Rotate(vec3 Vector) noexcept
 	return *this;
 }
 
-
-/*
-	Rotate X
-*/
 Standard_Matrix Standard_Matrix::RotateX(float Angle) noexcept
 {
 	Standard_Matrix Matrix;
@@ -74,10 +56,6 @@ Standard_Matrix Standard_Matrix::RotateX(float Angle) noexcept
 	return *this;
 }
 
-
-/*
-	Rotate Y
-*/
 Standard_Matrix Standard_Matrix::RotateY(float Angle) noexcept
 {
 	Standard_Matrix Matrix;
@@ -89,10 +67,6 @@ Standard_Matrix Standard_Matrix::RotateY(float Angle) noexcept
 	return *this;
 }
 
-
-/*
-	Rotate Z
-*/
 Standard_Matrix Standard_Matrix::RotateZ(float Angle) noexcept
 {
 	Standard_Matrix Matrix;
@@ -104,30 +78,33 @@ Standard_Matrix Standard_Matrix::RotateZ(float Angle) noexcept
 	return *this;
 }
 
-
-/*
-	Pitch, Yaw and Roll
-*/
-Standard_Matrix Standard_Matrix::PitchYawRoll(vec3 Vector) noexcept
+Standard_Matrix Standard_Matrix::YawPitchRoll(vec3 Vector) noexcept
 {
 	Standard_Matrix Matrix;
-	Matrix.m00 = cosf(Vector.y) * cosf(Vector.z);
-	Matrix.m01 = cosf(Vector.y) * sinf(Vector.z);
-	Matrix.m02 = sinf(Vector.y);
-	Matrix.m10 = sinf(Vector.x) * sinf(Vector.y) * cosf(Vector.z) + cosf(Vector.x) * sinf(Vector.z);
-	Matrix.m11 = sinf(Vector.x) * sinf(Vector.y) * sinf(Vector.z) - cosf(Vector.x) * cosf(Vector.z);
-	Matrix.m12 = -sinf(Vector.x) * cosf(Vector.y);
-	Matrix.m20 = -cosf(Vector.x) * sinf(Vector.y) * cosf(Vector.z) + sinf(Vector.x) * sinf(Vector.z);
-	Matrix.m21 = -cosf(Vector.x) * sinf(Vector.y) * sinf(Vector.z) - sinf(Vector.x) * cosf(Vector.z);
-	Matrix.m22 = cosf(Vector.x) * cosf(Vector.y);
+	
+	float sy = sinf(Vector.y);
+	float cy = cosf(Vector.y);
+	float sp = sinf(Vector.x);
+	float cp = cosf(Vector.x);
+	float sr = sinf(Vector.z);
+	float cr = cosf(Vector.z);
+
+	Matrix.m00 = cr * cy + sr * sp * sy;
+	Matrix.m01 = sr * cp;
+	Matrix.m02 = cr * -sy + sr * sp * cy;
+
+	Matrix.m10 = -sr * cy + cr * sp * sy;
+	Matrix.m11 = cr * cp;
+	Matrix.m12 = sr * sy + cr * sp * cy;
+
+	Matrix.m20 = cp * sy;
+	Matrix.m21 = -sp;
+	Matrix.m22 = cp * cy;
+
 	*this = Transpose(Matrix, *this);
 	return *this;
 }
 
-
-/*
-	Pitch
-*/
 Standard_Matrix Standard_Matrix::Pitch(float Angle) noexcept
 {
 	Standard_Matrix Matrix;
@@ -139,10 +116,6 @@ Standard_Matrix Standard_Matrix::Pitch(float Angle) noexcept
 	return *this;
 }
 
-
-/*
-	Yaw
-*/
 Standard_Matrix Standard_Matrix::Yaw(float Angle) noexcept
 {
 	Standard_Matrix Matrix;
@@ -154,10 +127,6 @@ Standard_Matrix Standard_Matrix::Yaw(float Angle) noexcept
 	return *this;
 }
 
-
-/*
-	Roll
-*/
 Standard_Matrix Standard_Matrix::Roll(float Angle) noexcept
 {
 	Standard_Matrix Matrix;
@@ -169,10 +138,6 @@ Standard_Matrix Standard_Matrix::Roll(float Angle) noexcept
 	return *this;
 }
 
-
-/*
-	Shear
-*/
 Standard_Matrix Standard_Matrix::Shear(vec3 Vector) noexcept
 {
 	Standard_Matrix Matrix;
@@ -186,10 +151,6 @@ Standard_Matrix Standard_Matrix::Shear(vec3 Vector) noexcept
 	return *this;
 }
 
-
-/*
-	Reflect
-*/
 Standard_Matrix Standard_Matrix::Reflect(vec3 Vector) noexcept
 {
 	Standard_Matrix Matrix;
@@ -207,10 +168,6 @@ Standard_Matrix Standard_Matrix::Reflect(vec3 Vector) noexcept
 	return *this;
 }
 
-
-/*
-	Inverse
-*/
 Standard_Matrix Standard_Matrix::Inverse(void) const
 {
 	Standard_Matrix Matrix;
@@ -247,10 +204,6 @@ Standard_Matrix Standard_Matrix::Inverse(void) const
 	return Matrix;
 }
 
-
-/*
-	Transpose
-*/
 Standard_Matrix Standard_Matrix::Transpose(Standard_Matrix m0, Standard_Matrix m1) const noexcept
 {
 	Standard_Matrix Matrix;
@@ -278,10 +231,6 @@ Standard_Matrix Standard_Matrix::Transpose(Standard_Matrix m0, Standard_Matrix m
 	return Matrix;
 }
 
-
-/*
-	Dot
-*/
 Standard_Matrix Standard_Matrix::Dot(Standard_Matrix& m0, Standard_Matrix& m1) const noexcept
 {
 	Standard_Matrix Matrix;
@@ -309,10 +258,6 @@ Standard_Matrix Standard_Matrix::Dot(Standard_Matrix& m0, Standard_Matrix& m1) c
 	return Matrix;
 }
 
-
-/*
-	Product
-*/
 Standard_Matrix Standard_Matrix::Product(Standard_Matrix m0, Standard_Matrix m1) const noexcept
 {
 	Standard_Matrix Matrix;
@@ -340,23 +285,59 @@ Standard_Matrix Standard_Matrix::Product(Standard_Matrix m0, Standard_Matrix m1)
 	return Matrix;
 }
 
-
-/*
-	Set World
-*/
 Standard_Matrix Standard_Matrix::SetWorld(const vec3& mTranslation, const vec3& mRotation, const vec3& mScale) noexcept
 {
-	this->Identity();
-	this->Translate(mTranslation);
-	this->Rotate(mRotation);
-	this->Scale(mScale);
+	Standard_Matrix S = Standard_Matrix().Scale(mScale);
+	Standard_Matrix R = Standard_Matrix().YawPitchRoll(vec3{ Radian(mRotation.x), Radian(mRotation.y), Radian(mRotation.z) });
+	Standard_Matrix T = Standard_Matrix().Translate(mTranslation);
+	*this = S * R * T;
 	return *this;
 }
 
+Standard_Matrix Standard_Matrix::SetWorldCentroid(const vec3& mTranslation, const vec3& mRotation, const vec3& mCentroid, const vec3& mScale) noexcept
+{
+	Standard_Matrix Neg = Standard_Matrix().Translate(-mCentroid);
+	Standard_Matrix Pos = Standard_Matrix().Translate(mCentroid);
+	Standard_Matrix R = Standard_Matrix().YawPitchRoll(vec3{ Radian(mRotation.x), Radian(mRotation.y), Radian(mRotation.z) });
+	Standard_Matrix T = Standard_Matrix().Translate(vec3{ mTranslation.x, mTranslation.y, mTranslation.z });
+	*this = T * (Pos * R * Neg);
+	return *this;
+}
 
-/*
-	Orthogonal Left
-*/
+vec3 Standard_Matrix::Centroid(const std::vector<vec3>& Shape) const noexcept
+{
+	if (Shape.empty()) return vec3(0.0f, 0.0f, 0.0f);
+	vec3 c(0.0f, 0.0f, 0.0f);
+	for (const auto& v : Shape) { c += v; }
+	c /= (float)(Shape.size());
+	return c;
+}
+
+vec3 Standard_Matrix::Centroid(const std::vector<vec3>& Shape, const vec3& Pos) const noexcept
+{
+	if (Shape.empty()) return vec3(0.0f, 0.0f, 0.0f);
+	vec3 c(0.0f, 0.0f, 0.0f);
+	for (const auto& v : Shape) { c += v; }
+	c /= (float)(Shape.size());
+	c += Pos;
+	return c;
+}
+
+vec3 Standard_Matrix::TransformPoint(const vec3& v) const noexcept
+{
+	float x = m00 * v.x + m01 * v.y + m02 * v.z + m03;
+	float y = m10 * v.x + m11 * v.y + m12 * v.z + m13;
+	float z = m20 * v.x + m21 * v.y + m22 * v.z + m23;
+	float w = m30 * v.x + m31 * v.y + m32 * v.z + m33;
+	if (w != 0.0f && w != 1.0f)
+	{
+		x /= w;
+		y /= w;
+		z /= w;
+	}
+	return vec3(x, y, z);
+}
+
 void Standard_Matrix::OrthogonalLeft(float Width, float Height, float zNear, float zFar) noexcept
 {
 	Identity();
@@ -369,10 +350,6 @@ void Standard_Matrix::OrthogonalLeft(float Width, float Height, float zNear, flo
 	m01 = m02 = m03 = m10 = m12 = m13 = m20 = m21 = m30 = m31 = 0.0f;
 }
 
-
-/*
-	Orthogonal Right
-*/
 void Standard_Matrix::OrthogonalRight(float Width, float Height, float zNear, float zFar) noexcept
 {
 	Identity();
@@ -385,42 +362,34 @@ void Standard_Matrix::OrthogonalRight(float Width, float Height, float zNear, fl
 	m01 = m02 = m03 = m10 = m12 = m13 = m20 = m21 = m30 = m31 = 0.0f;
 }
 
-
-/*
-	Orthogonal Off-Center Left
-*/
 void Standard_Matrix::OrthogonalOffCenterLeft(float Left, float Right, float Bottom, float Top, float zNear, float zFar) noexcept
 {
 	Identity();
 	m00 = 2.0f / (Right - Left);
 	m11 = 2.0f / (Top - Bottom);
 	m22 = 1.0f / (zFar - zNear);
+	m03 = -(Right + Left) / (Right - Left);
+	m13 = -(Top + Bottom) / (Top - Bottom);
 	m23 = -zNear / (zFar - zNear);
 	m33 = 1.0f;
 
-	m01 = m02 = m03 = m10 = m12 = m13 = m20 = m21 = m30 = m31 = 0.0f;
+	m01 = m02 = m10 = m12 = m20 = m21 = m30 = m31 = m32 = 0.0f;
 }
 
-
-/*
-	Orthogonal Off-Center Right
-*/
 void Standard_Matrix::OrthogonalOffCenterRight(float Left, float Right, float Bottom, float Top, float zNear, float zFar) noexcept
 {
 	Identity();
 	m00 = 2.0f / (Right - Left);
 	m11 = 2.0f / (Top - Bottom);
 	m22 = 1.0f / (zNear - zFar);
+	m03 = -(Right + Left) / (Right - Left);
+	m13 = -(Top + Bottom) / (Top - Bottom);
 	m23 = zNear / (zNear - zFar);
 	m33 = 1.0f;
 
-	m01 = m02 = m03 = m10 = m12 = m13 = m20 = m21 = m30 = m31 = 0.0f;
+	m01 = m02 = m10 = m12 = m20 = m21 = m30 = m31 = m32 = 0.0f;
 }
 
-
-/*
-	Perspective Left
-*/
 void Standard_Matrix::PerspectiveLeft(float Width, float Height, float zNear, float zFar) noexcept
 {
 	Identity();
@@ -433,10 +402,6 @@ void Standard_Matrix::PerspectiveLeft(float Width, float Height, float zNear, fl
 	m01 = m02 = m03 = m10 = m12 = m13 = m20 = m21 = m30 = m31 = 0.0f;
 }
 
-
-/*
-	Perspective Right
-*/
 void Standard_Matrix::PerspectiveRight(float Width, float Height, float zNear, float zFar) noexcept
 {
 	Identity();
@@ -449,10 +414,6 @@ void Standard_Matrix::PerspectiveRight(float Width, float Height, float zNear, f
 	m01 = m02 = m03 = m10 = m12 = m13 = m20 = m21 = m30 = m31 = 0.0f;
 }
 
-
-/*
-	Perspective FOV Left
-*/
 void Standard_Matrix::PerspectiveFovLeft(float FOV, float Aspect, float zNear, float zFar) noexcept
 {
 	Identity();
@@ -469,10 +430,6 @@ void Standard_Matrix::PerspectiveFovLeft(float FOV, float Aspect, float zNear, f
 	m01 = m02 = m03 = m10 = m12 = m13 = m20 = m21 = m30 = m31 = 0.0f;
 }
 
-
-/*
-	Perspective FOV Right
-*/
 void Standard_Matrix::PerspectiveFovRight(float FOV, float Aspect, float zNear, float zFar) noexcept
 {
 	Identity();
@@ -489,10 +446,6 @@ void Standard_Matrix::PerspectiveFovRight(float FOV, float Aspect, float zNear, 
 	m01 = m02 = m03 = m10 = m12 = m13 = m20 = m21 = m30 = m31 = 0.0f;
 }
 
-
-/*
-	Perspective Off-Center Left
-*/
 void Standard_Matrix::PerspectiveOffCenterLeft(float Left, float Right, float Bottom, float Top, float zNear, float zFar) noexcept
 {
 	Identity();
@@ -507,10 +460,6 @@ void Standard_Matrix::PerspectiveOffCenterLeft(float Left, float Right, float Bo
 	m01 = m02 = m03 = m10 = m12 = m13 = m30 = m31 = 0.0f;
 }
 
-
-/*
-	Perspective Off-Center Right
-*/
 void Standard_Matrix::PerspectiveOffCenterRight(float Left, float Right, float Bottom, float Top, float zNear, float zFar) noexcept
 {
 	Identity();
@@ -524,10 +473,6 @@ void Standard_Matrix::PerspectiveOffCenterRight(float Left, float Right, float B
 	m01 = m02 = m03 = m10 = m12 = m13 = m30 = m31 = 0.0f;
 }
 
-
-/*
-	LookAt Left
-*/
 void Standard_Matrix::LookAtLeft(const vec3& Eye, const vec3& At, const vec3& Up) noexcept
 {
 	vec3 Z = (At - Eye).Normalize();
@@ -555,10 +500,6 @@ void Standard_Matrix::LookAtLeft(const vec3& Eye, const vec3& At, const vec3& Up
 	m33 = 1.0f;
 }
 
-
-/*
-	LookAt Right
-*/
 void Standard_Matrix::LookAtRight(const vec3& Eye, const vec3& At, const vec3& Up) noexcept
 {
 	vec3 Z = (Eye - At).Normalize();

@@ -3,9 +3,6 @@
 *	Megan Grass
 *	January 01, 2024
 *
-*
-*	TODO:
-*
 */
 
 
@@ -18,9 +15,7 @@
 #pragma comment(lib, "Comctl32.lib")
 #pragma comment(lib, "Ole32.lib")
 
-/*
-	Message from GetLastError() function
-*/
+
 void Standard_Windows_Common::GetErrorMessage(bool b_ExitProcess, const std::source_location Location)
 {
 	wchar_t* lpBuffer = nullptr;
@@ -51,10 +46,6 @@ void Standard_Windows_Common::GetErrorMessage(bool b_ExitProcess, const std::sou
 	if (b_ExitProcess) { ExitProcess(dwMessageId); }
 }
 
-
-/*
-	Get the executable directory and filename
-*/
 std::filesystem::path Standard_Windows_Common::GetModuleStr(void)
 {
 	std::vector <wchar_t> _Filename(65535);
@@ -62,10 +53,6 @@ std::filesystem::path Standard_Windows_Common::GetModuleStr(void)
 	return _Filename.data();
 }
 
-
-/*
-	Get the executable directory
-*/
 std::filesystem::path Standard_Windows_Common::GetModuleDir(void)
 {
 	std::vector <wchar_t> _Filename(65535);
@@ -73,10 +60,6 @@ std::filesystem::path Standard_Windows_Common::GetModuleDir(void)
 	return GetDirectory(_Filename.data());
 }
 
-
-/*
-	Get the %USERPROFILE% directory
-*/
 std::filesystem::path Standard_Windows_Common::GetUserDir(void)
 {
 	std::filesystem::path UserPath;
@@ -87,10 +70,6 @@ std::filesystem::path Standard_Windows_Common::GetUserDir(void)
 	return UserPath;
 }
 
-
-/*
-	Get the %USERPROFILE% Documents directory
-*/
 std::filesystem::path Standard_Windows_Common::GetUserDocumentsDir(void)
 {
 	std::filesystem::path UserPath;
@@ -101,10 +80,6 @@ std::filesystem::path Standard_Windows_Common::GetUserDocumentsDir(void)
 	return UserPath;
 }
 
-
-/*
-	Get the %USERPROFILE% Saved Games directory
-*/
 std::filesystem::path Standard_Windows_Common::GetUserSavedGamesDir(void)
 {
 	std::filesystem::path UserPath;
@@ -115,10 +90,6 @@ std::filesystem::path Standard_Windows_Common::GetUserSavedGamesDir(void)
 	return UserPath;
 }
 
-
-/*
-	Get a list of Truetype Fonts in C:/Windows/Fonts
-*/
 std::vector<std::filesystem::path> Standard_Windows_Common::GetFonts(void)
 {
 	std::vector<std::filesystem::path> Fonts;
@@ -136,10 +107,6 @@ std::vector<std::filesystem::path> Standard_Windows_Common::GetFonts(void)
 	return Fonts;
 }
 
-
-/*
-	Open File Dialog
-*/
 std::optional<std::filesystem::path> Standard_Windows_Common::GetOpenFilename(StrVecW _Description, StrVecW _Filter)
 {
 	static std::mutex mtx;
@@ -194,10 +161,6 @@ std::optional<std::filesystem::path> Standard_Windows_Common::GetOpenFilename(St
 	return Path;
 }
 
-
-/*
-	Save File Dialog
-*/
 std::optional<std::filesystem::path> Standard_Windows_Common::GetSaveFilename(StrVecW _Description, StrVecW _Filter)
 {
 	static std::mutex mtx;
@@ -252,10 +215,6 @@ std::optional<std::filesystem::path> Standard_Windows_Common::GetSaveFilename(St
 	return Path;
 }
 
-
-/*
-	Get Folder Dialog
-*/
 [[nodiscard]] std::optional<std::filesystem::path> Standard_Windows_Common::GetFileDirectory(void) const
 {
 	static std::mutex mtx;
@@ -293,10 +252,6 @@ std::optional<std::filesystem::path> Standard_Windows_Common::GetSaveFilename(St
 	return Path;
 }
 
-
-/*
-	Message Box Question
-*/
 bool Standard_Windows_Common::Question(const std::wstring _Question, ...) const
 {
 	std::va_list _ArgList;
@@ -321,10 +276,6 @@ bool Standard_Windows_Common::Question(const std::wstring _Question, ...) const
 	return false;
 }
 
-
-/*
-	Message Box
-*/
 void Standard_Windows_Common::Message(const std::string _Format, ...)
 {
 	std::va_list _ArgList;
@@ -339,10 +290,6 @@ void Standard_Windows_Common::Message(const std::string _Format, ...)
 	MessageModal(L"Message", L"", WideStr.data());
 }
 
-
-/*
-	Message Box
-*/
 void Standard_Windows_Common::Message(const std::wstring _Format, ...)
 {
 	std::va_list _ArgList;
@@ -355,10 +302,6 @@ void Standard_Windows_Common::Message(const std::wstring _Format, ...)
 	MessageModal(L"Message", L"", String.data());
 }
 
-
-/*
-	Message Modal
-*/
 HRESULT CALLBACK Standard_Windows_Common::MessageModalCallbackProc(HWND hWnd, UINT uNotification, WPARAM wParam, LPARAM lParam, LONG_PTR dwRefData)
 {
 	if (uNotification == TDN_HYPERLINK_CLICKED)
@@ -367,6 +310,7 @@ HRESULT CALLBACK Standard_Windows_Common::MessageModalCallbackProc(HWND hWnd, UI
 	}
 	return S_OK;
 }
+
 void Standard_Windows_Common::MessageModal(const std::wstring& Title, const std::wstring& MainInstruction, const std::wstring _Content, ...) const
 {
 	std::va_list _ArgList;

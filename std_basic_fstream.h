@@ -3,14 +3,6 @@
 *	Megan Grass
 *	January 01, 2024
 *
-*
-*	TODO: 
-*		Maybe some cast converstions for tellg and tellp?
-* 
-*		File date functions
-* 
-*		Crc class needs to be moved out of the file class
-*
 */
 
 
