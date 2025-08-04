@@ -27,7 +27,7 @@ float4 main(INPUT Input) : COLOR0
 	{
 		return Input.Color;
 	}
-	else if(ScaleX && ScaleY)
+	else if (ScaleX && ScaleY)
 	{
 		Input.TexCoord.x *= ScaleX;
 		Input.TexCoord.y *= ScaleY;

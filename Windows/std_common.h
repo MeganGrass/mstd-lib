@@ -122,13 +122,13 @@ public:
 	/*
 		Get instance handle
 	*/
-	[[nodiscard]] virtual HINSTANCE GetInstance(void) const { return hInstance; }
+	[[nodiscard]] virtual const HINSTANCE& GetInstance(void) const { return hInstance; }
 
 
 	/*
 		Get window handle
 	*/
-	[[nodiscard]] virtual HWND GetWindow(void) const { return hWndOwner; }
+	[[nodiscard]] virtual const HWND& GetWindow(void) const { return hWndOwner; }
 
 
 	/*
@@ -140,61 +140,61 @@ public:
 	/*
 		Get the executable directory and filename
 	*/
-	[[nodiscard]] std::filesystem::path GetModuleStr(void);
+	[[nodiscard]] const std::filesystem::path GetModuleStr(void);
 
 
 	/*
 		Get the executable directory
 	*/
-	[[nodiscard]] std::filesystem::path GetModuleDir(void);
+	[[nodiscard]] const std::filesystem::path GetModuleDir(void);
 
 
 	/*
 		Get the %USERPROFILE% directory
 	*/
-	[[nodiscard]] std::filesystem::path GetUserDir(void);
+	[[nodiscard]] const std::filesystem::path GetUserDir(void);
 
 
 	/*
 		Get the %USERPROFILE% Documents directory
 	*/
-	[[nodiscard]] std::filesystem::path GetUserDocumentsDir(void);
+	[[nodiscard]] const std::filesystem::path GetUserDocumentsDir(void);
 
 
 	/*
 		Get the %USERPROFILE% Saved Games directory
 	*/
-	[[nodiscard]] std::filesystem::path GetUserSavedGamesDir(void);
+	[[nodiscard]] const std::filesystem::path GetUserSavedGamesDir(void);
 
 
 	/*
-		Get a list of Truetype Fonts in C:/Windows/Fonts
+		Get a full path list of Truetype Fonts in C:/Windows/Fonts
 	*/
-	[[nodiscard]] std::vector<std::filesystem::path> GetFonts(void);
+	[[nodiscard]] const std::vector<std::filesystem::path> GetFonts(void);
 
 
 	/*
 		Open File Dialog
 	*/
-	[[nodiscard]] std::optional<std::filesystem::path> GetOpenFilename(StrVecW _Description = { L"All Files" }, StrVecW _Filter = { L"*.*" });
+	[[nodiscard]] const std::optional<std::filesystem::path> GetOpenFilename(StrVecW _Description = { L"All Files" }, StrVecW _Filter = { L"*.*" });
 
 
 	/*
 		Save File Dialog
 	*/
-	[[nodiscard]] std::optional<std::filesystem::path> GetSaveFilename(StrVecW _Description = { L"All Files" }, StrVecW _Filter = { L"*.*" });
+	[[nodiscard]] const std::optional<std::filesystem::path> GetSaveFilename(StrVecW _Description = { L"All Files" }, StrVecW _Filter = { L"*.*" });
 
 
 	/*
 		Get Folder Dialog
 	*/
-	[[nodiscard]] std::optional<std::filesystem::path> GetFileDirectory(void) const;
+	[[nodiscard]] const std::optional<std::filesystem::path> GetFileDirectory(void) const;
 
 
 	/*
 		Message Box Question
 	*/
-	[[nodiscard]] bool Question(const std::wstring _Question, ...) const;
+	[[nodiscard]] const bool Question(const std::wstring _Question, ...) const;
 
 
 	/*
@@ -234,7 +234,7 @@ public:
 	/*
 		Performance measurement end
 	*/
-	[[nodiscard]] double PerformanceStop(void) const
+	[[nodiscard]] const double PerformanceStop(void) const
 	{
 		LARGE_INTEGER EndCounter{};
 		QueryPerformanceCounter(&EndCounter);

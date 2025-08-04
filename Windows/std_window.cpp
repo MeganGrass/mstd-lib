@@ -158,10 +158,11 @@ void Standard_Window::Create(int Width, int Height, HINSTANCE hInstance, int nCm
 	if (!hWnd) { GetErrorMessage(); }
 
 #if MSTD_DEVICE
+	static std::once_flag StdWinDevicesInitializedFlag;
+
 	if (b_Subclass)
 	{
-		b_StdWinDevicesInitialized = true;
-		m_Devices = std::make_shared<Windows_Devices>();
+		std::call_once(StdWinDevicesInitializedFlag, [this]() { m_Devices = std::make_shared<Windows_Devices>(); });
 	}
 #endif
 
@@ -312,7 +313,13 @@ std::shared_ptr<Standard_Window> Standard_Window::CreateChild(int x, int y, int 
 	Window->m_CurrentFont = m_CurrentFont;
 	Window->m_CurrentFontIndex = m_CurrentFontIndex;
 	Window->m_FontSize = m_FontSize;
-	Window->FontList() = m_Fonts;
+	Window->m_Fonts.reserve(m_Fonts.size());
+	Window->m_FontStems.reserve(m_Fonts.size());
+	for (const auto& Font : m_Fonts)
+	{
+		Window->m_Fonts.push_back(Font);
+		Window->m_FontStems.push_back(Font.filename().stem().string());
+	}
 
 	// Desktop Window Manager
 	Window->SetDarkMode(GetDarkMode());
@@ -403,7 +410,13 @@ bool Standard_Window::AddChildWindow(HWND hWndChild, int x, int y, bool b_SnapTo
 	Window->m_CurrentFont = m_CurrentFont;
 	Window->m_CurrentFontIndex = m_CurrentFontIndex;
 	Window->m_FontSize = m_FontSize;
-	Window->FontList() = m_Fonts;
+	Window->m_Fonts.reserve(m_Fonts.size());
+	Window->m_FontStems.reserve(m_Fonts.size());
+	for (const auto& Font : m_Fonts)
+	{
+		Window->m_Fonts.push_back(Font);
+		Window->m_FontStems.push_back(Font.filename().stem().string());
+	}
 
 	// Desktop Window Manager
 	Window->SetDarkMode(GetDarkMode());
@@ -449,9 +462,9 @@ bool Standard_Window::AddChildWindow(HWND hWndChild, int x, int y, bool b_SnapTo
 	return true;
 }
 
-std::shared_ptr<Standard_Window> Standard_Window::GetChildWindow(UINT Index)
+const std::shared_ptr<Standard_Window>& Standard_Window::GetChildWindow(UINT Index)
 {
-	if (Index > (v_ChildWindows.size() - 1)) { return nullptr; }
+	if (Index > (v_ChildWindows.size() - 1)) { return v_ChildWindows.back(); }
 	return v_ChildWindows[Index];
 }
 
@@ -728,25 +741,25 @@ bool Standard_Window::Resize(RECT* Rect, bool b_Center)
 	return true;
 }
 
-bool Standard_Window::IsMinimized(void)
+const bool Standard_Window::IsMinimized(void)
 {
 	// return b_Minimized = IsIconic(hWnd);
 	WINDOWPLACEMENT WindowPlacement{};
 	WindowPlacement.length = sizeof(WINDOWPLACEMENT);
 	GetWindowPlacement(hWnd, &WindowPlacement);
-	return b_Minimized = (WindowPlacement.showCmd == SW_SHOWMINIMIZED);
+	return b_Minimized = (WindowPlacement.showCmd == SW_SHOWMINIMIZED) || IsIconic(hWnd);
 }
 
-bool Standard_Window::IsMaximized(void)
+const bool Standard_Window::IsMaximized(void)
 {
 	// return b_Maximized = IsZoomed(hWnd);
 	WINDOWPLACEMENT WindowPlacement{};
 	WindowPlacement.length = sizeof(WINDOWPLACEMENT);
 	GetWindowPlacement(hWnd, &WindowPlacement);
-	return b_Maximized = (WindowPlacement.showCmd == SW_SHOWMAXIMIZED);
+	return b_Maximized = (WindowPlacement.showCmd == SW_SHOWMAXIMIZED) || IsZoomed(hWnd);
 }
 
-bool Standard_Window::IsFullscreen(void) const
+const bool Standard_Window::IsFullscreen(void) const
 {
 	/*QUERY_USER_NOTIFICATION_STATE m_FullscreenState;
 	SHQueryUserNotificationState(&m_FullscreenState);
@@ -784,10 +797,16 @@ void Standard_Window::AutoFullscreen(void)
 {
 	ShowWindow(hWnd, SW_HIDE);
 
-	m_OldRect.left = 0;
-	m_OldRect.top = 0;
-	m_OldRect.right = 1024;
-	m_OldRect.bottom = 720;
+	RECT Rect{};
+	GetClientRect(hWndParent, &Rect);
+
+	if (Rect.right < GetSystemMetricsForDpi(SM_CXSCREEN, m_SysDPI) && Rect.bottom < GetSystemMetricsForDpi(SM_CYSCREEN, m_SysDPI))
+	{
+		m_OldRect.left = Rect.left;
+		m_OldRect.top = Rect.top;
+		m_OldRect.right = Rect.right;
+		m_OldRect.bottom = Rect.bottom;
+	}
 
 	if (b_Fullscreen)
 	{

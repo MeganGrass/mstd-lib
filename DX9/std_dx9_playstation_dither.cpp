@@ -33,7 +33,7 @@ static const float DitherMatrix[4][4] =
 
 float4 main(INPUT Input) : COLOR0
 {
-	if(ScaleX && ScaleY)
+	if (ScaleX && ScaleY)
 	{
 		Input.TexCoord.x *= ScaleX;
 		Input.TexCoord.y *= ScaleY;

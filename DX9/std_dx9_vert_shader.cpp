@@ -6,22 +6,9 @@
 */
 
 const char* VertexShaderCode = R"(
-cbuffer MatrixBuffer : register(b0)
-{
-	matrix World;
-	matrix View;
-	matrix Projection;
-};
-
-cbuffer LightBuffer : register(b1)
-{
-	int LightMag;
-	int LightMode[3];
-	float3 LightDiffuse[3];
-	float3 LightAmbient;
-	float3 LightPosition[3];
-	float LightRange[3];
-};
+uniform float4x4 World;
+uniform float4x4 View;
+uniform float4x4 Projection;
 
 struct INPUT_POINTC
 {
@@ -38,15 +25,9 @@ struct INPUT_POINTCT
 	float2 TexCoord : TEXCOORD0;
 };
 
-struct INPUT_TEX3D
+struct INPUT_VERT3T
 {
 	float3 Position : POSITION;
-	float2 TexCoord : TEXCOORD0;
-};
-
-struct INPUT_TEX4D
-{
-	float4 Position : POSITION;
 	float2 TexCoord : TEXCOORD0;
 };
 
@@ -122,21 +103,10 @@ OUTPUT vecpct(INPUT_POINTCT Input)
 	return Output;
 }
 
-OUTPUT vec3t(INPUT_TEX3D Input)
+OUTPUT vec3t(INPUT_VERT3T Input)
 {
 	OUTPUT Output;
 	Output.Position = mul(mul(mul(float4(Input.Position, 1.0f), World), View), Projection);
-	Output.Normal = float3(0.0f, 0.0f, 0.0f);
-	Output.Color = float4(1.0f, 1.0f, 1.0f, 1.0f);
-	Output.PointSize = 1.0f;
-	Output.TexCoord = Input.TexCoord;
-	return Output;
-}
-
-OUTPUT vec4t(INPUT_TEX4D Input)
-{
-	OUTPUT Output;
-	Output.Position = mul(mul(mul(Input.Position, World), View), Projection);
 	Output.Normal = float3(0.0f, 0.0f, 0.0f);
 	Output.Color = float4(1.0f, 1.0f, 1.0f, 1.0f);
 	Output.PointSize = 1.0f;

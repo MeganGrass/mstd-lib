@@ -25,6 +25,12 @@ void Windows_Devices::Initialize(void) try
 	UINT nDevices = 0;
 	if (GetRawInputDeviceList(0, &nDevices, sizeof(RAWINPUTDEVICELIST)) == 0xFFFFFFFF) { GetErrorMessage(); }
 
+	if (nDevices == 0xFFFFFFFF)
+	{
+		GetErrorMessage();
+		return;
+	}
+
 	// Get Raw Input Device List
 	std::vector<RAWINPUTDEVICELIST> InputDeviceList(nDevices);
 	if (GetRawInputDeviceList(InputDeviceList.data(), &nDevices, sizeof(RAWINPUTDEVICELIST)) == 0xFFFFFFFF) { GetErrorMessage(); }
@@ -457,7 +463,7 @@ void Windows_Devices::MsgMouseWheel(WPARAM wParam)
 {
 	for (auto& Mouse : Mice)
 	{
-		Mouse->DeltaZ = static_cast<FLOAT>(GET_WHEEL_DELTA_WPARAM(wParam) / WHEEL_DELTA);
+		Mouse->DeltaZ += static_cast<FLOAT>(GET_WHEEL_DELTA_WPARAM(wParam) / WHEEL_DELTA);
 	}
 }
 
@@ -465,7 +471,7 @@ void Windows_Devices::MsgMouseHWheel(WPARAM wParam)
 {
 	for (auto& Mouse : Mice)
 	{
-		Mouse->DeltaX = static_cast<FLOAT>(GET_WHEEL_DELTA_WPARAM(wParam) / WHEEL_DELTA);
+		Mouse->DeltaX += static_cast<FLOAT>(GET_WHEEL_DELTA_WPARAM(wParam) / WHEEL_DELTA);
 	}
 }
 
@@ -572,7 +578,9 @@ FLOAT Windows_Devices::GetMouseDeltaZ(void) const
 	for (auto& Mouse : Mice)
 	{
 		if (Mouse->DeltaZ == 0.0f) { continue; }
-		return Mouse->DeltaZ;
+		FLOAT Delta = Mouse->DeltaZ;
+		Mouse->DeltaZ = 0.0f;
+		return Delta;
 	}
 	return 0.0f;
 }
@@ -582,7 +590,9 @@ FLOAT Windows_Devices::GetMouseDeltaX(void) const
 	for (auto& Mouse : Mice)
 	{
 		if (Mouse->DeltaX == 0.0f) { continue; }
-		return Mouse->DeltaX;
+		FLOAT Delta = Mouse->DeltaX;
+		Mouse->DeltaX = 0.0f;
+		return Delta;
 	}
 	return 0.0f;
 }

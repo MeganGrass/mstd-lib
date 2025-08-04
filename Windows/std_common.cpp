@@ -46,21 +46,21 @@ void Standard_Windows_Common::GetErrorMessage(bool b_ExitProcess, const std::sou
 	if (b_ExitProcess) { ExitProcess(dwMessageId); }
 }
 
-std::filesystem::path Standard_Windows_Common::GetModuleStr(void)
+const std::filesystem::path Standard_Windows_Common::GetModuleStr(void)
 {
 	std::vector <wchar_t> _Filename(65535);
 	GetModuleFileNameW(0, _Filename.data(), static_cast<DWORD>(_Filename.size()));
 	return _Filename.data();
 }
 
-std::filesystem::path Standard_Windows_Common::GetModuleDir(void)
+const std::filesystem::path Standard_Windows_Common::GetModuleDir(void)
 {
 	std::vector <wchar_t> _Filename(65535);
 	GetModuleFileNameW(0, _Filename.data(), static_cast<DWORD>(_Filename.size()));
 	return GetDirectory(_Filename.data());
 }
 
-std::filesystem::path Standard_Windows_Common::GetUserDir(void)
+const std::filesystem::path Standard_Windows_Common::GetUserDir(void)
 {
 	std::filesystem::path UserPath;
 	wchar_t* _Path = (wchar_t*)CoTaskMemAlloc(65535);
@@ -70,7 +70,7 @@ std::filesystem::path Standard_Windows_Common::GetUserDir(void)
 	return UserPath;
 }
 
-std::filesystem::path Standard_Windows_Common::GetUserDocumentsDir(void)
+const std::filesystem::path Standard_Windows_Common::GetUserDocumentsDir(void)
 {
 	std::filesystem::path UserPath;
 	wchar_t* _Path = (wchar_t*)CoTaskMemAlloc(65535);
@@ -80,7 +80,7 @@ std::filesystem::path Standard_Windows_Common::GetUserDocumentsDir(void)
 	return UserPath;
 }
 
-std::filesystem::path Standard_Windows_Common::GetUserSavedGamesDir(void)
+const std::filesystem::path Standard_Windows_Common::GetUserSavedGamesDir(void)
 {
 	std::filesystem::path UserPath;
 	wchar_t* _Path = (wchar_t*)CoTaskMemAlloc(65535);
@@ -90,7 +90,7 @@ std::filesystem::path Standard_Windows_Common::GetUserSavedGamesDir(void)
 	return UserPath;
 }
 
-std::vector<std::filesystem::path> Standard_Windows_Common::GetFonts(void)
+const std::vector<std::filesystem::path> Standard_Windows_Common::GetFonts(void)
 {
 	std::vector<std::filesystem::path> Fonts;
 	for (const auto& Entry : std::filesystem::directory_iterator(L"C:\\Windows\\Fonts\\"))
@@ -107,7 +107,7 @@ std::vector<std::filesystem::path> Standard_Windows_Common::GetFonts(void)
 	return Fonts;
 }
 
-std::optional<std::filesystem::path> Standard_Windows_Common::GetOpenFilename(StrVecW _Description, StrVecW _Filter)
+const std::optional<std::filesystem::path> Standard_Windows_Common::GetOpenFilename(StrVecW _Description, StrVecW _Filter)
 {
 	static std::mutex mtx;
 	std::lock_guard<std::mutex> lock(mtx);
@@ -161,7 +161,7 @@ std::optional<std::filesystem::path> Standard_Windows_Common::GetOpenFilename(St
 	return Path;
 }
 
-std::optional<std::filesystem::path> Standard_Windows_Common::GetSaveFilename(StrVecW _Description, StrVecW _Filter)
+const std::optional<std::filesystem::path> Standard_Windows_Common::GetSaveFilename(StrVecW _Description, StrVecW _Filter)
 {
 	static std::mutex mtx;
 	std::lock_guard<std::mutex> lock(mtx);
@@ -215,7 +215,7 @@ std::optional<std::filesystem::path> Standard_Windows_Common::GetSaveFilename(St
 	return Path;
 }
 
-[[nodiscard]] std::optional<std::filesystem::path> Standard_Windows_Common::GetFileDirectory(void) const
+[[nodiscard]] const std::optional<std::filesystem::path> Standard_Windows_Common::GetFileDirectory(void) const
 {
 	static std::mutex mtx;
 	std::lock_guard<std::mutex> lock(mtx);
@@ -252,7 +252,7 @@ std::optional<std::filesystem::path> Standard_Windows_Common::GetSaveFilename(St
 	return Path;
 }
 
-bool Standard_Windows_Common::Question(const std::wstring _Question, ...) const
+const bool Standard_Windows_Common::Question(const std::wstring _Question, ...) const
 {
 	std::va_list _ArgList;
 	va_start(_ArgList, _Question);

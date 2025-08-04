@@ -10,18 +10,10 @@
 
 #pragma comment(lib, "Shcore.lib")
 
-struct MessageTimer
-{
-	UINT_PTR TimerID{};
-};
-
-MessageTimer MouseWheelTimerZ;
-MessageTimer MouseWheelTimerX;
-
 
 LRESULT CALLBACK StandardWindowProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam, UINT_PTR uIdSubclass, DWORD_PTR dwRefData)
 {
-	StdWin* Window = (StdWin*)dwRefData;
+	Standard_Window* Window = (Standard_Window*)dwRefData;
 
 	if (!Window) { return DefSubclassProc(hWnd, uMsg, wParam, lParam); }
 
@@ -74,57 +66,31 @@ LRESULT CALLBACK StandardWindowProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM 
 		Window->MsgDisplayChange(wParam, lParam);
 		break;
 #if MSTD_DEVICE
-	case WM_DESTROY:
-	{
-		// Destroy the timer when the window is destroyed
-		KillTimer(hWnd, MouseWheelTimerZ.TimerID);
-		KillTimer(hWnd, MouseWheelTimerX.TimerID);
-		PostQuitMessage(0);
-		break;
-	}
 	case WM_INPUT_DEVICE_CHANGE:
 		Window->Device()->MsgInputDeviceChange(wParam, lParam);
 		break;
 	case WM_INPUT:
 		if ((Window->HasFocus()) && (GET_RAWINPUT_CODE_WPARAM(wParam) == RIM_INPUT)) { Window->Device()->MsgInput(hWnd, wParam, lParam); }
 		break;
+	case WM_TIMER:
+		if (wParam == 1)
+		{
+			KillTimer(hWnd, 1);
+			Window->Device()->ResetMouseDeltaZ();
+		}
+		if (wParam == 2)
+		{
+			KillTimer(hWnd, 2);
+			Window->Device()->ResetMouseDeltaX();
+		}
+		break;
 	case WM_MOUSEWHEEL:
 		Window->Device()->MsgMouseWheel(wParam);
-		if (MouseWheelTimerZ.TimerID == 0)
-		{
-			MouseWheelTimerZ.TimerID = SetTimer(hWnd, 1, 1, NULL);
-		}
-		else
-		{
-			KillTimer(hWnd, MouseWheelTimerZ.TimerID);
-			MouseWheelTimerZ.TimerID = SetTimer(hWnd, 1, 1, NULL);
-		}
+		SetTimer(hWnd, 1, 10, NULL);
 		break;
 	case WM_MOUSEHWHEEL:
 		Window->Device()->MsgMouseHWheel(wParam);
-		if (MouseWheelTimerX.TimerID == 0)
-		{
-			MouseWheelTimerX.TimerID = SetTimer(hWnd, 2, 1, NULL);
-		}
-		else
-		{
-			KillTimer(hWnd, MouseWheelTimerX.TimerID);
-			MouseWheelTimerX.TimerID = SetTimer(hWnd, 2, 1, NULL);
-		}
-		break;
-	case WM_TIMER:
-		if (wParam == MouseWheelTimerZ.TimerID)
-		{
-			KillTimer(hWnd, MouseWheelTimerZ.TimerID);
-			MouseWheelTimerZ.TimerID = 0;
-			Window->Device()->ResetMouseDeltaZ();
-		}
-		if (wParam == MouseWheelTimerX.TimerID)
-		{
-			KillTimer(hWnd, MouseWheelTimerX.TimerID);
-			MouseWheelTimerX.TimerID = 0;
-			Window->Device()->ResetMouseDeltaX();
-		}
+		SetTimer(hWnd, 2, 10, NULL);
 		break;
 #endif
 	case WM_DROPFILES:
@@ -211,7 +177,7 @@ void Standard_Window::MsgPositionChanged(WPARAM wParam, LPARAM lParam)
 	}*/
 }
 
-void Standard_Window::MsgDisplayChange(WPARAM wParam, LPARAM lParam)
+void Standard_Window::MsgDisplayChange(WPARAM wParam, LPARAM lParam) const
 {
 	if (IsFullscreen())
 	{

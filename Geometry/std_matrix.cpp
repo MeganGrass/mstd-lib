@@ -323,19 +323,32 @@ vec3 Standard_Matrix::Centroid(const std::vector<vec3>& Shape, const vec3& Pos) 
 	return c;
 }
 
-vec3 Standard_Matrix::TransformPoint(const vec3& v) const noexcept
+void Standard_Matrix::VecTransform(vec3& Vec) const noexcept
 {
-	float x = m00 * v.x + m01 * v.y + m02 * v.z + m03;
-	float y = m10 * v.x + m11 * v.y + m12 * v.z + m13;
-	float z = m20 * v.x + m21 * v.y + m22 * v.z + m23;
-	float w = m30 * v.x + m31 * v.y + m32 * v.z + m33;
+	Vec.x = Vec.x * m00 + Vec.y * m01 + Vec.z * m02 + 1.0f * m03;
+	Vec.y = Vec.x * m10 + Vec.y * m11 + Vec.z * m12 + 1.0f * m13;
+	Vec.z = Vec.x * m20 + Vec.y * m21 + Vec.z * m22 + 1.0f * m23;
+	float w = Vec.x * m30 + Vec.y * m31 + Vec.z * m32 + 1.0f * m33;
 	if (w != 0.0f && w != 1.0f)
 	{
-		x /= w;
-		y /= w;
-		z /= w;
+		Vec.x /= w;
+		Vec.y /= w;
+		Vec.z /= w;
 	}
-	return vec3(x, y, z);
+}
+
+void Standard_Matrix::VecTransform(vec4& Vec) const noexcept
+{
+	Vec.x = Vec.x * m00 + Vec.y * m01 + Vec.z * m02 + Vec.w * m03;
+	Vec.y = Vec.x * m10 + Vec.y * m11 + Vec.z * m12 + Vec.w * m13;
+	Vec.z = Vec.x * m20 + Vec.y * m21 + Vec.z * m22 + Vec.w * m23;
+	Vec.w = Vec.x * m30 + Vec.y * m31 + Vec.z * m32 + Vec.w * m33;
+	if (Vec.w != 0.0f && Vec.w != 1.0f)
+	{
+		Vec.x /= Vec.w;
+		Vec.y /= Vec.w;
+		Vec.z /= Vec.w;
+	}
 }
 
 void Standard_Matrix::OrthogonalLeft(float Width, float Height, float zNear, float zFar) noexcept
@@ -368,9 +381,9 @@ void Standard_Matrix::OrthogonalOffCenterLeft(float Left, float Right, float Bot
 	m00 = 2.0f / (Right - Left);
 	m11 = 2.0f / (Top - Bottom);
 	m22 = 1.0f / (zFar - zNear);
-	m03 = -(Right + Left) / (Right - Left);
-	m13 = -(Top + Bottom) / (Top - Bottom);
-	m23 = -zNear / (zFar - zNear);
+	m03 = (Left + Right) / (Left - Right);
+	m13 = (Top + Bottom) / (Bottom - Top);
+	m23 = zNear / (zNear - zFar);
 	m33 = 1.0f;
 
 	m01 = m02 = m10 = m12 = m20 = m21 = m30 = m31 = m32 = 0.0f;
@@ -382,8 +395,8 @@ void Standard_Matrix::OrthogonalOffCenterRight(float Left, float Right, float Bo
 	m00 = 2.0f / (Right - Left);
 	m11 = 2.0f / (Top - Bottom);
 	m22 = 1.0f / (zNear - zFar);
-	m03 = -(Right + Left) / (Right - Left);
-	m13 = -(Top + Bottom) / (Top - Bottom);
+	m03 = (Left + Right) / (Left - Right);
+	m13 = (Top + Bottom) / (Bottom - Top);
 	m23 = zNear / (zNear - zFar);
 	m33 = 1.0f;
 

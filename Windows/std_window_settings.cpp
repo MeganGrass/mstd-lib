@@ -205,7 +205,7 @@ void Standard_Window::SetColor(BYTE Red, BYTE Green, BYTE Blue, bool SetAsClassB
 /*
 	Get current font path
 */
-std::filesystem::path Standard_Window::GetFont(void)
+const std::filesystem::path& Standard_Window::GetFont(void)
 {
 	for (std::size_t i = 0; i < m_Fonts.size(); i++)
 	{
@@ -229,14 +229,12 @@ std::filesystem::path Standard_Window::GetFont(void)
 */
 void Standard_Window::SetFont(const std::filesystem::path Font, float Size)
 {
-	Standard_String Str;
-
 	for (std::size_t i = 0; i < m_Fonts.size(); i++)
 	{
 		StringW Filename = Font.stem().wstring();
 		StringW FontFilename = m_Fonts[i].stem().wstring();
-		Str.CleanString(Filename, { L"_", L" " });
-		Str.CleanString(FontFilename, { L"_", L" " });
+		Standard_String().CleanString(Filename, { L"_", L" " });
+		Standard_String().CleanString(FontFilename, {L"_", L" "});
 		if (ToUpper(Filename) == ToUpper(FontFilename))
 		{
 			m_CurrentFontIndex = i;

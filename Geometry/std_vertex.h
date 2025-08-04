@@ -74,6 +74,16 @@ struct vec4t
 };
 
 /*
+	Texture W (w/ Color)
+*/
+struct vec4ct
+{
+	vec4 vec;
+	unsigned long color;
+	vec2 uv;
+};
+
+/*
 	Vertex (w/ Normal)
 */
 struct vec3n

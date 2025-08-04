@@ -24,6 +24,11 @@ extern "C"
 	__declspec(dllexport) int AmdPowerXpressRequestHighPerformance = 1;
 }
 
+extern const char* VertexShaderCode;
+extern const char* HomogeneousShaderCode;
+extern const char* PixelShaderCode;
+extern const char* PlayStationDitherShaderCode;
+
 D3DVERTEXELEMENT9 ElementVecPoint[] =
 {
 	{ 0, offsetof(vecp, vec), D3DDECLTYPE_FLOAT3, D3DDECLMETHOD_DEFAULT, D3DDECLUSAGE_POSITION, 0 },
@@ -59,6 +64,14 @@ D3DVERTEXELEMENT9 ElementVec4t[] =
 {
 	{ 0, offsetof(vec4t, vec), D3DDECLTYPE_FLOAT4, D3DDECLMETHOD_DEFAULT, D3DDECLUSAGE_POSITION, 0 },
 	{ 0, offsetof(vec4t, uv), D3DDECLTYPE_FLOAT2, D3DDECLMETHOD_DEFAULT, D3DDECLUSAGE_TEXCOORD, 0 },
+	D3DDECL_END()
+};
+
+D3DVERTEXELEMENT9 ElementVec4ct[] =
+{
+	{ 0, offsetof(vec4ct, vec), D3DDECLTYPE_FLOAT4, D3DDECLMETHOD_DEFAULT, D3DDECLUSAGE_POSITION, 0 },
+	{ 0, offsetof(vec4ct, color), D3DDECLTYPE_D3DCOLOR, D3DDECLMETHOD_DEFAULT, D3DDECLUSAGE_COLOR, 0 },
+	{ 0, offsetof(vec4ct, uv), D3DDECLTYPE_FLOAT2, D3DDECLMETHOD_DEFAULT, D3DDECLUSAGE_TEXCOORD, 0 },
 	D3DDECL_END()
 };
 
@@ -115,6 +128,16 @@ static LRESULT CALLBACK DirectX9WndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPA
 	Standard_DirectX_9* DX9 = (Standard_DirectX_9*)dwRefData;
 
 	if (!DX9 || !DX9->Ready()) { return DefSubclassProc(hWnd, uMsg, wParam, lParam); }
+
+	{
+		WINDOWPLACEMENT WindowPlacement{ sizeof(WINDOWPLACEMENT) };
+		GetWindowPlacement(DX9->Window()->GetParent(), &WindowPlacement);
+		if ((WindowPlacement.showCmd == SW_SHOWMINIMIZED) || IsIconic(DX9->Window()->GetParent()))
+		{
+			DX9->SetDeviceState(D3DDEVICE_STATE::UNKNOWN);
+			return DefSubclassProc(hWnd, uMsg, wParam, lParam);
+		}
+	}
 
 	switch (uMsg)
 	{
@@ -173,17 +196,17 @@ void Standard_DirectX_9::Update(void)
 		std::this_thread::sleep_for(std::chrono::milliseconds(100));
 	}
 
-	Wnd->SetTimer(30);
+	Wnd->SetTimer(60);
 
 	while (b_Active)
 	{
 		Wnd->SleepTimer();
 
-		if (e_DeviceState != D3DDEVICE_STATE::NORMAL)
+		if (!NormalState())
 		{
 			e_DeviceState = D3DDEVICE_STATE::UNKNOWN;
 
-			while ((b_Active) && (e_DeviceState != D3DDEVICE_STATE::NORMAL))
+			while ((b_Active) && (!NormalState()))
 			{
 				Test();
 
@@ -210,6 +233,7 @@ void Standard_DirectX_9::InitShaders(void)
 	if (FAILED(pDevice->CreateVertexDeclaration(ElementVecPointct, &Decl))) { Wnd->GetErrorMessage(); } ShaderVecPointct.Decl.reset(Decl);
 	if (FAILED(pDevice->CreateVertexDeclaration(ElementVec3t, &Decl))) { Wnd->GetErrorMessage(); } ShaderVec3t.Decl.reset(Decl);
 	if (FAILED(pDevice->CreateVertexDeclaration(ElementVec4t, &Decl))) { Wnd->GetErrorMessage(); } ShaderVec4t.Decl.reset(Decl);
+	if (FAILED(pDevice->CreateVertexDeclaration(ElementVec4ct, &Decl))) { Wnd->GetErrorMessage(); } ShaderVec4ct.Decl.reset(Decl);
 	if (FAILED(pDevice->CreateVertexDeclaration(ElementVec3n, &Decl))) { Wnd->GetErrorMessage(); } ShaderVec3n.Decl.reset(Decl);
 	if (FAILED(pDevice->CreateVertexDeclaration(ElementVec3nt, &Decl))) { Wnd->GetErrorMessage(); } ShaderVec3nt.Decl.reset(Decl);
 	if (FAILED(pDevice->CreateVertexDeclaration(ElementVec3c, &Decl))) { Wnd->GetErrorMessage(); } ShaderVec3c.Decl.reset(Decl);
@@ -235,10 +259,16 @@ void Standard_DirectX_9::InitShaders(void)
 	ShaderVec3t.Shader.reset(Shader);
 	pShaderBuffer->Release();
 
-	if (FAILED(D3DXCompileShader(VertexShaderCode, static_cast<UINT>(strlen(VertexShaderCode)), NULL, NULL, "vec4t", "vs_3_0", 0, &pShaderBuffer, NULL, &Const))) { Wnd->GetErrorMessage(); }
+	if (FAILED(D3DXCompileShader(HomogeneousShaderCode, static_cast<UINT>(strlen(HomogeneousShaderCode)), NULL, NULL, "vec4t", "vs_3_0", 0, &pShaderBuffer, NULL, &Const))) { Wnd->GetErrorMessage(); }
 	pDevice->CreateVertexShader((DWORD*)pShaderBuffer->GetBufferPointer(), &Shader);
 	ShaderVec4t.Const.reset(Const);
 	ShaderVec4t.Shader.reset(Shader);
+	pShaderBuffer->Release();
+
+	if (FAILED(D3DXCompileShader(HomogeneousShaderCode, static_cast<UINT>(strlen(HomogeneousShaderCode)), NULL, NULL, "vec4ct", "vs_3_0", 0, &pShaderBuffer, NULL, &Const))) { Wnd->GetErrorMessage(); }
+	pDevice->CreateVertexShader((DWORD*)pShaderBuffer->GetBufferPointer(), &Shader);
+	ShaderVec4ct.Const.reset(Const);
+	ShaderVec4ct.Shader.reset(Shader);
 	pShaderBuffer->Release();
 
 	if (FAILED(D3DXCompileShader(VertexShaderCode, static_cast<UINT>(strlen(VertexShaderCode)), NULL, NULL, "vec3n", "vs_3_0", 0, &pShaderBuffer, NULL, &Const))) { Wnd->GetErrorMessage(); }
@@ -278,7 +308,7 @@ void Standard_DirectX_9::InitShaders(void)
 	pShaderBuffer->Release();
 }
 
-bool Standard_DirectX_9::Initialize(std::shared_ptr<Standard_Window> StdWnd, UINT Width, UINT Height, bool NativeResolution)
+const bool Standard_DirectX_9::Initialize(std::shared_ptr<Standard_Window> StdWnd, UINT Width, UINT Height, bool NativeResolution)
 {
 	if (b_Ready) { return true; }
 
@@ -364,31 +394,17 @@ bool Standard_DirectX_9::Initialize(std::shared_ptr<Standard_Window> StdWnd, UIN
 	}*/
 
 	IDirect3DDevice9Ex* Direct3DDevice9Ex = nullptr;
+
 	if (FAILED(pD3D->CreateDeviceEx(D3DADAPTER_DEFAULT, D3DDEVTYPE_HAL, m_PresentParameters->hDeviceWindow,
-		D3DCREATE_FPU_PRESERVE | D3DCREATE_MULTITHREADED | D3DCREATE_HARDWARE_VERTEXPROCESSING | D3DCREATE_ENABLE_PRESENTSTATS,
-		m_PresentParameters.get(), NULL, &Direct3DDevice9Ex))) { Wnd->GetErrorMessage(); }
+		D3DCREATE_FPU_PRESERVE | D3DCREATE_MULTITHREADED | D3DCREATE_HARDWARE_VERTEXPROCESSING | D3DCREATE_ENABLE_PRESENTSTATS | D3DCREATE_NOWINDOWCHANGES,
+		m_PresentParameters.get(), NULL, &Direct3DDevice9Ex)))
+	{
+		Wnd->GetErrorMessage();
+	}
+
 	pDevice.reset(Direct3DDevice9Ex);
 
-	if (FAILED(pDevice->CreateAdditionalSwapChain(m_PresentParameters.get(), (IDirect3DSwapChain9**)&pSwapChain))) { Wnd->GetErrorMessage(); }
-
-	if (m_DeviceCaps->PixelShaderVersion >= D3DPS_VERSION(3, 0))
-	{
-		pDevice->SetRenderState(D3DRS_POINTSIZE_MAX, reinterpret_cast<DWORD&>(m_DeviceCaps->MaxPointSize));
-	}
-	else
-	{
-		pDevice->SetRenderState(D3DRS_POINTSIZE_MAX, 0x3F800000);
-	}
-
-	pDevice->SetRenderState(D3DRS_MULTISAMPLEANTIALIAS, b_AntiAliasing);
-
-	pDevice->SetRenderState(D3DRS_POINTSPRITEENABLE, TRUE);
-
-	pDevice->SetRenderState(D3DRS_SCISSORTESTENABLE, FALSE);
-
-	pDevice->SetRenderState(D3DRS_LASTPIXEL, FALSE);
-
-	TextureFiltering(m_TextureFilter);
+	Reset();
 
 	InitShaders();
 
@@ -397,68 +413,110 @@ bool Standard_DirectX_9::Initialize(std::shared_ptr<Standard_Window> StdWnd, UIN
 
 void Standard_DirectX_9::Test(void)
 {
-	if (!pDevice) { return; }
+	static std::mutex Mutex;
+	std::scoped_lock<std::mutex> Lock(Mutex);
 
-	HRESULT hRes = pDevice->TestCooperativeLevel();
+	HRESULT hRes = pDevice->CheckDeviceState(m_PresentParameters.get()->hDeviceWindow);
 
 	if (hRes == D3D_OK)
 	{
 		e_DeviceState = D3DDEVICE_STATE::NORMAL;
+		//std::cout << "Direct-X: The device is in a normal state" << std::endl;
 	}
 	else if (hRes == D3DERR_DEVICELOST)
 	{
 		e_DeviceState = D3DDEVICE_STATE::LOST;
 		std::cout << "Direct-X: The device has been lost but cannot be reset at this time" << std::endl;
 	}
-	else if (hRes == D3DERR_DEVICENOTRESET)
+	else if (hRes == D3DERR_DEVICEHUNG || hRes == D3DERR_DEVICENOTRESET)
 	{
-		Reset(m_PresentParameters.get());
-	}
-	else if (hRes == D3DERR_DRIVERINTERNALERROR)
-	{
-		e_DeviceState = D3DDEVICE_STATE::DRIVER_ERROR;
-		std::cout << "Direct-X: Internal driver error" << std::endl;
-	}
-}
-
-void Standard_DirectX_9::Reset(D3DPRESENT_PARAMETERS* Present)
-{
-	if (Present)
-	{
-		m_PresentParameters.reset(Present);
-	}
-
-	if (!pDevice) { return; }
-
-	HRESULT hRes = pDevice->Reset(m_PresentParameters.get());
-
-	if (hRes == D3D_OK)
-	{
-		e_DeviceState = D3DDEVICE_STATE::NORMAL;
-	}
-	else if (hRes == D3DERR_DEVICELOST)
-	{
-		e_DeviceState = D3DDEVICE_STATE::LOST;
-		std::cout << "Direct-X: The device has been lost but cannot be reset at this time" << std::endl;
+		e_DeviceState = D3DDEVICE_STATE::NOTRESET;
+		std::cout << "Direct-X: The device has been hung and needs to be reset" << std::endl;
+		Reset();
 	}
 	else if (hRes == D3DERR_DEVICEREMOVED)
 	{
 		e_DeviceState = D3DDEVICE_STATE::REMOVED;
 		std::cout << "Direct-X: The hardware adapter has been removed" << std::endl;
 	}
-	else if (hRes == D3DERR_DRIVERINTERNALERROR)
-	{
-		e_DeviceState = D3DDEVICE_STATE::DRIVER_ERROR;
-		std::cout << "Direct-X: Internal driver error" << std::endl;
-	}
 	else if (hRes == D3DERR_OUTOFVIDEOMEMORY)
 	{
 		e_DeviceState = D3DDEVICE_STATE::OUT_OF_MEMORY;
 		std::cout << "Direct-X: Direct3D does not have enough display memory to perform the operation" << std::endl;
 	}
+	else if (hRes == S_PRESENT_MODE_CHANGED)
+	{
+		e_DeviceState = D3DDEVICE_STATE::MODE_CHANGED;
+		std::cout << "Direct-X: The desktop display mode has been changed" << std::endl;
+		Reset();
+	}
+	else if (hRes == S_PRESENT_OCCLUDED)
+	{
+		e_DeviceState = D3DDEVICE_STATE::OCCLUDED;
+		std::cout << "Direct-X: The presentation area is occluded" << std::endl;
+		//Test();
+	}
 }
 
-D3DCAPS9* Standard_DirectX_9::GetDeviceCaps(void)
+void Standard_DirectX_9::Reset(void)
+{
+	static std::mutex Mutex;
+	std::scoped_lock<std::mutex> Lock(Mutex);
+
+	HRESULT hRes = pDevice->ResetEx(m_PresentParameters.get(), NULL);
+
+	if (hRes == D3D_OK)
+	{
+		if (pSwapChain) { pSwapChain.reset(); }
+
+		if (FAILED(pDevice->CreateAdditionalSwapChain(m_PresentParameters.get(), (IDirect3DSwapChain9**)&pSwapChain))) { Wnd->GetErrorMessage(); }
+
+		if (m_DeviceCaps->PixelShaderVersion >= D3DPS_VERSION(3, 0))
+		{
+			pDevice->SetRenderState(D3DRS_POINTSIZE_MAX, reinterpret_cast<DWORD&>(m_DeviceCaps->MaxPointSize));
+		}
+		else
+		{
+			pDevice->SetRenderState(D3DRS_POINTSIZE_MAX, 0x3F800000);
+		}
+
+		pDevice->SetRenderState(D3DRS_MULTISAMPLEANTIALIAS, b_AntiAliasing);
+
+		pDevice->SetRenderState(D3DRS_POINTSPRITEENABLE, TRUE);
+
+		pDevice->SetRenderState(D3DRS_SCISSORTESTENABLE, FALSE);
+
+		pDevice->SetRenderState(D3DRS_LASTPIXEL, FALSE);
+
+		Lighting(FALSE);
+
+		TextureFiltering(m_TextureFilter = D3DTEXF_NONE);
+
+		e_DeviceState = D3DDEVICE_STATE::NORMAL;
+
+		b_DeviceWasReset = true;
+
+		//std::cout << "Direct-X: The device has been reset successfully" << std::endl;
+	}
+	else if (hRes == D3DERR_DEVICELOST)
+	{
+		e_DeviceState = D3DDEVICE_STATE::LOST;
+		std::cout << "Direct-X: The device has been lost but cannot be reset at this time" << std::endl;
+	}
+	else if (hRes == D3DERR_DEVICEHUNG || hRes == D3DERR_DEVICENOTRESET)
+	{
+		e_DeviceState = D3DDEVICE_STATE::NOTRESET;
+		std::cout << "Direct-X: The device has been hung and needs to be reset" << std::endl;
+		Reset();
+	}
+	else
+	{
+		e_DeviceState = D3DDEVICE_STATE::UNKNOWN;
+		std::cout << "Direct-X: An unknown error occurred while resetting the device: " << std::hex << hRes << std::endl;
+	}
+}
+
+D3DCAPS9* Standard_DirectX_9::GetUpdatedDeviceCaps(void)
 {
 	D3DCAPS9* DeviceCaps = new D3DCAPS9{};
 	if (FAILED(pD3D->GetDeviceCaps(D3DADAPTER_DEFAULT, D3DDEVTYPE_HAL, DeviceCaps))) { Wnd->GetErrorMessage(); }
@@ -484,8 +542,6 @@ D3DDISPLAYMODE* Standard_DirectX_9::GetDisplayMode(void)
 
 IDirect3DSurface9* Standard_DirectX_9::CreateRenderSurface(std::uint16_t Width, std::uint16_t Height, D3DFORMAT Format)
 {
-	if (e_DeviceState != D3DDEVICE_STATE::NORMAL) { return nullptr; }
-
 	IDirect3DSurface9* pSurface = nullptr;
 
 	if (FAILED(pDevice->CreateRenderTarget(Width, Height, Format, m_PresentParameters->MultiSampleType, m_PresentParameters->MultiSampleQuality, FALSE, &pSurface, NULL))) { Wnd->GetErrorMessage(); }
@@ -495,8 +551,6 @@ IDirect3DSurface9* Standard_DirectX_9::CreateRenderSurface(std::uint16_t Width, 
 
 IDirect3DTexture9* Standard_DirectX_9::CreateTexture(std::uint16_t Width, std::uint16_t Height, DWORD Usage)
 {
-	if (e_DeviceState != D3DDEVICE_STATE::NORMAL) { return nullptr; }
-
 	IDirect3DTexture9* pTexture = nullptr;
 
 	D3DLOCKED_RECT LockedRect{};
@@ -529,9 +583,9 @@ IDirect3DTexture9* Standard_DirectX_9::CreateTexture(std::uint16_t Width, std::u
 	return pTexture;
 }
 
-IDirect3DTexture9* Standard_DirectX_9::CreateTexture(std::unique_ptr<Standard_Image>& Image, bool b_Alpha, DWORD AlphaColor, std::uint8_t AlphaChannel)
+IDirect3DTexture9* Standard_DirectX_9::CreateTexture(std::unique_ptr<Standard_Image>& Image, bool b_Alpha, DWORD AlphaColor, std::uint8_t AlphaChannel, bool b_VerticalFlip)
 {
-	if (e_DeviceState != D3DDEVICE_STATE::NORMAL) { return nullptr; }
+	if (!Image->IsOpen()) { return nullptr; }
 
 	auto NextPowerOfTwo = [](int32_t x) {
 		if (x <= 0) { return 1; }
@@ -685,6 +739,22 @@ IDirect3DTexture9* Standard_DirectX_9::CreateTexture(std::unique_ptr<Standard_Im
 		}
 	}
 
+	if (b_VerticalFlip && pBits)
+	{
+		std::vector<uint32_t> Temp(PowWidth * Image->GetHeight());
+		std::memcpy(Temp.data(), pBitsPow, (std::size_t)PowWidth * Image->GetHeight() * sizeof(uint32_t));
+
+		for (LONG Y = 0; Y < Image->GetHeight(); Y++)
+		{
+			for (LONG X = 0; X < Image->GetWidth(); X++)
+			{
+				std::size_t iSrc = (std::size_t)(Image->GetHeight() - Y - 1) * PowWidth + X;
+				std::size_t iDst = (std::size_t)Y * PowWidth + X;
+				((uint32_t*)pBitsPow)[iDst] = Temp[iSrc];
+			}
+		}
+	}
+
 	if (FAILED(pImagePow->UnlockRect(0))) { Wnd->GetErrorMessage(); }
 	if (FAILED(pImage->UnlockRect(0))) { Wnd->GetErrorMessage(); }
 	pImage->Release();
@@ -695,8 +765,6 @@ IDirect3DTexture9* Standard_DirectX_9::CreateTexture(std::unique_ptr<Standard_Im
 IDirect3DTexture9* Standard_DirectX_9::CreateTexture(std::unique_ptr<Sony_PlayStation_Texture>& TIM, uint16_t iPalette, Sony_Texture_Transparency Transparency, DWORD TransparencyColor,
 	bool b_VerticalFlip)
 {
-	if (e_DeviceState != D3DDEVICE_STATE::NORMAL) { return nullptr; }
-
 	Standard_String Str;
 
 	if (!TIM->IsOpen())
@@ -915,24 +983,73 @@ IDirect3DTexture9* Standard_DirectX_9::CreateTexture(std::unique_ptr<Sony_PlaySt
 	return pTexture;
 }
 
-bool Standard_DirectX_9::SaveTexture(IDirect3DTexture9* Texture, D3DXIMAGE_FILEFORMAT Format, const std::filesystem::path& Filename)
+bool Standard_DirectX_9::SaveTexture(IDirect3DTexture9* Texture, D3DXIMAGE_FILEFORMAT Format, bool b_VertFlip, const std::filesystem::path& Filename)
 {
 	if (!Texture) { return false; }
 
-	HRESULT hr = D3DXSaveTextureToFile(Filename.wstring().c_str(), Format, Texture, nullptr);
-	if (FAILED(hr))
+	IDirect3DTexture9* DestTexture = nullptr;
+
+	if (b_VertFlip)
+	{
+		IDirect3DSurface9* DestSurface = nullptr;
+		IDirect3DSurface9* TextureSurface = nullptr;
+		D3DSURFACE_DESC TextureDesc{};
+		D3DLOCKED_RECT LockedRect{};
+
+		if (FAILED(Texture->GetLevelDesc(0, &TextureDesc)) ||
+			FAILED(pDevice->CreateTexture(TextureDesc.Width, TextureDesc.Height, 1, 0, TextureDesc.Format, D3DPOOL_SYSTEMMEM, &DestTexture, nullptr)) ||
+			FAILED(Texture->GetSurfaceLevel(0, &TextureSurface)) ||
+			FAILED(DestTexture->GetSurfaceLevel(0, &DestSurface)) ||
+			FAILED(pDevice->GetRenderTargetData(TextureSurface, DestSurface)))
+		{
+			Wnd->GetErrorMessage(false);
+			return false;
+		}
+
+		TextureSurface->Release();
+
+		if (SUCCEEDED(DestSurface->LockRect(&LockedRect, nullptr, D3DLOCK_READONLY | D3DLOCK_NO_DIRTY_UPDATE)))
+		{
+			UINT rowBytes = TextureDesc.Width * 4;
+			std::vector<BYTE> FlippedBytes(TextureDesc.Height * rowBytes);
+
+			BYTE* src = static_cast<BYTE*>(LockedRect.pBits);
+			for (size_t y = 0; y < (size_t)TextureDesc.Height; ++y)
+			{
+				std::memcpy(&FlippedBytes[y * rowBytes], src + ((size_t)TextureDesc.Height - 1 - y) * LockedRect.Pitch, rowBytes);
+			}
+			DestSurface->UnlockRect();
+
+			if (SUCCEEDED(DestSurface->LockRect(&LockedRect, nullptr, 0)))
+			{
+				for (size_t y = 0; y < (size_t)TextureDesc.Height; ++y)
+				{
+					std::memcpy(static_cast<BYTE*>(LockedRect.pBits) + y * LockedRect.Pitch, &FlippedBytes[y * rowBytes], rowBytes);
+				}
+				DestSurface->UnlockRect();
+			}
+		}
+
+		DestSurface->Release();
+	}
+	else
+	{
+		DestTexture = Texture;
+	}
+
+	if (FAILED(D3DXSaveTextureToFileW(Filename.wstring().c_str(), Format, DestTexture, nullptr)))
 	{
 		Wnd->GetErrorMessage(false);
 		return false;
 	}
+
+	if (b_VertFlip) { DestTexture->Release(); }
 
 	return true;
 }
 
 IDirect3DIndexBuffer9* Standard_DirectX_9::CreateIndexBuffer(D3DFORMAT Format, std::size_t Length)
 {
-	if (e_DeviceState != D3DDEVICE_STATE::NORMAL) { return nullptr; }
-
 	if ((Format != D3DFMT_INDEX16) && (Format != D3DFMT_INDEX32)) { return nullptr; }
 
 	IDirect3DIndexBuffer9* pIndexBuffer = nullptr;
@@ -975,8 +1092,6 @@ void Standard_DirectX_9::UpdateIndexBuffer(IDirect3DIndexBuffer9* Buffer, void* 
 
 IDirect3DVertexBuffer9* Standard_DirectX_9::CreateVertexBuffer(DWORD FVF, std::size_t Length)
 {
-	if (e_DeviceState != D3DDEVICE_STATE::NORMAL) { return nullptr; }
-
 	IDirect3DVertexBuffer9* pVertexBuffer = nullptr;
 
 	if (FAILED(pDevice->CreateVertexBuffer(static_cast<UINT>(Length), D3DUSAGE_DYNAMIC | D3DUSAGE_WRITEONLY, FVF, D3DPOOL_DEFAULT, &pVertexBuffer, NULL))) { Wnd->GetErrorMessage(); }
@@ -1071,7 +1186,7 @@ IDirect3DVertexBuffer9* Standard_DirectX_9::CreateVec3t(std::vector<vec3t> Data)
 		return nullptr;
 	}
 
-	IDirect3DVertexBuffer9* Buffer = CreateVertexBuffer(D3DFVF_TEX3D, Data.size() * sizeof(vec3t));
+	IDirect3DVertexBuffer9* Buffer = CreateVertexBuffer(D3DFVF_VERT3T, Data.size() * sizeof(vec3t));
 
 	vec3t* pVertices = nullptr;
 
@@ -1102,7 +1217,7 @@ IDirect3DVertexBuffer9* Standard_DirectX_9::CreateVec3t(std::vector<vec3> Vector
 		return nullptr;
 	}
 
-	IDirect3DVertexBuffer9* Buffer = CreateVertexBuffer(D3DFVF_TEX3D, Vector.size() * sizeof(vec3t));
+	IDirect3DVertexBuffer9* Buffer = CreateVertexBuffer(D3DFVF_VERT3T, Vector.size() * sizeof(vec3t));
 
 	vec3t* pVertices = nullptr;
 
@@ -1127,7 +1242,7 @@ IDirect3DVertexBuffer9* Standard_DirectX_9::CreateVec4t(std::vector<vec4t> Data)
 		return nullptr;
 	}
 
-	IDirect3DVertexBuffer9* Buffer = CreateVertexBuffer(D3DFVF_TEX4D, Data.size() * sizeof(vec4t));
+	IDirect3DVertexBuffer9* Buffer = CreateVertexBuffer(D3DFVF_VERT4T, Data.size() * sizeof(vec4t));
 
 	vec4t* pVertices = nullptr;
 
@@ -1158,7 +1273,7 @@ IDirect3DVertexBuffer9* Standard_DirectX_9::CreateVec4t(std::vector<vec4> Vector
 		return nullptr;
 	}
 
-	IDirect3DVertexBuffer9* Buffer = CreateVertexBuffer(D3DFVF_TEX4D, Vector.size() * sizeof(vec4t));
+	IDirect3DVertexBuffer9* Buffer = CreateVertexBuffer(D3DFVF_VERT4T, Vector.size() * sizeof(vec4t));
 
 	vec4t* pVertices = nullptr;
 
@@ -1167,6 +1282,63 @@ IDirect3DVertexBuffer9* Standard_DirectX_9::CreateVec4t(std::vector<vec4> Vector
 	for (std::size_t i = 0; i < Vector.size(); i++)
 	{
 		pVertices[i].vec = Vector[i];
+		pVertices[i].uv = UV[i];
+	}
+
+	if (FAILED(Buffer->Unlock())) { Wnd->GetErrorMessage(); }
+
+	return Buffer;
+}
+
+IDirect3DVertexBuffer9* Standard_DirectX_9::CreateVec4ct(std::vector<vec4ct> Data)
+{
+	if (Data.empty())
+	{
+		std::cout << "CreateVec4ct: Data is empty" << std::endl;
+		return nullptr;
+	}
+
+	IDirect3DVertexBuffer9* Buffer = CreateVertexBuffer(D3DFVF_VERT4CT, Data.size() * sizeof(vec4ct));
+
+	vec4ct* pVertices = nullptr;
+
+	if (FAILED(Buffer->Lock(0, 0, (void**)&pVertices, 0))) { Wnd->GetErrorMessage(); }
+
+	try
+	{
+		std::memcpy(pVertices, Data.data(), Data.size() * sizeof(vec4ct));
+	}
+	catch (...) { std::cout << "CreateVec4ct: Memory copy failed" << std::endl; }
+
+	if (FAILED(Buffer->Unlock())) { Wnd->GetErrorMessage(); }
+
+	return Buffer;
+}
+
+IDirect3DVertexBuffer9* Standard_DirectX_9::CreateVec4ct(std::vector<vec4> Vector, std::vector<vec2> UV, DWORD Color)
+{
+	if (Vector.size() != UV.size())
+	{
+		std::cout << "CreateVec4ct: Vector and UV sizes do not match" << std::endl;
+		return nullptr;
+	}
+
+	if (Vector.empty() || UV.empty())
+	{
+		std::cout << "CreateVec4ct: Vector and/or UV are empty" << std::endl;
+		return nullptr;
+	}
+
+	IDirect3DVertexBuffer9* Buffer = CreateVertexBuffer(D3DFVF_VERT4CT, Vector.size() * sizeof(vec4ct));
+
+	vec4ct* pVertices = nullptr;
+
+	if (FAILED(Buffer->Lock(0, 0, (void**)&pVertices, 0))) { Wnd->GetErrorMessage(); }
+
+	for (std::size_t i = 0; i < Vector.size(); i++)
+	{
+		pVertices[i].vec = Vector[i];
+		pVertices[i].color = Color;
 		pVertices[i].uv = UV[i];
 	}
 
@@ -1520,8 +1692,6 @@ IDirect3DVertexBuffer9* Standard_DirectX_9::CreateVec3cnt(std::vector<vec3> Vect
 
 IDirect3DPixelShader9* Standard_DirectX_9::CreatePixelShader(const char* Code, const char* FunctionName, const char* Profile)
 {
-	//if (e_DeviceState != D3DDEVICE_STATE::NORMAL) { return nullptr; }
-
 	ID3DXBuffer* pBuffer = nullptr;
 
 	IDirect3DPixelShader9* pShader = nullptr;
@@ -1535,11 +1705,56 @@ IDirect3DPixelShader9* Standard_DirectX_9::CreatePixelShader(const char* Code, c
 	return pShader;
 }
 
-void Standard_DirectX_9::SetVertexShader(DWORD FVF, bool b_CustomMat, D3DXMATRIX World, D3DXMATRIX View, D3DXMATRIX Projection)
+void Standard_DirectX_9::SetHomogeneousShader(DWORD FVF, float Width, float Height, D3DXMATRIX* Projection)
 {
 	ID3DXConstantTable* Const = nullptr;
 	IDirect3DVertexDeclaration9* Decl = nullptr;
 	IDirect3DVertexShader9* Shader = nullptr;
+
+	D3DXMATRIX ProjectionMatrix;
+
+	switch (FVF)
+	{
+	case D3DFVF_VERT4T:
+		Const = ShaderVec4t.Const.get();
+		Decl = ShaderVec4t.Decl.get();
+		Shader = ShaderVec4t.Shader.get();
+		break;
+	case D3DFVF_VERT4CT:
+		Const = ShaderVec4ct.Const.get();
+		Decl = ShaderVec4ct.Decl.get();
+		Shader = ShaderVec4ct.Shader.get();
+		break;
+	default:
+		pDevice->SetVertexShader(nullptr);
+		std::cout << "SetHomogeneousShader: Unsupported FVF (0x" << std::hex << FVF << ")" << std::dec << std::endl;
+		return;
+	}
+
+	pDevice->SetVertexDeclaration(Decl);
+
+	if (!Projection) { pDevice->GetTransform(D3DTS_PROJECTION, &ProjectionMatrix); } else { ProjectionMatrix = *Projection; }
+
+	D3DXVECTOR4 Clip(0.0f, 0.0f, m_DepthScaleZ, m_DepthMaxZ);
+
+	D3DXHANDLE pProjection = Const->GetConstantByName(NULL, "Projection");
+	D3DXHANDLE pClip = Const->GetConstantByName(NULL, "Clip");
+
+	Const->SetMatrix(pDevice.get(), pProjection, &ProjectionMatrix);
+	Const->SetVector(pDevice.get(), pClip, &Clip);
+
+	pDevice->SetVertexShader(Shader);
+}
+
+void Standard_DirectX_9::SetVertexShader(DWORD FVF, float Width, float Height, D3DXMATRIX* World, D3DXMATRIX* View, D3DXMATRIX* Projection)
+{
+	ID3DXConstantTable* Const = nullptr;
+	IDirect3DVertexDeclaration9* Decl = nullptr;
+	IDirect3DVertexShader9* Shader = nullptr;
+
+	D3DXMATRIX WorldMatrix;
+	D3DXMATRIX ViewMatrix;
+	D3DXMATRIX ProjectionMatrix;
 
 	switch (FVF)
 	{
@@ -1553,16 +1768,17 @@ void Standard_DirectX_9::SetVertexShader(DWORD FVF, bool b_CustomMat, D3DXMATRIX
 		Decl = ShaderVecPointct.Decl.get();
 		Shader = ShaderVecPointct.Shader.get();
 		break;
-	case D3DFVF_TEX3D:
+	case D3DFVF_VERT3T:
 		Const = ShaderVec3t.Const.get();
 		Decl = ShaderVec3t.Decl.get();
 		Shader = ShaderVec3t.Shader.get();
 		break;
-	case D3DFVF_TEX4D:
-		Const = ShaderVec4t.Const.get();
-		Decl = ShaderVec4t.Decl.get();
-		Shader = ShaderVec4t.Shader.get();
-		break;
+	case D3DFVF_VERT4T:
+		SetHomogeneousShader(FVF, Width, Height, Projection);
+		return;
+	case D3DFVF_VERT4CT:
+		SetHomogeneousShader(FVF, Width, Height, Projection);
+		return;
 	case D3DFVF_VERTN:
 		Const = ShaderVec3n.Const.get();
 		Decl = ShaderVec3n.Decl.get();
@@ -1594,27 +1810,24 @@ void Standard_DirectX_9::SetVertexShader(DWORD FVF, bool b_CustomMat, D3DXMATRIX
 		Shader = ShaderVec3cnt.Shader.get();
 		break;
 	default:
-		pDevice->SetVertexShader(NULL);
+		pDevice->SetVertexShader(nullptr);
 		std::cout << "SetVertexShader: Unsupported FVF (0x" << std::hex << FVF << ")" << std::dec << std::endl;
 		return;
 	}
 
 	pDevice->SetVertexDeclaration(Decl);
 
-	if (!b_CustomMat)
-	{
-		pDevice->GetTransform(D3DTS_WORLD, &World);
-		pDevice->GetTransform(D3DTS_VIEW, &View);
-		pDevice->GetTransform(D3DTS_PROJECTION, &Projection);
-	}
+	if (!World) { pDevice->GetTransform(D3DTS_WORLD, &WorldMatrix); } else { WorldMatrix = *World; }
+	if (!View) { pDevice->GetTransform(D3DTS_VIEW, &ViewMatrix); } else { ViewMatrix = *View; }
+	if (!Projection) { pDevice->GetTransform(D3DTS_PROJECTION, &ProjectionMatrix); } else { ProjectionMatrix = *Projection; }
 
 	D3DXHANDLE pWorld = Const->GetConstantByName(NULL, "World");
 	D3DXHANDLE pView = Const->GetConstantByName(NULL, "View");
 	D3DXHANDLE pProjection = Const->GetConstantByName(NULL, "Projection");
 
-	if (FAILED(Const->SetMatrix(pDevice.get(), pWorld, &World))) { std::cout << "SetVertexShader: SetMatrix (World) failed" << std::endl; }
-	if (FAILED(Const->SetMatrix(pDevice.get(), pView, &View))) { std::cout << "SetVertexShader: SetMatrix (View) failed" << std::endl; }
-	if (FAILED(Const->SetMatrix(pDevice.get(), pProjection, &Projection))) { std::cout << "SetVertexShader: SetMatrix (Projection) failed" << std::endl; }
+	Const->SetMatrix(pDevice.get(), pWorld, &WorldMatrix);
+	Const->SetMatrix(pDevice.get(), pView, &ViewMatrix);
+	Const->SetMatrix(pDevice.get(), pProjection, &ProjectionMatrix);
 
 	pDevice->SetVertexShader(Shader);
 }
@@ -1625,10 +1838,9 @@ void Standard_DirectX_9::Draw(D3DDRAWPACKET Packet)
 	float Height = 0.0f;
 	float ScaleX = 0.0f;
 	float ScaleY = 0.0f;
+	static constexpr float Nullify = 0.0f;
 
-	if (e_DeviceState != D3DDEVICE_STATE::NORMAL) { return; }
-
-	if (!Packet.Vertices || FAILED(Packet.Vertices->GetDesc(&VertexBufferDesc))) { return; }
+	if (FAILED(Packet.Vertices->GetDesc(&VertexBufferDesc))) { return; }
 
 	if (!Packet.PixelShader) { Packet.PixelShader = PassthroughPixelShader.get(); }
 
@@ -1645,11 +1857,9 @@ void Standard_DirectX_9::Draw(D3DDRAWPACKET Packet)
 		}
 	}
 
-	Lighting(Packet.Primitive.Fill == D3DFILL_WIREFRAME ? FALSE : VertexBufferDesc.FVF & D3DFVF_NORMAL ? TRUE : FALSE);
-
 	ZBuffer(Packet.ZBuffer.Active, Packet.ZBuffer.Type, Packet.ZBuffer.Func);
 
-	SetVertexShader(VertexBufferDesc.FVF);
+	SetVertexShader(VertexBufferDesc.FVF, Packet.TextureAttr.Width, Packet.TextureAttr.Height, Packet.Matrix.World, Packet.Matrix.View, Packet.Matrix.Projection);
 
 	pDevice->SetPixelShaderConstantF(0, &Width, 1);
 	pDevice->SetPixelShaderConstantF(1, &Height, 1);
@@ -1674,7 +1884,7 @@ void Standard_DirectX_9::Draw(D3DDRAWPACKET Packet)
 
 		switch (Packet.Primitive.Type)
 		{
-		case D3DFILL_POINT:
+		case D3DPT_POINTLIST:
 			pDevice->DrawIndexedPrimitive(Packet.Primitive.Type, 0, 0, VertexBufferDesc.Size / Packet.Primitive.Stride, 0, NumIndices);
 			break;
 		case D3DPT_LINELIST:
@@ -1698,7 +1908,7 @@ void Standard_DirectX_9::Draw(D3DDRAWPACKET Packet)
 
 		switch (Packet.Primitive.Type)
 		{
-		case D3DFILL_POINT:
+		case D3DPT_POINTLIST:
 			pDevice->DrawPrimitive(Packet.Primitive.Type, 0, VertexBufferDesc.Size / Packet.Primitive.Stride);
 			break;
 		case D3DPT_LINELIST:
@@ -1716,29 +1926,11 @@ void Standard_DirectX_9::Draw(D3DDRAWPACKET Packet)
 			break;
 		}
 	}
-}
 
-void Standard_DirectX_9::DrawVec4t(IDirect3DVertexBuffer9* Buffer, IDirect3DTexture9* Texture, IDirect3DPixelShader9* Shader, float Width, float Height)
-{
-	if (e_DeviceState != D3DDEVICE_STATE::NORMAL) { return; }
-
-	DWORD CullMode = 0;
-	DWORD Clipping = 0;
-	DWORD ShadeMode = 0;
-
-	pDevice->GetRenderState(D3DRS_CULLMODE, &CullMode);
-	pDevice->GetRenderState(D3DRS_CLIPPING, &Clipping);
-
-	pDevice->SetRenderState(D3DRS_CULLMODE, D3DCULL_NONE);
-	pDevice->SetRenderState(D3DRS_CLIPPING, FALSE);
-
-	Draw({ Buffer, nullptr, Texture, Shader,
-		{ TRUE, D3DZB_USEW, D3DCMP_EQUAL },
-		{ sizeof(vec4t), D3DFILL_SOLID, D3DPT_TRIANGLESTRIP },
-		{ Width, Height } });
-
-	pDevice->SetRenderState(D3DRS_CULLMODE, CullMode);
-	pDevice->SetRenderState(D3DRS_CLIPPING, Clipping);
+	pDevice->SetPixelShaderConstantF(0, &Nullify, 1);
+	pDevice->SetPixelShaderConstantF(1, &Nullify, 1);
+	pDevice->SetPixelShaderConstantF(2, &Nullify, 1);
+	pDevice->SetPixelShaderConstantF(3, &Nullify, 1);
 }
 
 D3DXMATRIX Standard_DirectX_9::SetWorld(float X, float Y, float Z, float RX, float RY, float RZ, float SX, float SY, float SZ)
@@ -1762,8 +1954,6 @@ D3DXMATRIX Standard_DirectX_9::SetWorld(float X, float Y, float Z, float RX, flo
 
 void Standard_DirectX_9::AntiAliasing(bool OnOff)
 {
-	if (e_DeviceState != D3DDEVICE_STATE::NORMAL) { return; }
-
 	b_AntiAliasing = OnOff;
 
 	if (b_AntiAliasing)
@@ -1785,31 +1975,8 @@ void Standard_DirectX_9::AntiAliasing(bool OnOff)
 	pDevice->SetRenderState(D3DRS_MULTISAMPLEANTIALIAS, b_AntiAliasing);
 }
 
-void Standard_DirectX_9::TextureFiltering(D3DTEXTUREFILTERTYPE Type)
-{
-	if (e_DeviceState != D3DDEVICE_STATE::NORMAL) { return; }
-
-	m_TextureFilter = Type;
-
-	pDevice->SetSamplerState(0, D3DSAMP_MINFILTER, m_TextureFilter);
-	pDevice->SetSamplerState(0, D3DSAMP_MAGFILTER, m_TextureFilter);
-	pDevice->SetSamplerState(0, D3DSAMP_MIPFILTER, m_TextureFilter);
-}
-
-void Standard_DirectX_9::AlphaBlending(BOOL OnOff, D3DBLEND SrcBlend, D3DBLEND DestBlend, D3DBLENDOP BlendOp)
-{
-	if (e_DeviceState != D3DDEVICE_STATE::NORMAL) { return; }
-
-	pDevice->SetRenderState(D3DRS_ALPHABLENDENABLE, OnOff);
-	pDevice->SetRenderState(D3DRS_SRCBLEND, SrcBlend);
-	pDevice->SetRenderState(D3DRS_DESTBLEND, DestBlend);
-	pDevice->SetRenderState(D3DRS_BLENDOP, BlendOp);
-}
-
 void Standard_DirectX_9::Lighting(bool OnOff)
 {
-	if (e_DeviceState != D3DDEVICE_STATE::NORMAL) { return; }
-
 	pDevice->SetRenderState(D3DRS_LIGHTING, OnOff);
 
 	if (OnOff)
@@ -1855,15 +2022,15 @@ void Standard_DirectX_9::Lighting(bool OnOff)
 
 void Standard_DirectX_9::CreateAxisGrid(void)
 {
-	if (AxisGrid) { return; }
+	if (Grid) { return; }
 
-	AxisGrid.reset(CreateVertexBuffer(D3DFVF_VERTC, 68 * sizeof(vec3c)));
+	Grid.reset(CreateVertexBuffer(D3DFVF_VERTC, 68 * sizeof(vec3c)));
 
-	if (!AxisGrid) { return; }
+	if (!Grid) { return; }
 
 	vec3c* pVertices = nullptr;
 
-	if (FAILED(AxisGrid->Lock(0, 68 * sizeof(vec3c), reinterpret_cast<void**>(&pVertices), 0))) { Wnd->GetErrorMessage(); }
+	if (FAILED(Grid->Lock(0, 68 * sizeof(vec3c), reinterpret_cast<void**>(&pVertices), 0))) { Wnd->GetErrorMessage(); }
 
 	size_t n = 0;
 	for (FLOAT i = -8.0f; i < 8.000001f; i += 1.0f, n += 2)
@@ -1879,13 +2046,13 @@ void Standard_DirectX_9::CreateAxisGrid(void)
 		pVertices[n + 0].color = pVertices[n + 1].color = D3DCOLOR_XRGB(192, 192, 192);
 	}
 
-	if (FAILED(AxisGrid->Unlock())) { Wnd->GetErrorMessage(); }
+	if (FAILED(Grid->Unlock())) { Wnd->GetErrorMessage(); }
 
-	Xyz.reset(CreateVertexBuffer(D3DFVF_VERTC, 6 * sizeof(vec3c)));
+	Axis.reset(CreateVertexBuffer(D3DFVF_VERTC, 6 * sizeof(vec3c)));
 
-	if (!Xyz) { return; }
+	if (!Axis) { return; }
 
-	if (FAILED(Xyz->Lock(0, 6 * sizeof(vec3c), reinterpret_cast<void**>(&pVertices), 0))) { Wnd->GetErrorMessage(); }
+	if (FAILED(Axis->Lock(0, 6 * sizeof(vec3c), reinterpret_cast<void**>(&pVertices), 0))) { Wnd->GetErrorMessage(); }
 
 	pVertices[0].vec.Set(0.0f, 0.0f, 0.0f);
 	pVertices[1].vec.Set(8.0f, 0.0f, 0.0f);
@@ -1901,13 +2068,11 @@ void Standard_DirectX_9::CreateAxisGrid(void)
 	pVertices[4].color = D3DCOLOR_XRGB(0, 0, 255);
 	pVertices[5].color = D3DCOLOR_XRGB(0, 0, 255);
 
-	if (FAILED(Xyz->Unlock())) { Wnd->GetErrorMessage(); }
+	if (FAILED(Axis->Unlock())) { Wnd->GetErrorMessage(); }
 }
 
 bool Standard_DirectX_9::SaveScreenshot(D3DXIMAGE_FILEFORMAT Format, std::filesystem::path Output)
 {
-	if (e_DeviceState != D3DDEVICE_STATE::NORMAL) { return false; }
-
 	RECT WindowRect{};
 
 	GetClientRect(Wnd->Get(), &WindowRect);

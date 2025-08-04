@@ -23,18 +23,12 @@ public:
 
 	constexpr static float PI = 3.141592654f;
 
-	/*
-		Data
-	*/
 	float
 		m00, m10, m20, m30,
 		m01, m11, m21, m31,
 		m02, m12, m22, m32,
 		m03, m13, m23, m33;
 
-	/*
-		Construction
-	*/
 	explicit Standard_Matrix(void) noexcept :
 		m00(1.0f), m10(0.0f), m20(0.0f), m30(0.0f),
 		m01(0.0f), m11(1.0f), m21(0.0f), m31(0.0f),
@@ -63,14 +57,9 @@ public:
 		*this = S * R * T;
 	}
 
-	/*
-		Deconstruction
-	*/
 	~Standard_Matrix() noexcept = default;
 
-	/*
-		Copy
-	*/
+	// Copy
 	Standard_Matrix(const Standard_Matrix& m) noexcept :
 		m00(m.m00), m10(m.m10), m20(m.m20), m30(m.m30),
 		m01(m.m01), m11(m.m11), m21(m.m21), m31(m.m31),
@@ -88,9 +77,7 @@ public:
 		return *this;
 	}
 
-	/*
-		Move
-	*/
+	// Move
 	Standard_Matrix(Standard_Matrix&& m) noexcept :
 		m00(std::exchange(m.m00, 0.0f)), m10(std::exchange(m.m10, 0.0f)), m20(std::exchange(m.m20, 0.0f)), m30(std::exchange(m.m30, 0.0f)),
 		m01(std::exchange(m.m01, 0.0f)), m11(std::exchange(m.m11, 0.0f)), m21(std::exchange(m.m21, 0.0f)), m31(std::exchange(m.m31, 0.0f)),
@@ -108,9 +95,7 @@ public:
 		return *this;
 	}
 
-	/*
-		Unary
-	*/
+	// Unary
 	Standard_Matrix operator - (void) const noexcept
 	{
 		Standard_Matrix Matrix;
@@ -138,9 +123,7 @@ public:
 		return Matrix;
 	}
 
-	/*
-		Equality
-	*/
+	// Equality
 	bool operator == (const Standard_Matrix& m) const noexcept
 	{
 		return
@@ -151,9 +134,7 @@ public:
 	}
 	bool operator != (const Standard_Matrix& m) const noexcept { return !(*this == m); }
 
-	/*
-		Addition
-	*/
+	// Addition
 	Standard_Matrix operator + (const Standard_Matrix& m) const noexcept
 	{
 		Standard_Matrix Matrix;
@@ -182,9 +163,7 @@ public:
 	}
 	Standard_Matrix& operator += (const Standard_Matrix& m) noexcept { return *this = *this + m; }
 
-	/*
-		Scalar Addition
-	*/
+	// Scalar Addition
 	Standard_Matrix operator + (float s) const noexcept
 	{
 		Standard_Matrix Matrix;
@@ -213,9 +192,7 @@ public:
 	}
 	Standard_Matrix& operator += (float s) noexcept { return *this = *this + s; }
 
-	/*
-		Subtraction
-	*/
+	// Subtraction
 	Standard_Matrix operator - (const Standard_Matrix& m) const noexcept
 	{
 		Standard_Matrix Matrix;
@@ -244,9 +221,7 @@ public:
 	}
 	Standard_Matrix& operator -= (const Standard_Matrix& m) noexcept { return *this = *this - m; }
 
-	/*
-		Scalar Subtraction
-	*/
+	// Scalar Subtraction
 	Standard_Matrix operator - (float s) const noexcept
 	{
 		Standard_Matrix Matrix;
@@ -275,9 +250,7 @@ public:
 	}
 	Standard_Matrix& operator -= (float s) noexcept { return *this = *this - s; }
 
-	/*
-		Multiplication
-	*/
+	// Multiplication
 	Standard_Matrix operator * (const Standard_Matrix& m) const
 	{
 		Standard_Matrix Matrix;
@@ -306,9 +279,7 @@ public:
 	}
 	Standard_Matrix& operator *= (const Standard_Matrix& m) noexcept { return *this = *this * m; }
 
-	/*
-		Scalar Multiplication
-	*/
+	// Scalar Multiplication
 	Standard_Matrix operator * (float s) const noexcept
 	{
 		Standard_Matrix Matrix;
@@ -337,9 +308,7 @@ public:
 	}
 	Standard_Matrix& operator *= (float s) noexcept { return *this = *this * s; }
 
-	/*
-		Division
-	*/
+	// Division
 	Standard_Matrix operator / (const Standard_Matrix& m) const noexcept
 	{
 		Standard_Matrix Matrix;
@@ -368,9 +337,7 @@ public:
 	}
 	Standard_Matrix& operator /= (const Standard_Matrix& m) noexcept { return *this = *this / m; }
 
-	/*
-		Scalar Division
-	*/
+	// Scalar Division
 	Standard_Matrix operator / (float s) const noexcept
 	{
 		Standard_Matrix Matrix;
@@ -399,24 +366,16 @@ public:
 	}
 	Standard_Matrix& operator /= (float s) noexcept { return *this = *this / s; }
 
-	/*
-		Data
-	*/
+	// Data
 	float* data(void) const noexcept { return (float*)this; }
 
-	/*
-		Get Radian
-	*/
+	// Get Radian
 	float Radian(float Degree) const noexcept { return Degree * (PI / 180.0f); }
 
-	/*
-		Get Vector
-	*/
+	// Get Vector
 	vec3 GetVector(void) const noexcept { return vec3(m03, m13, m23); }
 
-	/*
-		Is identity matrix?
-	*/
+	// Is identity matrix?
 	bool IsIdentity(void) const noexcept
 	{
 		return
@@ -426,9 +385,7 @@ public:
 			m03 == 0.0f && m13 == 0.0f && m23 == 0.0f && m33 == 1.0f;
 	}
 
-	/*
-		Identity
-	*/
+	// Identity
 	Standard_Matrix Identity(void) noexcept
 	{
 		m00 = 1.0f; m10 = 0.0f; m20 = 0.0f; m30 = 0.0f;
@@ -438,104 +395,64 @@ public:
 		return *this;
 	}
 
-	/*
-		Translate
-	*/
+	// Translate
 	Standard_Matrix Translate(float X, float Y, float Z) noexcept { return Translate(vec3{ X, Y, Z }); }
 
-	/*
-		Translate
-	*/
+	// Translate
 	Standard_Matrix Translate(vec3 Vector) noexcept;
 
-	/*
-		Scale
-	*/
+	// Scale
 	Standard_Matrix Scale(float S) noexcept { return Scale(vec3{ S, S, S }); }
 
-	/*
-		Scale
-	*/
+	// Scale
 	Standard_Matrix Scale(float X, float Y, float Z) noexcept { return Scale(vec3{ X, Y, Z }); }
 
-	/*
-		Scale
-	*/
+	// Scale
 	Standard_Matrix Scale(vec3 Vector) noexcept;
 
-	/*
-		Rotate
-	*/
+	// Rotate
 	Standard_Matrix Rotate(float X, float Y, float Z) noexcept { return Rotate(vec3{ X, Y, Z }); }
 
-	/*
-		Rotate
-	*/
+	// Rotate
 	Standard_Matrix Rotate(vec3 Vector) noexcept;
 
-	/*
-		Rotate X
-	*/
+	// Rotate X
 	Standard_Matrix RotateX(float Angle) noexcept;
 
-	/*
-		Rotate Y
-	*/
+	// Rotate Y
 	Standard_Matrix RotateY(float Angle) noexcept;
 
-	/*
-		Rotate Z
-	*/
+	// Rotate Z
 	Standard_Matrix RotateZ(float Angle) noexcept;
 
-	/*
-		Pitch, Yaw and Roll
-	*/
+	// Pitch, Yaw and Roll
 	Standard_Matrix YawPitchRoll(float Yaw, float Pitch, float Roll) noexcept { return YawPitchRoll(vec3{ Yaw, Pitch, Roll }); }
 
-	/*
-		Pitch, Yaw and Roll
-	*/
+	// Pitch, Yaw and Roll
 	Standard_Matrix YawPitchRoll(vec3 Vector) noexcept;
 
-	/*
-		Pitch
-	*/
+	// Pitch
 	Standard_Matrix Pitch(float Angle) noexcept;
 
-	/*
-		Yaw
-	*/
+	// Yaw
 	Standard_Matrix Yaw(float Angle) noexcept;
 
-	/*
-		Roll
-	*/
+	// Roll
 	Standard_Matrix Roll(float Angle) noexcept;
 
-	/*
-		Shear
-	*/
+	// Shear
 	Standard_Matrix Shear(float X, float Y, float Z) noexcept { return Shear(vec3{ X, Y, Z }); }
 
-	/*
-		Shear
-	*/
+	// Shear
 	Standard_Matrix Shear(vec3 Vector) noexcept;
 
-	/*
-		Reflect
-	*/
+	// Reflect
 	Standard_Matrix Reflect(float X, float Y, float Z) noexcept { return Reflect(vec3{ X, Y, Z }); }
 
-	/*
-		Reflect
-	*/
+	// Reflect
 	Standard_Matrix Reflect(vec3 Vector) noexcept;
 
-	/*
-		Determinant
-	*/
+	// Determinant
 	float Determinant(void) const noexcept
 	{
 		return
@@ -549,109 +466,121 @@ public:
 			m03 * m10 * m21 * m32 - m03 * m11 * m22 * m30 - m03 * m12 * m20 * m31;
 	}
 
-	/*
-		Inverse
-	*/
+	// Inverse
 	Standard_Matrix Inverse(void) const;
 
-	/*
-		Transpose
-	*/
+	// Transpose
 	Standard_Matrix Transpose(Standard_Matrix m0, Standard_Matrix m1) const noexcept;
 
-	/*
-		Dot
-	*/
+	// Dot
 	Standard_Matrix Dot(Standard_Matrix& m0, Standard_Matrix& m1) const noexcept;
 
-	/*
-		Product
-	*/
+	// Product
 	Standard_Matrix Product(Standard_Matrix m0, Standard_Matrix m1) const noexcept;
 
-	/*
-		Set World Matrix
-	*/
+	// Set World Matrix
 	Standard_Matrix SetWorld(const vec3& mTranslation, const vec3& mRotation, const vec3& mScale = vec3{ 1.0f , 1.0f , 1.0f }) noexcept;
 
-	/*
-		Set World Matrix w/Centroid
-	*/
+	// Set World Matrix w/Centroid
 	Standard_Matrix SetWorldCentroid(const vec3& mTranslation, const vec3& mRotation, const vec3& mCentroid, const vec3& mScale = vec3{ 1.0f , 1.0f , 1.0f }) noexcept;
 
-	/*
-		Centroid
-	*/
+	// Centroid
 	vec3 Centroid(const std::vector<vec3>& Shape) const noexcept;
 
-	/*
-		Centroid
-	*/
+	// Centroid
 	vec3 Centroid(const std::vector<vec3>& Shape, const vec3& Pos) const noexcept;
 
-	/*
-		Transform Point
-	*/
-	vec3 TransformPoint(const vec3& v) const noexcept;
+	// Vector Transform
+	void VecTransform(vec3& Vec) const noexcept;
 
-	/*
-		Orthogonal Left
-	*/
+	// Vector Transform
+	void VecTransform(vec4& Vec) const noexcept;
+
+	// Vector Transform
+	void VecTransform(vec3t& Vec) const noexcept { VecTransform(Vec.vec); }
+
+	// Vector Transform
+	void VecTransform(vec3n& Vec) const noexcept { VecTransform(Vec.vec); }
+
+	// Vector Transform
+	void VecTransform(vec3nt& Vec) const noexcept { VecTransform(Vec.vec); }
+
+	// Vector Transform
+	void VecTransform(vec3c& Vec) const noexcept { VecTransform(Vec.vec); }
+
+	// Vector Transform
+	void VecTransform(vec3cn& Vec) const noexcept { VecTransform(Vec.vec); }
+
+	// Vector Transform
+	void VecTransform(vec3ct& Vec) const noexcept { VecTransform(Vec.vec); }
+
+	// Vector Transform
+	void VecTransform(vec3cnt& Vec) const noexcept { VecTransform(Vec.vec); }
+
+	// Vector Transform
+	void VecTransform(vec4t& Vec) const noexcept { VecTransform(Vec.vec); }
+
+	// Vector Transform
+	void VecTransform(std::vector<vec3t>& Vec) const noexcept { for (auto& v : Vec) { VecTransform(v.vec); } }
+
+	// Vector Transform
+	void VecTransform(std::vector<vec3n>& Vec) const noexcept { for (auto& v : Vec) { VecTransform(v.vec); } }
+
+	// Vector Transform
+	void VecTransform(std::vector<vec3nt>& Vec) const noexcept { for (auto& v : Vec) { VecTransform(v.vec); } }
+
+	// Vector Transform
+	void VecTransform(std::vector<vec3c>& Vec) const noexcept { for (auto& v : Vec) { VecTransform(v.vec); } }
+
+	// Vector Transform
+	void VecTransform(std::vector<vec3cn>& Vec) const noexcept { for (auto& v : Vec) { VecTransform(v.vec); } }
+
+	// Vector Transform
+	void VecTransform(std::vector<vec3ct>& Vec) const noexcept { for (auto& v : Vec) { VecTransform(v.vec); } }
+
+	// Vector Transform
+	void VecTransform(std::vector<vec3cnt>& Vec) const noexcept { for (auto& v : Vec) { VecTransform(v.vec); } }
+
+	// Vector Transform
+	void VecTransform(std::vector<vec4>& Vec) const noexcept { for (auto& v : Vec) { VecTransform(v); } }
+
+	// Vector Transform
+	void VecTransform(std::vector<vec4t>& Vec) const noexcept { for (auto& v : Vec) { VecTransform(v.vec); } }
+
+	// Orthogonal Left
 	void OrthogonalLeft(float Width, float Height, float zNear, float zFar) noexcept;
 
-	/*
-		Orthogonal Right
-	*/
+	// Orthogonal Right
 	void OrthogonalRight(float Width, float Height, float zNear, float zFar) noexcept;
 
-	/*
-		Orthogonal Off-Center Left
-	*/
+	// Orthogonal Off-Center Left
 	void OrthogonalOffCenterLeft(float Left, float Right, float Bottom, float Top, float zNear, float zFar) noexcept;
 
-	/*
-		Orthogonal Off-Center Right
-	*/
+	// Orthogonal Off-Center Right
 	void OrthogonalOffCenterRight(float Left, float Right, float Bottom, float Top, float zNear, float zFar) noexcept;
 
-	/*
-		Perspective Left
-	*/
+	// Perspective Left
 	void PerspectiveLeft(float Width, float Height, float zNear, float zFar) noexcept;
 
-	/*
-		Perspective Right
-	*/
+	// Perspective Right
 	void PerspectiveRight(float Width, float Height, float zNear, float zFar) noexcept;
 
-	/*
-		Perspective FOV Left
-	*/
+	// Perspective FOV Left
 	void PerspectiveFovLeft(float FOV, float Aspect, float zNear, float zFar) noexcept;
 
-	/*
-		Perspective FOV Right
-	*/
+	// Perspective FOV Right
 	void PerspectiveFovRight(float FOV, float Aspect, float zNear, float zFar) noexcept;
 
-	/*
-		Perspective Off-Center Left
-	*/
+	// Perspective Off-Center Left
 	void PerspectiveOffCenterLeft(float Left, float Right, float Bottom, float Top, float zNear, float zFar) noexcept;
 
-	/*
-		Perspective Off-Center Right
-	*/
+	// Perspective Off-Center Right
 	void PerspectiveOffCenterRight(float Left, float Right, float Bottom, float Top, float zNear, float zFar) noexcept;
 
-	/*
-		LookAt Left
-	*/
+	// LookAt Left
 	void LookAtLeft(const vec3& Eye, const vec3& At, const vec3& Up) noexcept;
 
-	/*
-		LookAt Right
-	*/
+	// LookAt Right
 	void LookAtRight(const vec3& Eye, const vec3& At, const vec3& Up) noexcept;
 
 };
