@@ -1,11 +1,10 @@
 /*
 *
 *	Megan Grass
-*	November 25, 2024
+*	December 5, 2024
 *
 */
 
-const char* PixelShaderCode = R"(
 sampler2D TextureSampler : register(s0);
 float Width : register(c0);
 float Height : register(c1);
@@ -34,13 +33,3 @@ float4 main(INPUT Input) : COLOR0
 	}
 	return tex2D(TextureSampler, Input.TexCoord);
 }
-
-technique ShaderTechnique
-{
-	pass P0
-	{
-		VertexShader = compile vs_3_0 main();
-		PixelShader = compile ps_3_0 main();
-	}
-}
-)";

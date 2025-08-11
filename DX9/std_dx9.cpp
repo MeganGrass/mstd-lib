@@ -24,11 +24,6 @@ extern "C"
 	__declspec(dllexport) int AmdPowerXpressRequestHighPerformance = 1;
 }
 
-extern const char* VertexShaderCode;
-extern const char* HomogeneousShaderCode;
-extern const char* PixelShaderCode;
-extern const char* PlayStationDitherShaderCode;
-
 D3DVERTEXELEMENT9 ElementVecPoint[] =
 {
 	{ 0, offsetof(vecp, vec), D3DDECLTYPE_FLOAT3, D3DDECLMETHOD_DEFAULT, D3DDECLUSAGE_POSITION, 0 },
@@ -220,92 +215,36 @@ void Standard_DirectX_9::Update(void)
 
 void Standard_DirectX_9::InitShaders(void)
 {
-	PassthroughPixelShader.reset(CreatePixelShader(PixelShaderCode, "main", "ps_3_0"));
+	std::filesystem::path ShaderPath = Standard_Windows_Common().GetCurrentWorkingDir() / L"shader";
+	std::filesystem::path PassThrough = ShaderPath / L"pixel_passthrough.hlsl";
+	std::filesystem::path PlayStationDither = ShaderPath / L"pixel_playstation_dither.hlsl";
+	std::filesystem::path Vertex = ShaderPath / L"vertex.hlsl";
 
-	PS1DitherPixelShader.reset(CreatePixelShader(PlayStationDitherShaderCode, "main", "ps_3_0"));
+	PassthroughPixelShader.reset(CreatePixelShaderFromFile(PassThrough, "main", "ps_3_0"));
 
-	ID3DXConstantTable* Const = nullptr;
-	IDirect3DVertexDeclaration9* Decl = nullptr;
-	ID3DXBuffer* pShaderBuffer = nullptr;
-	IDirect3DVertexShader9* Shader = nullptr;
+	PS1DitherPixelShader.reset(CreatePixelShaderFromFile(PlayStationDither, "main", "ps_3_0"));
 
-	if (FAILED(pDevice->CreateVertexDeclaration(ElementVecPointc, &Decl))) { Wnd->GetErrorMessage(); } ShaderVecPointc.Decl.reset(Decl);
-	if (FAILED(pDevice->CreateVertexDeclaration(ElementVecPointct, &Decl))) { Wnd->GetErrorMessage(); } ShaderVecPointct.Decl.reset(Decl);
-	if (FAILED(pDevice->CreateVertexDeclaration(ElementVec3t, &Decl))) { Wnd->GetErrorMessage(); } ShaderVec3t.Decl.reset(Decl);
-	if (FAILED(pDevice->CreateVertexDeclaration(ElementVec4t, &Decl))) { Wnd->GetErrorMessage(); } ShaderVec4t.Decl.reset(Decl);
-	if (FAILED(pDevice->CreateVertexDeclaration(ElementVec4ct, &Decl))) { Wnd->GetErrorMessage(); } ShaderVec4ct.Decl.reset(Decl);
-	if (FAILED(pDevice->CreateVertexDeclaration(ElementVec3n, &Decl))) { Wnd->GetErrorMessage(); } ShaderVec3n.Decl.reset(Decl);
-	if (FAILED(pDevice->CreateVertexDeclaration(ElementVec3nt, &Decl))) { Wnd->GetErrorMessage(); } ShaderVec3nt.Decl.reset(Decl);
-	if (FAILED(pDevice->CreateVertexDeclaration(ElementVec3c, &Decl))) { Wnd->GetErrorMessage(); } ShaderVec3c.Decl.reset(Decl);
-	if (FAILED(pDevice->CreateVertexDeclaration(ElementVec3cn, &Decl))) { Wnd->GetErrorMessage(); } ShaderVec3cn.Decl.reset(Decl);
-	if (FAILED(pDevice->CreateVertexDeclaration(ElementVec3ct, &Decl))) { Wnd->GetErrorMessage(); } ShaderVec3ct.Decl.reset(Decl);
-	if (FAILED(pDevice->CreateVertexDeclaration(ElementVec3cnt, &Decl))) { Wnd->GetErrorMessage(); } ShaderVec3cnt.Decl.reset(Decl);
+	ShaderVecPointc = CreateVertexShader(Vertex, ElementVecPointc, "vecpc", "vs_3_0");
 
-	if (FAILED(D3DXCompileShader(VertexShaderCode, static_cast<UINT>(strlen(VertexShaderCode)), NULL, NULL, "vecpc", "vs_3_0", 0, &pShaderBuffer, NULL, &Const))) { Wnd->GetErrorMessage(); }
-	pDevice->CreateVertexShader((DWORD*)pShaderBuffer->GetBufferPointer(), &Shader);
-	ShaderVecPointc.Const.reset(Const);
-	ShaderVecPointc.Shader.reset(Shader);
-	pShaderBuffer->Release();
+	ShaderVecPointct = CreateVertexShader(Vertex, ElementVecPointc, "vecpct", "vs_3_0");
 
-	if (FAILED(D3DXCompileShader(VertexShaderCode, static_cast<UINT>(strlen(VertexShaderCode)), NULL, NULL, "vecpct", "vs_3_0", 0, &pShaderBuffer, NULL, &Const))) { Wnd->GetErrorMessage(); }
-	pDevice->CreateVertexShader((DWORD*)pShaderBuffer->GetBufferPointer(), &Shader);
-	ShaderVecPointct.Const.reset(Const);
-	ShaderVecPointct.Shader.reset(Shader);
-	pShaderBuffer->Release();
+	ShaderVec3t = CreateVertexShader(Vertex, ElementVec3t, "vec3t", "vs_3_0");
 
-	if (FAILED(D3DXCompileShader(VertexShaderCode, static_cast<UINT>(strlen(VertexShaderCode)), NULL, NULL, "vec3t", "vs_3_0", 0, &pShaderBuffer, NULL, &Const))) { Wnd->GetErrorMessage(); }
-	pDevice->CreateVertexShader((DWORD*)pShaderBuffer->GetBufferPointer(), &Shader);
-	ShaderVec3t.Const.reset(Const);
-	ShaderVec3t.Shader.reset(Shader);
-	pShaderBuffer->Release();
+	ShaderVec3n = CreateVertexShader(Vertex, ElementVec3n, "vec3n", "vs_3_0");
 
-	if (FAILED(D3DXCompileShader(HomogeneousShaderCode, static_cast<UINT>(strlen(HomogeneousShaderCode)), NULL, NULL, "vec4t", "vs_3_0", 0, &pShaderBuffer, NULL, &Const))) { Wnd->GetErrorMessage(); }
-	pDevice->CreateVertexShader((DWORD*)pShaderBuffer->GetBufferPointer(), &Shader);
-	ShaderVec4t.Const.reset(Const);
-	ShaderVec4t.Shader.reset(Shader);
-	pShaderBuffer->Release();
+	ShaderVec3nt = CreateVertexShader(Vertex, ElementVec3nt, "vec3nt", "vs_3_0");
 
-	if (FAILED(D3DXCompileShader(HomogeneousShaderCode, static_cast<UINT>(strlen(HomogeneousShaderCode)), NULL, NULL, "vec4ct", "vs_3_0", 0, &pShaderBuffer, NULL, &Const))) { Wnd->GetErrorMessage(); }
-	pDevice->CreateVertexShader((DWORD*)pShaderBuffer->GetBufferPointer(), &Shader);
-	ShaderVec4ct.Const.reset(Const);
-	ShaderVec4ct.Shader.reset(Shader);
-	pShaderBuffer->Release();
+	ShaderVec3c = CreateVertexShader(Vertex, ElementVec3c, "vec3c", "vs_3_0");
 
-	if (FAILED(D3DXCompileShader(VertexShaderCode, static_cast<UINT>(strlen(VertexShaderCode)), NULL, NULL, "vec3n", "vs_3_0", 0, &pShaderBuffer, NULL, &Const))) { Wnd->GetErrorMessage(); }
-	pDevice->CreateVertexShader((DWORD*)pShaderBuffer->GetBufferPointer(), &Shader);
-	ShaderVec3n.Const.reset(Const);
-	ShaderVec3n.Shader.reset(Shader);
-	pShaderBuffer->Release();
+	ShaderVec3cn = CreateVertexShader(Vertex, ElementVec3cn, "vec3cn", "vs_3_0");
 
-	if (FAILED(D3DXCompileShader(VertexShaderCode, static_cast<UINT>(strlen(VertexShaderCode)), NULL, NULL, "vec3nt", "vs_3_0", 0, &pShaderBuffer, NULL, &Const))) { Wnd->GetErrorMessage(); }
-	pDevice->CreateVertexShader((DWORD*)pShaderBuffer->GetBufferPointer(), &Shader);
-	ShaderVec3nt.Const.reset(Const);
-	ShaderVec3nt.Shader.reset(Shader);
-	pShaderBuffer->Release();
+	ShaderVec3ct = CreateVertexShader(Vertex, ElementVec3ct, "vec3ct", "vs_3_0");
 
-	if (FAILED(D3DXCompileShader(VertexShaderCode, static_cast<UINT>(strlen(VertexShaderCode)), NULL, NULL, "vec3c", "vs_3_0", 0, &pShaderBuffer, NULL, &Const))) { Wnd->GetErrorMessage(); }
-	pDevice->CreateVertexShader((DWORD*)pShaderBuffer->GetBufferPointer(), &Shader);
-	ShaderVec3c.Const.reset(Const);
-	ShaderVec3c.Shader.reset(Shader);
-	pShaderBuffer->Release();
+	ShaderVec3cnt = CreateVertexShader(Vertex, ElementVec3cnt, "vec3cnt", "vs_3_0");
 
-	if (FAILED(D3DXCompileShader(VertexShaderCode, static_cast<UINT>(strlen(VertexShaderCode)), NULL, NULL, "vec3cn", "vs_3_0", 0, &pShaderBuffer, NULL, &Const))) { Wnd->GetErrorMessage(); }
-	pDevice->CreateVertexShader((DWORD*)pShaderBuffer->GetBufferPointer(), &Shader);
-	ShaderVec3cn.Const.reset(Const);
-	ShaderVec3cn.Shader.reset(Shader);
-	pShaderBuffer->Release();
+	ShaderVec4t = CreateVertexShader(Vertex, ElementVec4t, "vec4t", "vs_3_0");
 
-	if (FAILED(D3DXCompileShader(VertexShaderCode, static_cast<UINT>(strlen(VertexShaderCode)), NULL, NULL, "vec3ct", "vs_3_0", 0, &pShaderBuffer, NULL, &Const))) { Wnd->GetErrorMessage(); }
-	pDevice->CreateVertexShader((DWORD*)pShaderBuffer->GetBufferPointer(), &Shader);
-	ShaderVec3ct.Const.reset(Const);
-	ShaderVec3ct.Shader.reset(Shader);
-	pShaderBuffer->Release();
-
-	if (FAILED(D3DXCompileShader(VertexShaderCode, static_cast<UINT>(strlen(VertexShaderCode)), NULL, NULL, "vec3cnt", "vs_3_0", 0, &pShaderBuffer, NULL, &Const))) { Wnd->GetErrorMessage(); }
-	pDevice->CreateVertexShader((DWORD*)pShaderBuffer->GetBufferPointer(), &Shader);
-	ShaderVec3cnt.Const.reset(Const);
-	ShaderVec3cnt.Shader.reset(Shader);
-	pShaderBuffer->Release();
+	ShaderVec4ct = CreateVertexShader(Vertex, ElementVec4ct, "vec4ct", "vs_3_0");
 }
 
 const bool Standard_DirectX_9::Initialize(std::shared_ptr<Standard_Window> StdWnd, UINT Width, UINT Height, bool NativeResolution)
@@ -981,6 +920,59 @@ IDirect3DTexture9* Standard_DirectX_9::CreateTexture(std::unique_ptr<Sony_PlaySt
 	}
 
 	return pTexture;
+}
+
+IDirect3DTexture9* Standard_DirectX_9::BlitTexture(IDirect3DTexture9* Source, IDirect3DTexture9* Dest, size_t Width, size_t Height, UINT X, UINT Y, bool b_VertFlip)
+{
+	if (!Source || !Dest) { return nullptr; }
+
+	if (!Width || !Height) { return Dest; }
+
+	D3DSURFACE_DESC SourceDesc{};
+	D3DSURFACE_DESC DestDesc{};
+	D3DLOCKED_RECT SrcRect{};
+	D3DLOCKED_RECT DstRect{};
+
+	if (FAILED(Source->GetLevelDesc(0, &SourceDesc)) || FAILED(Dest->GetLevelDesc(0, &DestDesc))) { return Dest; }
+
+	if (X + Width > DestDesc.Width) { Width = (size_t)DestDesc.Width - X; }
+	if (Y + Height > DestDesc.Height) { Height = (size_t)DestDesc.Height - Y; }
+
+	if (SourceDesc.Format != D3DFMT_A8R8G8B8 || DestDesc.Format != D3DFMT_A8R8G8B8)
+	{
+		std::cout << "Direct-X: Error, Source and Destination textures must be in A8R8G8B8 format" << std::endl;
+		return Dest;
+	}
+
+	RECT SrcArea = { 0, 0, (LONG)Width, (LONG)Height };
+	RECT DstArea = { (LONG)X, (LONG)Y, (LONG)(X + Width), (LONG)(Y + Height) };
+
+	if (FAILED(Source->LockRect(0, &SrcRect, &SrcArea, D3DLOCK_READONLY))) { return Dest; }
+
+	if (FAILED(Dest->LockRect(0, &DstRect, &DstArea, 0)))
+	{
+		Source->UnlockRect(0);
+		return Dest;
+	}
+
+	BYTE* SrcBits = static_cast<BYTE*>(SrcRect.pBits);
+	BYTE* DstBits = static_cast<BYTE*>(DstRect.pBits);
+
+	for (UINT row = 0; row < Height; ++row)
+	{
+		BYTE* SrcRow;
+		BYTE* DstRow = DstBits + row * DstRect.Pitch;
+
+		if (b_VertFlip) { SrcRow = SrcBits + (Height - 1 - row) * SrcRect.Pitch; }
+		else { SrcRow = SrcBits + row * SrcRect.Pitch; }
+
+		if (DstRow && SrcRow) { std::memcpy(DstRow, SrcRow, Width * 4); }
+	}
+
+	Dest->UnlockRect(0);
+	Source->UnlockRect(0);
+
+	return Dest;
 }
 
 bool Standard_DirectX_9::SaveTexture(IDirect3DTexture9* Texture, D3DXIMAGE_FILEFORMAT Format, bool b_VertFlip, const std::filesystem::path& Filename)
@@ -1692,20 +1684,66 @@ IDirect3DVertexBuffer9* Standard_DirectX_9::CreateVec3cnt(std::vector<vec3> Vect
 
 IDirect3DPixelShader9* Standard_DirectX_9::CreatePixelShader(const char* Code, const char* FunctionName, const char* Profile)
 {
-	ID3DXBuffer* pBuffer = nullptr;
-
+	ID3DXBuffer* pShaderBuffer = nullptr;
 	IDirect3DPixelShader9* pShader = nullptr;
 
-	if (FAILED(D3DXCompileShader(Code, static_cast<UINT>(strlen(Code)), NULL, NULL, FunctionName, Profile, 0, &pBuffer, NULL, NULL))) { Wnd->GetErrorMessage(); }
+	if (FAILED(D3DXCompileShader(Code, static_cast<UINT>(strlen(Code)), NULL, NULL, FunctionName, Profile, 0, &pShaderBuffer, NULL, NULL))) { Wnd->GetErrorMessage(); }
 
-	if (FAILED(pDevice->CreatePixelShader((DWORD*)pBuffer->GetBufferPointer(), &pShader))) { Wnd->GetErrorMessage(); }
+	if (FAILED(pDevice->CreatePixelShader((DWORD*)pShaderBuffer->GetBufferPointer(), &pShader))) { Wnd->GetErrorMessage(); }
 
-	pBuffer->Release();
+	pShaderBuffer->Release();
 
 	return pShader;
 }
 
-void Standard_DirectX_9::SetHomogeneousShader(DWORD FVF, float Width, float Height, D3DXMATRIX* Projection)
+IDirect3DPixelShader9* Standard_DirectX_9::CreatePixelShaderFromFile(const std::filesystem::path& Filename, const char* FunctionName, const char* Profile)
+{
+	StdFile m_File { Filename, FileAccessMode::Read, true, false };
+	if (!m_File.IsOpen()) { Wnd->GetErrorMessage(); }
+
+	std::string ShaderCode((std::istreambuf_iterator<char>(m_File.Get())), std::istreambuf_iterator<char>());
+
+	ShaderCode.push_back('\0');
+
+	return CreatePixelShader(ShaderCode.c_str(), FunctionName, Profile);
+}
+
+D3DSHADERPACKET Standard_DirectX_9::CreateVertexShader(void* Element, const char* Code, const char* FunctionName, const char* Profile)
+{
+	ID3DXBuffer* pShaderBuffer = nullptr;
+	IDirect3DVertexShader9* pShader = nullptr;
+	ID3DXConstantTable* Const = nullptr;
+	IDirect3DVertexDeclaration9* Decl = nullptr;
+	D3DSHADERPACKET Packet{};
+
+	if (FAILED(D3DXCompileShader(Code, static_cast<UINT>(strlen(Code)), NULL, NULL, FunctionName, Profile, 0, &pShaderBuffer, NULL, &Const))) { Wnd->GetErrorMessage(); }
+
+	if (FAILED(pDevice->CreateVertexDeclaration((D3DVERTEXELEMENT9*)Element, &Decl))) { Wnd->GetErrorMessage(); }
+
+	if (FAILED(pDevice->CreateVertexShader((DWORD*)pShaderBuffer->GetBufferPointer(), &pShader))) { Wnd->GetErrorMessage(); }
+
+	pShaderBuffer->Release();
+
+	Packet.Const.reset(Const);
+	Packet.Decl.reset(Decl);
+	Packet.Shader.reset(pShader);
+
+	return Packet;
+}
+
+D3DSHADERPACKET Standard_DirectX_9::CreateVertexShader(const std::filesystem::path& Filename, void* Element, const char* FunctionName, const char* Profile)
+{
+	StdFile m_File { Filename, FileAccessMode::Read, true, false };
+	if (!m_File.IsOpen()) { Wnd->GetErrorMessage(); }
+
+	std::string ShaderCode((std::istreambuf_iterator<char>(m_File.Get())), std::istreambuf_iterator<char>());
+
+	ShaderCode.push_back('\0');
+
+	return CreateVertexShader(Element, ShaderCode.c_str(), FunctionName, Profile);
+}
+
+void Standard_DirectX_9::SetHomogeneousShader(DWORD FVF, D3DXMATRIX* Projection)
 {
 	ID3DXConstantTable* Const = nullptr;
 	IDirect3DVertexDeclaration9* Decl = nullptr;
@@ -1746,7 +1784,7 @@ void Standard_DirectX_9::SetHomogeneousShader(DWORD FVF, float Width, float Heig
 	pDevice->SetVertexShader(Shader);
 }
 
-void Standard_DirectX_9::SetVertexShader(DWORD FVF, float Width, float Height, D3DXMATRIX* World, D3DXMATRIX* View, D3DXMATRIX* Projection)
+void Standard_DirectX_9::SetVertexShader(DWORD FVF, D3DXMATRIX* World, D3DXMATRIX* View, D3DXMATRIX* Projection)
 {
 	ID3DXConstantTable* Const = nullptr;
 	IDirect3DVertexDeclaration9* Decl = nullptr;
@@ -1774,10 +1812,10 @@ void Standard_DirectX_9::SetVertexShader(DWORD FVF, float Width, float Height, D
 		Shader = ShaderVec3t.Shader.get();
 		break;
 	case D3DFVF_VERT4T:
-		SetHomogeneousShader(FVF, Width, Height, Projection);
+		SetHomogeneousShader(FVF, Projection);
 		return;
 	case D3DFVF_VERT4CT:
-		SetHomogeneousShader(FVF, Width, Height, Projection);
+		SetHomogeneousShader(FVF, Projection);
 		return;
 	case D3DFVF_VERTN:
 		Const = ShaderVec3n.Const.get();
@@ -1859,7 +1897,7 @@ void Standard_DirectX_9::Draw(D3DDRAWPACKET Packet)
 
 	ZBuffer(Packet.ZBuffer.Active, Packet.ZBuffer.Type, Packet.ZBuffer.Func);
 
-	SetVertexShader(VertexBufferDesc.FVF, Packet.TextureAttr.Width, Packet.TextureAttr.Height, Packet.Matrix.World, Packet.Matrix.View, Packet.Matrix.Projection);
+	SetVertexShader(VertexBufferDesc.FVF, Packet.Matrix.World, Packet.Matrix.View, Packet.Matrix.Projection);
 
 	pDevice->SetPixelShaderConstantF(0, &Width, 1);
 	pDevice->SetPixelShaderConstantF(1, &Height, 1);

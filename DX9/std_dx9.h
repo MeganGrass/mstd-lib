@@ -285,6 +285,12 @@ public:
 	bool b_DeviceWasReset = false;
 
 	/*
+		Force Shutdown
+		 - an unrecoverable error has occurred
+	*/
+	bool b_ForceShutdown = false;
+
+	/*
 		Generic Pixel Shader
 		 - uv coordinates used when texture is bound
 		 - diffuse color used when texture is not bound and diffuse exists
@@ -532,6 +538,9 @@ public:
 		DWORD TransparencyColor = 0xFF00FF,
 		bool b_VerticalFlip = false);
 
+	// Blit Texture (32bpp)
+	[[nodiscard]] IDirect3DTexture9* BlitTexture(IDirect3DTexture9* Source, IDirect3DTexture9* Dest, size_t Width, size_t Height, UINT X, UINT Y, bool b_VertFlip = false);
+
 	// Save Texture (32bpp)
 	bool SaveTexture(IDirect3DTexture9* Texture, D3DXIMAGE_FILEFORMAT Format, bool b_VertFlip, const std::filesystem::path& Filename);
 
@@ -616,11 +625,20 @@ public:
 	// Create pixel shader
 	[[nodiscard]] IDirect3DPixelShader9* CreatePixelShader(const char* Code, const char* FunctionName = "main", const char* Profile = "ps_3_0");
 
+	// Create pixel shader from file
+	[[nodiscard]] IDirect3DPixelShader9* CreatePixelShaderFromFile(const std::filesystem::path& Filename, const char* FunctionName = "main", const char* Profile = "ps_3_0");
+
+	// Create vertex shader
+	[[nodiscard]] D3DSHADERPACKET CreateVertexShader(void* Element, const char* Code, const char* FunctionName = "main", const char* Profile = "ps_3_0");
+
+	// Create vertex shader from file
+	[[nodiscard]] D3DSHADERPACKET CreateVertexShader(const std::filesystem::path& Filename, void* Element, const char* FunctionName = "main", const char* Profile = "ps_3_0");
+
 	// Set homogeneous vertex shader + matrix
-	void SetHomogeneousShader(DWORD FVF, float Width, float Height, D3DXMATRIX* Projection = nullptr);
+	void SetHomogeneousShader(DWORD FVF, D3DXMATRIX* Projection = nullptr);
 
 	// Set vertex shader + matrix
-	void SetVertexShader(DWORD FVF, float Width = 0, float Height = 0, D3DXMATRIX* World = nullptr, D3DXMATRIX* View = nullptr, D3DXMATRIX* Projection = nullptr);
+	void SetVertexShader(DWORD FVF, D3DXMATRIX* World = nullptr, D3DXMATRIX* View = nullptr, D3DXMATRIX* Projection = nullptr);
 
 	/*
 		Draw
@@ -906,6 +924,14 @@ public:
 		pDevice->SetRenderState(D3DRS_SRCBLEND, SrcBlend);
 		pDevice->SetRenderState(D3DRS_DESTBLEND, DestBlend);
 		pDevice->SetRenderState(D3DRS_BLENDOP, BlendOp);
+	}
+
+	// Alpha Testing
+	void AlphaTesting(BOOL OnOff, std::uint8_t Ref = 0xFF, D3DCMPFUNC Func = D3DCMP_GREATEREQUAL)
+	{
+		pDevice->SetRenderState(D3DRS_ALPHATESTENABLE, OnOff);
+		pDevice->SetRenderState(D3DRS_ALPHAREF, Ref);
+		pDevice->SetRenderState(D3DRS_ALPHAFUNC, Func);
 	}
 
 	// Enable/Disable Lighting

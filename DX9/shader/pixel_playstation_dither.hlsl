@@ -1,13 +1,12 @@
 /*
 *
 *	Megan Grass
-*	November 25, 2024
+*	November 26, 2024
 *
 *	Dither Matrix: https://psx-spx.consoledev.net/graphicsprocessingunitgpu/#24bit-rgb-to-15bit-rgb-dithering-enabled-in-texpage-attribute
 *
 */
 
-const char* PlayStationDitherShaderCode = R"(
 sampler2D TextureSampler : register(s0);
 float Width : register(c0);
 float Height : register(c1);
@@ -55,13 +54,3 @@ float4 main(INPUT Input) : COLOR0
 
 	return color;
 }
-
-technique ShaderTechnique
-{
-	pass P0
-	{
-		VertexShader = compile vs_3_0 main();
-		PixelShader = compile ps_3_0 main();
-	}
-}
-)";

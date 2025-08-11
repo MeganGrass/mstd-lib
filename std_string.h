@@ -33,6 +33,7 @@ public:
 	*	De/Construction
 	*/
 	explicit constexpr Standard_String(void) noexcept = default;
+	explicit constexpr Standard_String(HWND hWnd) noexcept : hWnd(hWnd) {}
 	virtual ~Standard_String(void) noexcept = default;
 
 

@@ -1,25 +1,25 @@
 /*
 *
 *	Megan Grass
-*	November 25, 2024
+*	November 26, 2024
 *
 */
 
-const char* VertexShaderCode = R"(
-uniform float4x4 World;
-uniform float4x4 View;
-uniform float4x4 Projection;
+float4x4 World : register(c0);
+float4x4 View : register(c4);
+float4x4 Projection : register(c8);
+float4 Clip : register(c12);
 
 struct INPUT_POINTC
 {
-	float3 Position : POSITION;
+    float4 Position : POSITION;
 	float4 Color : COLOR0;
 	float PointSize : PSIZE;
 };
 
 struct INPUT_POINTCT
 {
-	float3 Position : POSITION;
+    float4 Position : POSITION;
 	float4 Color : COLOR0;
 	float PointSize : PSIZE;
 	float2 TexCoord : TEXCOORD0;
@@ -27,7 +27,7 @@ struct INPUT_POINTCT
 
 struct INPUT_VERT3T
 {
-	float3 Position : POSITION;
+    float4 Position : POSITION;
 	float2 TexCoord : TEXCOORD0;
 };
 
@@ -72,6 +72,19 @@ struct INPUT_VERTCNT
 	float2 TexCoord : TEXCOORD0;
 };
 
+struct INPUT_VERT4T
+{
+    float4 Position : POSITION;
+    float2 TexCoord : TEXCOORD0;
+};
+
+struct INPUT_VERT4CT
+{
+    float4 Position : POSITION;
+    float4 Color : COLOR0;
+    float2 TexCoord : TEXCOORD0;
+};
+
 struct OUTPUT
 {
 	float4 Position : POSITION;
@@ -83,8 +96,8 @@ struct OUTPUT
 
 OUTPUT vecpc(INPUT_POINTC Input)
 {
-	OUTPUT Output;
-	Output.Position = mul(mul(mul(float4(Input.Position, 1.0f), World), View), Projection);
+    OUTPUT Output;
+    Output.Position = mul(mul(mul(Input.Position, World), View), Projection);
 	Output.Normal = float3(0.0f, 0.0f, 0.0f);
 	Output.Color = Input.Color;
 	Output.PointSize = Input.PointSize;
@@ -94,8 +107,8 @@ OUTPUT vecpc(INPUT_POINTC Input)
 
 OUTPUT vecpct(INPUT_POINTCT Input)
 {
-	OUTPUT Output;
-	Output.Position = mul(mul(mul(float4(Input.Position, 1.0f), World), View), Projection);
+    OUTPUT Output;
+    Output.Position = mul(mul(mul(Input.Position, World), View), Projection);
 	Output.Normal = float3(0.0f, 0.0f, 0.0f);
 	Output.Color = Input.Color;
 	Output.PointSize = Input.PointSize;
@@ -105,8 +118,8 @@ OUTPUT vecpct(INPUT_POINTCT Input)
 
 OUTPUT vec3t(INPUT_VERT3T Input)
 {
-	OUTPUT Output;
-	Output.Position = mul(mul(mul(float4(Input.Position, 1.0f), World), View), Projection);
+    OUTPUT Output;
+    Output.Position = mul(mul(mul(Input.Position, World), View), Projection);
 	Output.Normal = float3(0.0f, 0.0f, 0.0f);
 	Output.Color = float4(1.0f, 1.0f, 1.0f, 1.0f);
 	Output.PointSize = 1.0f;
@@ -179,4 +192,70 @@ OUTPUT vec3cnt(INPUT_VERTCNT Input)
 	Output.TexCoord = Input.TexCoord;
 	return Output;
 }
-)";
+
+OUTPUT vec4t(INPUT_VERT4T Input)
+{
+    OUTPUT Output;
+    Output.Normal = float3(0.0f, 0.0f, 0.0f);
+    Output.Color = float4(1.0f, 1.0f, 1.0f, 1.0f);
+    Output.PointSize = 1.0f;
+    Output.TexCoord = Input.TexCoord;
+
+    float4 p = mul(Input.Position, Projection);
+
+    float z = 0.0f;
+
+    if (Clip.z == 0 || Clip.z == 1)
+    {
+        z = Clip.z;
+    }
+    else
+    {
+        z = (Input.Position.z * Clip.z) / Clip.w;
+        if (z > 1.0f)
+        {
+            z *= 0.5f;
+        }
+    }
+
+    Output.Position = float4(p.x, p.y, z, 1.0f);
+
+    return Output;
+}
+
+OUTPUT vec4ct(INPUT_VERT4CT Input)
+{
+    OUTPUT Output;
+    Output.Normal = float3(0.0f, 0.0f, 0.0f);
+    Output.Color = Input.Color;
+    Output.PointSize = 1.0f;
+    Output.TexCoord = Input.TexCoord;
+
+    float4 p = mul(Input.Position, Projection);
+
+    float z = 0.0f;
+
+    if (Clip.z == 0 || Clip.z == 1)
+    {
+        z = Clip.z;
+    }
+    else
+    {
+        z = (Input.Position.z * Clip.z) / Clip.w;
+    }
+
+    Output.Position = float4(p.x, p.y, z, 1.0f);
+
+    return Output;
+}
+
+OUTPUT main()
+{
+    OUTPUT Output;
+    Output.Position = float4(0.0f, 0.0f, 0.0f, 0.0f);
+    Output.Normal = float3(0.0f, 0.0f, 0.0f);
+    Output.Color = float4(0.0f, 0.0f, 0.0f, 0.0f);
+    Output.PointSize = 0.0f;
+    Output.TexCoord = float2(0.0f, 0.0f);
+    return Output;
+}
