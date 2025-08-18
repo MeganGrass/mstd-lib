@@ -9,7 +9,7 @@
 #include "std_thread_pool.h"
 
 
-void Standard_Thread_Pool::ThreadPoolManager(void)
+void Standard_Thread_Pool::Manager(void)
 {
 	while (!b_Terminate)
 	{
@@ -27,11 +27,11 @@ void Standard_Thread_Pool::ThreadPoolManager(void)
 	}
 }
 
-void Standard_Thread_Pool::ThreadPoolInit(std::size_t nThreads)
+void Standard_Thread_Pool::InitPool(std::size_t nThreads)
 {
 	if (!m_Threads.empty())
 	{
-		ThreadPoolResize(nThreads);
+		ResizePool(nThreads);
 	}
 
 	if (!nThreads)
@@ -46,15 +46,15 @@ void Standard_Thread_Pool::ThreadPoolInit(std::size_t nThreads)
 
 	for (std::size_t i = 0; i < nThreads; i++)
 	{
-		m_Threads.emplace_back([this] { ThreadPoolManager(); });
+		m_Threads.emplace_back([this] { Manager(); });
 	}
 }
 
-void Standard_Thread_Pool::ThreadPoolResize(std::size_t nThreads)
+void Standard_Thread_Pool::ResizePool(std::size_t nThreads)
 {
 	if (m_Threads.empty())
 	{
-		ThreadPoolInit(nThreads);
+		InitPool(nThreads);
 	}
 
 	if (!nThreads)
@@ -69,7 +69,7 @@ void Standard_Thread_Pool::ThreadPoolResize(std::size_t nThreads)
 
 	if (nThreads < m_Threads.size())
 	{
-		while (ThreadPoolBusy())
+		while (Busy())
 		{
 			std::this_thread::yield();
 		}
@@ -94,29 +94,40 @@ void Standard_Thread_Pool::ThreadPoolResize(std::size_t nThreads)
 	{
 		for (std::size_t i = m_Threads.size(); i < nThreads; i++)
 		{
-			m_Threads.emplace_back([this] { ThreadPoolManager(); });
+			m_Threads.emplace_back([this] { Manager(); });
 		}
 	}
 
 }
 
-bool Standard_Thread_Pool::ThreadPoolBusy(void)
+bool Standard_Thread_Pool::Busy(void)
 {
 	std::scoped_lock<std::mutex> Lock(m_Mutex);
 	return !m_Queue.empty();
 }
 
-void Standard_Thread_Pool::ThreadPoolStop(void)
+bool Standard_Thread_Pool::Stop(void)
 {
 	{
 		std::scoped_lock<std::mutex> Lock(m_Mutex);
 		b_Terminate = true;
 	}
+
 	m_Condition.notify_all();
-	for (std::size_t i = 0; i < m_Threads.size(); i++)
+
+	for (auto& Thread : m_Threads)
 	{
-		if (m_Threads[i].joinable()) { m_Threads[i].join(); }
+		if (Thread.joinable()) { Thread.join(); }
 	}
+
+	for (auto* Task : m_Queue)
+	{
+		delete Task;
+	}
+
+	m_Queue.clear();
+
 	m_Threads.clear();
-	b_Terminate = false;
+
+	return !(b_Terminate = false);
 }

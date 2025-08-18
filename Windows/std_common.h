@@ -31,11 +31,13 @@ class Standard_Windows_Common :
 	protected Standard_String {
 private:
 
-	using TimePoint = std::chrono::time_point<std::chrono::steady_clock>;
-
 	// Window
 	HINSTANCE hInstance;					// Module Handle
 	HWND hWndOwner;							// Owner Window Handle
+
+	// Performance
+	LONGLONG m_PerformanceFrequency;		// Performance Frequency
+	LONGLONG m_PerformanceCounter;			// Performance Counter
 
 	// Timer
 	HANDLE h_Timer;							// Timer Handle
@@ -44,31 +46,20 @@ private:
 	DWORD m_TimerMilliFPS;					// Timer Frames Per Second in milliseconds
 
 	// Chrono Timer
-	LONGLONG m_ChronoFPS;					// Chrono Frames Per Second
-	TimePoint t_Start;						// Chrono Timer Begin Time
-	TimePoint t_Finish;						// Chrono Timer End Time
-
-	// Performance
-	LONGLONG m_PerformanceFrequency;		// Performance Frequency
-	LONGLONG m_PerformanceCounter;			// Performance Counter
-
-	// Convert the chrono frames per second to a double
-	[[nodiscard]] double ChronoFPS() const { return 500.0f / static_cast<double>(m_ChronoFPS); }
+	double m_ChronoFPS;
+	double m_TimeFrame;
+	double m_TimeDelta;
+	std::chrono::steady_clock::time_point m_LastFrameTime;
+	std::chrono::steady_clock::time_point m_CurrentFrameTime;
 
 	static HRESULT CALLBACK MessageModalCallbackProc(HWND hwnd, UINT uNotification, WPARAM wParam, LPARAM lParam, LONG_PTR dwRefData);
 	
 protected:
 
-
-	/*
-		Set the module handle
-	*/
+	// Set the module handle
 	void SetCommonInstance(HINSTANCE _hInstance) { hInstance = _hInstance; }
 
-
-	/*
-		Set the owner window handle
-	*/
+	// Set the owner window handle
 	void SetCommonOwner(HWND _hWndOwner) { hWndOwner = _hWndOwner; }
 
 
@@ -77,15 +68,15 @@ public:
 	explicit Standard_Windows_Common(void) :
 		hInstance(GetModuleHandleW(GetModuleStr().wstring().c_str())),
 		hWndOwner(nullptr),
+		m_PerformanceFrequency(0),
+		m_PerformanceCounter(0),
 		h_Timer(nullptr),
 		m_DueTime{},
 		m_TimerFPS(60),
 		m_TimerMilliFPS(1666666666),
-		m_ChronoFPS(60),
-		t_Start(std::chrono::steady_clock::now()),
-		t_Finish(std::chrono::steady_clock::now()),
-		m_PerformanceFrequency(0),
-		m_PerformanceCounter(0)
+		m_ChronoFPS(60.0),
+		m_TimeFrame(1000.0 / 60.0),
+		m_TimeDelta(0.0)
 	{
 		if (FAILED(CoInitializeEx(0, COINIT_APARTMENTTHREADED | COINIT_DISABLE_OLE1DDE))) { GetErrorMessage(); }
 	}
@@ -96,10 +87,6 @@ public:
 		CoUninitialize();
 	}
 
-
-	/*
-		Inheritance
-	*/
 	using Standard_FileSystem::Exists;
 	using Standard_FileSystem::CleanPath;
 	using Standard_FileSystem::GetDirectory;
@@ -118,96 +105,50 @@ public:
 	using Standard_String::ToUpper;
 	using Standard_String::ToLower;
 
-
-	/*
-		Get instance handle
-	*/
+	// Get instance handle
 	[[nodiscard]] virtual const HINSTANCE& GetInstance(void) const { return hInstance; }
 
-
-	/*
-		Get window handle
-	*/
+	// Get window handle
 	[[nodiscard]] virtual const HWND& GetWindow(void) const { return hWndOwner; }
 
-
-	/*
-		Message from GetLastError() function
-	*/
+	// Message from GetLastError() function
 	void GetErrorMessage(bool b_ExitProcess = true, const std::source_location Location = std::source_location::current());
 
-
-	/*
-		Get the executable directory and filename
-	*/
+	// Get the executable directory and filename
 	[[nodiscard]] const std::filesystem::path GetModuleStr(void);
 
-
-	/*
-		Get the executable directory
-	*/
+	// Get the executable directory
 	[[nodiscard]] const std::filesystem::path GetModuleDir(void);
 
-
-	/*
-		Get the %USERPROFILE% directory
-	*/
+	// Get the %USERPROFILE% directory
 	[[nodiscard]] const std::filesystem::path GetUserDir(void);
 
-
-	/*
-		Get the %USERPROFILE% Documents directory
-	*/
+	// Get the %USERPROFILE% Documents directory
 	[[nodiscard]] const std::filesystem::path GetUserDocumentsDir(void);
 
-
-	/*
-		Get the %USERPROFILE% Saved Games directory
-	*/
+	// Get the %USERPROFILE% Saved Games directory
 	[[nodiscard]] const std::filesystem::path GetUserSavedGamesDir(void);
 
-
-	/*
-		Get a full path list of Truetype Fonts in C:/Windows/Fonts
-	*/
+	// Get a full path list of Truetype Fonts in C:/Windows/Fonts
 	[[nodiscard]] const std::vector<std::filesystem::path> GetFonts(void);
 
-
-	/*
-		Open File Dialog
-	*/
+	// Open File Dialog
 	[[nodiscard]] const std::optional<std::filesystem::path> GetOpenFilename(StrVecW _Description = { L"All Files" }, StrVecW _Filter = { L"*.*" });
 
-
-	/*
-		Save File Dialog
-	*/
+	// Save File Dialog
 	[[nodiscard]] const std::optional<std::filesystem::path> GetSaveFilename(StrVecW _Description = { L"All Files" }, StrVecW _Filter = { L"*.*" });
 
-
-	/*
-		Get Folder Dialog
-	*/
+	// Get Folder Dialog
 	[[nodiscard]] const std::optional<std::filesystem::path> GetFileDirectory(void) const;
 
-
-	/*
-		Message Box Question
-	*/
+	// Message Box Question
 	[[nodiscard]] const bool Question(const std::wstring _Question, ...) const;
 
-
-	/*
-		Message Box
-	*/
+	// Message Box
 	virtual void Message(const std::string _Format, ...) override;
 
-
-	/*
-		Message Box
-	*/
+	// Message Box
 	virtual void Message(const std::wstring _Format, ...) override;
-
 
 	/*
 		Message Modal
@@ -216,10 +157,7 @@ public:
 	*/
 	void MessageModal(const std::wstring& Title, const std::wstring& MainInstruction, const std::wstring _Content, ...) const;
 
-
-	/*
-		Performance measurement begin
-	*/
+	// Performance measurement begin
 	void PerformanceStart(void)
 	{
 		LARGE_INTEGER StartFrequency{};
@@ -230,10 +168,7 @@ public:
 
 	}
 
-
-	/*
-		Performance measurement end
-	*/
+	// Performance measurement end
 	[[nodiscard]] const double PerformanceStop(void) const
 	{
 		LARGE_INTEGER EndCounter{};
@@ -241,10 +176,7 @@ public:
 		return static_cast<double>(EndCounter.QuadPart - m_PerformanceCounter) / static_cast<double>(m_PerformanceFrequency);
 	}
 
-
-	/*
-		Initialize a generic fps timer for use with CreateWaitableTimerEx()
-	*/
+	// Initialize a generic fps timer for use with CreateWaitableTimerEx()
 	void SetTimer(LONGLONG FPS = 60)
 	{
 		m_TimerFPS = FPS;
@@ -255,42 +187,37 @@ public:
 		h_Timer = CreateWaitableTimerExW(0, 0, CREATE_WAITABLE_TIMER_HIGH_RESOLUTION, TIMER_ALL_ACCESS);
 	}
 
-
-	/*
-		Wait for the generic fps timer to expire with WaitForSingleObject()
-	*/
+	// Wait for the generic fps timer to expire with WaitForSingleObject()
 	void SleepTimer(void) const
 	{
 		SetWaitableTimerEx(h_Timer, &m_DueTime, 0, 0, 0, 0, 0);
 		WaitForSingleObject(h_Timer, m_TimerMilliFPS);
 	}
 
-
-	/*
-		Set chrono timer fps
-	*/
-	void SetChronoFPS(LONGLONG FPS = 60) { m_ChronoFPS = FPS; }
-
-
-	/*
-		Chrono timer start
-	*/
-	void ChronoTimerBegin(void)
+	// Initialize the chrono timer
+	void ChronoTimerInit(double TargetFPS)
 	{
-		t_Start = std::chrono::steady_clock::now();
-		std::chrono::duration<double, std::milli> WorkTime = t_Start - t_Finish;
-		if (WorkTime.count() < ChronoFPS())
-		{
-			std::chrono::duration<double, std::milli> Delta(ChronoFPS() - WorkTime.count());
-			std::this_thread::sleep_until(t_Start + Delta);
-		}
+		m_ChronoFPS = TargetFPS;
+		m_TimeFrame = 1000.0 / TargetFPS;
+		m_LastFrameTime = std::chrono::high_resolution_clock::now();
 	}
 
+	// Update the chrono timer
+	void ChronoTimerUpdate(void)
+	{
+		m_CurrentFrameTime = std::chrono::high_resolution_clock::now();
+		std::chrono::duration<double, std::milli> ElapsedTime = m_CurrentFrameTime - m_LastFrameTime;
+		m_LastFrameTime = m_CurrentFrameTime;
+		m_TimeDelta = ElapsedTime.count();
+	}
 
-	/*
-		Chrono timer finish
-	*/
-	void ChronoTimerEnd(void) { t_Finish = std::chrono::steady_clock::now(); }
-
-
+	// Sleep the thread until the next frame is ready
+	void ChronoTimerSleep(void) const
+	{
+		double SleepTime = m_TimeFrame - m_TimeDelta;
+		if (SleepTime > 0)
+		{
+			std::this_thread::sleep_for(std::chrono::milliseconds(static_cast<int>(SleepTime)));
+		}
+	}
 };

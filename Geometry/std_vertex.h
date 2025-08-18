@@ -26,6 +26,14 @@
 #include "vec4.h"
 
 /*
+	Color
+*/
+struct colorvec
+{
+	float r, g, b, a;
+};
+
+/*
 	Point
 */
 struct vecp

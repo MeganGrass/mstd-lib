@@ -285,12 +285,6 @@ public:
 	bool b_DeviceWasReset = false;
 
 	/*
-		Force Shutdown
-		 - an unrecoverable error has occurred
-	*/
-	bool b_ForceShutdown = false;
-
-	/*
 		Generic Pixel Shader
 		 - uv coordinates used when texture is bound
 		 - diffuse color used when texture is not bound and diffuse exists
@@ -346,75 +340,10 @@ public:
 		ShaderVec3ct{},
 		ShaderVec3cnt{}
 	{
-		ThreadPoolInit(1);
-		ThreadPoolEnqueue([this]() { Update(); });
+		InitPool(1);
+		Enqueue([this]() { Update(); });
 	}
-	virtual ~Standard_DirectX_9(void)
-	{
-		b_Abort = true;
-		b_Active = false;
-		e_DeviceState = D3DDEVICE_STATE::UNKNOWN;
-
-		while (!b_Complete)
-		{
-			std::this_thread::sleep_for(std::chrono::milliseconds(100));
-		}
-
-		Grid.reset();
-		Axis.reset();
-
-		ShaderVecPointc.Decl.reset();
-		ShaderVecPointc.Shader.reset();
-		ShaderVecPointc.Const.reset();
-
-		ShaderVecPointct.Decl.reset();
-		ShaderVecPointct.Shader.reset();
-		ShaderVecPointct.Const.reset();
-
-		ShaderVec3t.Decl.reset();
-		ShaderVec3t.Shader.reset();
-		ShaderVec3t.Const.reset();
-
-		ShaderVec4t.Decl.reset();
-		ShaderVec4t.Shader.reset();
-		ShaderVec4t.Const.reset();
-
-		ShaderVec4ct.Decl.reset();
-		ShaderVec4ct.Shader.reset();
-		ShaderVec4ct.Const.reset();
-
-		ShaderVec3n.Decl.reset();
-		ShaderVec3n.Shader.reset();
-		ShaderVec3n.Const.reset();
-
-		ShaderVec3nt.Decl.reset();
-		ShaderVec3nt.Shader.reset();
-		ShaderVec3nt.Const.reset();
-
-		ShaderVec3c.Decl.reset();
-		ShaderVec3c.Shader.reset();
-		ShaderVec3c.Const.reset();
-
-		ShaderVec3cn.Decl.reset();
-		ShaderVec3cn.Shader.reset();
-		ShaderVec3cn.Const.reset();
-
-		ShaderVec3ct.Decl.reset();
-		ShaderVec3ct.Shader.reset();
-		ShaderVec3ct.Const.reset();
-
-		ShaderVec3cnt.Decl.reset();
-		ShaderVec3cnt.Shader.reset();
-		ShaderVec3cnt.Const.reset();
-
-		m_DeviceCaps.reset();
-		m_AdapterIdentifier.reset();
-		m_DisplayMode.reset();
-		m_PresentParameters.reset();
-		pSwapChain.reset();
-		pDevice.reset();
-		pD3D.reset();
-	}
+	virtual ~Standard_DirectX_9(void) = default;
 
 	// Shutdown
 	void Shutdown(void);

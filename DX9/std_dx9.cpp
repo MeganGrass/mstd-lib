@@ -122,7 +122,7 @@ static LRESULT CALLBACK DirectX9WndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPA
 {
 	Standard_DirectX_9* DX9 = (Standard_DirectX_9*)dwRefData;
 
-	if (!DX9 || !DX9->Ready()) { return DefSubclassProc(hWnd, uMsg, wParam, lParam); }
+	if (!DX9 || !DX9->Ready() || !DX9->NormalState()) { return DefSubclassProc(hWnd, uMsg, wParam, lParam); }
 
 	{
 		WINDOWPLACEMENT WindowPlacement{ sizeof(WINDOWPLACEMENT) };
@@ -167,14 +167,27 @@ static LRESULT CALLBACK DirectX9WndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPA
 
 void Standard_DirectX_9::Shutdown(void)
 {
+	{
+		static std::mutex Mutex;
+		std::scoped_lock<std::mutex> Lock(Mutex);
+	}
+
+	if (b_Complete) { return; }
+
 	b_Abort = true;
 	b_Active = false;
+
+	auto StartTime = std::chrono::steady_clock::now();
+
+	while (!b_Complete && !Stop())
+	{
+		if (std::chrono::steady_clock::now() - StartTime > std::chrono::seconds(5)) { break; }
+		std::this_thread::sleep_for(std::chrono::milliseconds(10));
+	}
+
 	e_DeviceState = D3DDEVICE_STATE::UNKNOWN;
 
-	while (!b_Complete)
-	{
-		std::this_thread::sleep_for(std::chrono::milliseconds(100));
-	}
+	DestroyWindow(Window()->Get());
 }
 
 void Standard_DirectX_9::Update(void)
@@ -201,7 +214,7 @@ void Standard_DirectX_9::Update(void)
 		{
 			e_DeviceState = D3DDEVICE_STATE::UNKNOWN;
 
-			while ((b_Active) && (!NormalState()))
+			while (b_Active && !NormalState())
 			{
 				Test();
 
@@ -2060,7 +2073,7 @@ void Standard_DirectX_9::Lighting(bool OnOff)
 
 void Standard_DirectX_9::CreateAxisGrid(void)
 {
-	if (Grid) { return; }
+	if (Grid && Axis) { return; }
 
 	Grid.reset(CreateVertexBuffer(D3DFVF_VERTC, 68 * sizeof(vec3c)));
 
@@ -2085,6 +2098,8 @@ void Standard_DirectX_9::CreateAxisGrid(void)
 	}
 
 	if (FAILED(Grid->Unlock())) { Wnd->GetErrorMessage(); }
+
+	if (Axis) { return; }
 
 	Axis.reset(CreateVertexBuffer(D3DFVF_VERTC, 6 * sizeof(vec3c)));
 

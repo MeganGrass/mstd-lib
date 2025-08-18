@@ -63,44 +63,51 @@ private:
 	std::vector<std::jthread> m_Threads;
 	std::deque<T_FuncExec*> m_Queue;
 
-	void ThreadPoolManager(void);
+	void Manager(void);
 
 public:
 
+	explicit Standard_Thread_Pool(void) : b_Terminate(false) {}
 
-	/*
-		Construction
-	*/
-	explicit Standard_Thread_Pool(void) :
-		b_Terminate(false)
-		{}
-
-
-	/*
-		Deconstruction
-	*/
 	virtual ~Standard_Thread_Pool(void)
 	{
-		ThreadPoolStop();
+		{
+			std::scoped_lock<std::mutex> Lock(m_Mutex);
+			b_Terminate = true;
+		}
+
+		m_Condition.notify_all();
+
+		for (auto& Thread : m_Threads)
+		{
+			if (Thread.joinable()) { Thread.join(); }
+		}
+
+		for (auto* Task : m_Queue)
+		{
+			delete Task;
+		}
+
+		m_Queue.clear();
+
+		m_Threads.clear();
 	}
 
 
-	/*
-		Initialize the thread pool
-	*/
-	void ThreadPoolInit(std::size_t nThreads);
+	// Initialize the thread pool
+	void InitPool(std::size_t nThreads);
 
 
-	/*
-		Get the number of threads in the pool
-	*/
-	[[nodiscard]] std::size_t ThreadPoolSize(void) const { return m_Threads.size(); }
+	// Get the number of threads in the pool
+	[[nodiscard]] const std::size_t ThreadCount(void) const { return m_Threads.size(); }
 
 
-	/*
-		Resize the thread pool
-	*/
-	void ThreadPoolResize(std::size_t nThreads);
+	// Get the number of jobs in the queue
+	[[nodiscard]] const std::size_t QueueCount(void) const { return m_Queue.size(); }
+
+
+	// Resize the thread pool
+	void ResizePool(std::size_t nThreads);
 
 
 	/*
@@ -110,7 +117,7 @@ public:
 		-- Example: auto Future = Foo->ThreadPoolEnqueue([this]() { a = 1; foo->bar(); });
 	*/
 	template<typename _Fty, typename... Args, typename _Ret = std::invoke_result_t<_Fty, Args...>>
-	auto ThreadPoolEnqueue(_Fty&& _Func, Args&&... _Args) -> std::future<_Ret>
+	auto Enqueue(_Fty&& _Func, Args&&... _Args) -> std::future<_Ret>
 	{
 		std::packaged_task<_Ret()> Task(std::bind(std::forward<_Fty>(_Func), std::forward<Args>(_Args)...));
 		auto Future = Task.get_future();
@@ -123,16 +130,12 @@ public:
 	}
 
 
-	/*
-		Test if the thread pool is busy
-	*/
-	[[nodiscard]] bool ThreadPoolBusy(void);
+	// Test if the thread pool is busy
+	[[nodiscard]] bool Busy(void);
 
 
-	/*
-		Terminate the thread pool
-	*/
-	void ThreadPoolStop(void);
+	// Terminate the thread pool
+	bool Stop(void);
 
 
 };
