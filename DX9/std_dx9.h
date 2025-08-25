@@ -270,6 +270,25 @@ private:
 
 	D3DSHADERPACKET ShaderVec3cnt;
 
+	struct Sony_PlayStation_Light
+	{
+		std::uint8_t Mag{};
+		colorvec Ambient{};
+		struct DATA
+		{
+			std::uint8_t Mode{};
+			colorvec Color{};
+			vec3 Position{};
+			float Intensity{};
+		} Data[3];
+	};
+
+	Sony_PlayStation_Light m_Light;
+
+	bool b_LightingDisabled = true;
+	bool b_PerVertexLighting = false;
+	bool b_PerPixelLighting = false;
+
 public:
 
 	// View Grid
@@ -816,8 +835,8 @@ public:
 		m_DepthScaleZ = ScaleZ;
 		m_DepthMaxZ = MaxZ;
 
-		float DepthBias = m_DepthScaleZ / 65536.0f;
-		float SlopeScaleBias = m_DepthMaxZ / 65536.0f;
+		float DepthBias = m_DepthScaleZ / 32768.0f;
+		float SlopeScaleBias = m_DepthMaxZ / 32768.0f;
 
 		pDevice->SetRenderState(D3DRS_DEPTHBIAS, *(DWORD*)&DepthBias);
 		pDevice->SetRenderState(D3DRS_SLOPESCALEDEPTHBIAS, *(DWORD*)&SlopeScaleBias);
@@ -899,5 +918,59 @@ public:
 
 	// Save screenshot
 	bool SaveScreenshot(D3DXIMAGE_FILEFORMAT Format, std::filesystem::path Output);
+
+	// Get Lights
+	[[nodiscard]] Sony_PlayStation_Light& PlayStationLight(void) { return m_Light; }
+
+	/*
+		Sony PlayStation (1994) Lighting Toggle
+		 - enable/disable lighting in all shaders
+		 - if b_PerPixel is true, per-pixel lighting is used
+		 - if b_PerPixel is false, per-vertex lighting is used
+		 - if b_Off is true, lighting is disabled entirely
+	*/
+	void SetPSXLightToggle(bool b_PerPixel, bool b_Off);
+
+	/*
+		Sony PlayStation (1994) Lighting Mode
+		 - 0 = Off
+		 - 1 = Per-Vertex Lighting
+		 - 2 = Per-Pixel Lighting
+	*/
+	// Get Lighting Mode
+	[[nodiscard]] const int GetPSXLightToggle(void) const
+	{
+		if (b_PerPixelLighting) { return 2; }
+		else if (b_PerVertexLighting) { return 1; }
+		else { return 0; }
+	}
+
+	/*
+		Sony PlayStation (1994) Mag Toggle
+		 - enable/disable Mag in all pixel shaders
+	*/
+	void SetPSXLightMag(std::uint8_t Mag);
+
+	/*
+		Sony PlayStation (1994) Ambient Light Color
+		 - values are normalized to [0.0f, 1.0f]
+	*/
+	void SetPSXLightAmbient(colorvec Color);
+
+	/*
+		Sony PlayStation (1994) Lighting
+		 - 3 lights max, Index 0-2
+		 - color values are auto-normalized to [0.0f, 1.0f]
+		 - position values are auto-converted from GTE units (4096 = 1.0f)
+		 - intensity is auto-normalized to [0.0f, 1.0f]
+		 - call UpdateLightConstants() after setting all lights
+	*/
+	void SetPSXLight(std::size_t Index, std::uint8_t Mode, colorvec Color, vec3 Position, std::uint16_t Intensity);
+
+	/*
+		Sony PlayStation (1994) Lighting Constants
+		 - updates vertex and pixel shader constants for all lights
+	*/
+	void UpdateLightConstants(void);
 
 };

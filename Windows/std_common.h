@@ -212,12 +212,19 @@ public:
 	}
 
 	// Sleep the thread until the next frame is ready
-	void ChronoTimerSleep(void) const
+	void ChronoTimerSleep(void)
 	{
-		double SleepTime = m_TimeFrame - m_TimeDelta;
+		m_CurrentFrameTime = std::chrono::high_resolution_clock::now();
+		std::chrono::duration<double, std::milli> ElapsedTime = m_CurrentFrameTime - m_LastFrameTime;
+
+		double SleepTime = m_TimeFrame - ElapsedTime.count();
+
 		if (SleepTime > 0)
 		{
 			std::this_thread::sleep_for(std::chrono::milliseconds(static_cast<int>(SleepTime)));
+			//std::this_thread::sleep_for(std::chrono::duration<double, std::milli>(SleepTime));
 		}
+
+		m_LastFrameTime = std::chrono::high_resolution_clock::now();
 	}
 };

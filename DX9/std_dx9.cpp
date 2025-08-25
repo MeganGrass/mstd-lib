@@ -2154,3 +2154,76 @@ bool Standard_DirectX_9::SaveScreenshot(D3DXIMAGE_FILEFORMAT Format, std::filesy
 
 	return true;
 }
+
+void Standard_DirectX_9::SetPSXLightToggle(bool b_PerPixel, bool b_Off)
+{
+	b_LightingDisabled = b_Off;
+	b_PerVertexLighting = !b_PerPixel;
+	b_PerPixelLighting = b_PerPixel;
+	const float Mode = b_LightingDisabled ? 0.0f : (b_PerPixel ? 2.0f : 1.0f);
+	pDevice->SetPixelShaderConstantF(15, &Mode, 1);
+	pDevice->SetVertexShaderConstantF(23, &Mode, 1);
+}
+
+void Standard_DirectX_9::SetPSXLightMag(std::uint8_t Mag)
+{
+	PlayStationLight().Mag = Mag;
+}
+
+void Standard_DirectX_9::SetPSXLightAmbient(colorvec Color)
+{
+	PlayStationLight().Ambient = { Color.r / 255, Color.g / 255, Color.b / 255, 1.0f };
+
+	const float Ambient[4] = { m_Light.Ambient.r, m_Light.Ambient.g, m_Light.Ambient.b, 1.0f };
+	pDevice->SetPixelShaderConstantF(5, Ambient, 1);
+}
+
+void Standard_DirectX_9::SetPSXLight(std::size_t Index, std::uint8_t Mode, colorvec Color, vec3 Position, std::uint16_t Intensity)
+{
+	Index = min(Index, 2);
+
+	PlayStationLight().Data[Index].Mode = Mode;
+
+	PlayStationLight().Data[Index].Color = { Color.r / 255.0f, Color.g / 255.0f, Color.b / 255.0f, 1.0f };
+
+	PlayStationLight().Data[Index].Position = { Position.x / 4096.0f, Position.y / 4096.0f, Position.z / 4096.0f };
+
+	PlayStationLight().Data[Index].Intensity = !Intensity ? 0.0f : ((1.0f / Intensity) * 4096);
+}
+
+void Standard_DirectX_9::UpdateLightConstants(void)
+{
+	SetPSXLightToggle(b_PerPixelLighting, b_LightingDisabled);
+
+	const float Ambient[4] = { m_Light.Ambient.r, m_Light.Ambient.g, m_Light.Ambient.b, 0.0f };
+
+	float Position[3][4] = {};
+	for (int i = 0; i < 3; ++i)
+	{
+		Position[i][0] = m_Light.Data[i].Position.x;
+		Position[i][1] = m_Light.Data[i].Position.y;
+		Position[i][2] = m_Light.Data[i].Position.z;
+		Position[i][3] = 0.0f;
+	}
+
+	float Color[3][4] = {};
+	for (int i = 0; i < 3; ++i)
+	{
+		Color[i][0] = m_Light.Data[i].Color.r;
+		Color[i][1] = m_Light.Data[i].Color.g;
+		Color[i][2] = m_Light.Data[i].Color.b;
+		Color[i][3] = 0.0f;
+	}
+
+	const float Intensity[4] = { m_Light.Data[0].Intensity, m_Light.Data[1].Intensity, m_Light.Data[2].Intensity, 0.0f };
+
+	pDevice->SetPixelShaderConstantF(5, Ambient, 1);
+	pDevice->SetPixelShaderConstantF(6, &Position[0][0], 3);
+	pDevice->SetPixelShaderConstantF(9, &Color[0][0], 3);
+	pDevice->SetPixelShaderConstantF(12, Intensity, 1);
+
+	pDevice->SetVertexShaderConstantF(13, Ambient, 1);
+	pDevice->SetVertexShaderConstantF(14, &Position[0][0], 3);
+	pDevice->SetVertexShaderConstantF(17, &Color[0][0], 3);
+	pDevice->SetVertexShaderConstantF(20, Intensity, 1);
+}

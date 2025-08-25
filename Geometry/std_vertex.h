@@ -34,6 +34,22 @@ struct colorvec
 };
 
 /*
+	Rectangle
+*/
+struct rect
+{
+	float l, r, t, b;
+};
+
+/*
+	Size
+*/
+struct sizevec
+{
+	float w, h, d;
+};
+
+/*
 	Point
 */
 struct vecp
