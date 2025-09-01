@@ -224,7 +224,7 @@ OUTPUT vec3c(INPUT_VERTC Input)
     float4 wp = mul(Input.Position, World);
     Output.Position = mul(mul(wp, View), Projection);
     Output.Normal = float3(0.0f, 0.0f, 0.0f);
-    Output.Color = (Input.Color.rgba == 0.0f) ? float4(1.0f, 1.0f, 1.0f, 1.0f) : Input.Color;
+    Output.Color = length(Input.Color.rgba) == 0.0f ? float4(1.0f, 1.0f, 1.0f, 1.0f) : Input.Color;
     Output.PointSize = 1.0f;
     Output.TexCoord = float2(0.0f, 0.0f);
     
@@ -240,7 +240,7 @@ OUTPUT vec3cn(INPUT_VERTCN Input)
     float4 wp = mul(Input.Position, World);
     Output.Position = mul(mul(wp, View), Projection);
     Output.Normal = Input.Normal;
-    Output.Color = (Input.Color.rgba == 0.0f) ? float4(1.0f, 1.0f, 1.0f, 1.0f) : Input.Color;
+    Output.Color = length(Input.Color.rgba) == 0.0f ? float4(1.0f, 1.0f, 1.0f, 1.0f) : Input.Color;
     Output.PointSize = 1.0f;
     Output.TexCoord = float2(0.0f, 0.0f);
 
@@ -261,7 +261,7 @@ OUTPUT vec3ct(INPUT_VERTCT Input)
     float4 wp = mul(Input.Position, World);
     Output.Position = mul(mul(wp, View), Projection);
     Output.Normal = float3(0.0f, 0.0f, 0.0f);
-    Output.Color = (Input.Color.rgba == 0.0f) ? float4(1.0f, 1.0f, 1.0f, 1.0f) : Input.Color;
+    Output.Color = length(Input.Color.rgba) == 0.0f ? float4(1.0f, 1.0f, 1.0f, 1.0f) : Input.Color;
     Output.PointSize = 1.0f;
     Output.TexCoord = Input.TexCoord;
 
@@ -277,7 +277,7 @@ OUTPUT vec3cnt(INPUT_VERTCNT Input)
     float4 wp = mul(Input.Position, World);
     Output.Position = mul(mul(wp, View), Projection);
     Output.Normal = Input.Normal;
-    Output.Color = (Input.Color.rgba == 0.0f) ? float4(1.0f, 1.0f, 1.0f, 1.0f) : Input.Color;
+    Output.Color = length(Input.Color.rgba) == 0.0f ? float4(1.0f, 1.0f, 1.0f, 1.0f) : Input.Color;
     Output.PointSize = 1.0f;
     Output.TexCoord = Input.TexCoord;
 
