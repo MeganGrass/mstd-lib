@@ -344,10 +344,15 @@ public:
 			joyReleaseCapture(Joystick->ID);
 		}
 		Mice.clear();
+		Mice.shrink_to_fit();
 		Keyboards.clear();
+		Keyboards.shrink_to_fit();
 		HID.clear();
+		HID.shrink_to_fit();
 		Joysticks.clear();
+		Joysticks.shrink_to_fit();
 		Displays.clear();
+		Displays.shrink_to_fit();
 	}
 
 

@@ -100,7 +100,7 @@ void Standard_Window::SetStatusBar(INT nParts, DWORD Style)
 void Standard_Window::SetToolBar(UINT IconWidth, UINT IconHeight, std::vector<TBBUTTON> Buttons, DWORD Style, DWORD StyleEx)
 {
 	if (h_ToolBarImageList) { ImageList_Destroy(h_ToolBarImageList); }
-	if (!m_ToolbarButtons.empty()) { m_ToolbarButtons.clear(); }
+	if (!m_ToolbarButtons.empty()) { m_ToolbarButtons.clear(); m_ToolbarButtons.shrink_to_fit(); }
 	m_ToolBarIconWidth = IconWidth;
 	m_ToolBarIconHeight = IconHeight;
 	m_ToolbarButtons = Buttons;

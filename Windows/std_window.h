@@ -316,6 +316,7 @@ public:
 			DestroyWindow(h_ToolBar);
 		}
 		m_ToolbarButtons.clear();
+		m_ToolbarButtons.shrink_to_fit();
 
 		if (h_StatusBar) { DestroyWindow(h_StatusBar); }
 
@@ -328,6 +329,7 @@ public:
 		if (m_Class.hInstance) { UnregisterClassW(m_Class.lpszClassName, m_Class.hInstance); }
 
 		s_DroppedFiles.clear();
+		s_DroppedFiles.shrink_to_fit();
 	}
 
 	// Move

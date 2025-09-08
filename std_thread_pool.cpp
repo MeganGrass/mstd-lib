@@ -126,8 +126,10 @@ bool Standard_Thread_Pool::Stop(void)
 	}
 
 	m_Queue.clear();
+	m_Queue.shrink_to_fit();
 
 	m_Threads.clear();
+	m_Threads.shrink_to_fit();
 
 	return !(b_Terminate = false);
 }

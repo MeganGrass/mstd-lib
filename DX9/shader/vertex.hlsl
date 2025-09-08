@@ -117,7 +117,7 @@ float4 PlayStationLighting(float3 WorldPos, float3 NormalW, float4 BaseColor)
             float3 Vector = (Light_Position[i] - WorldPos) * Light_Intensity[i];
             float Attenuation = saturate(1.0f - dot(Vector, Vector));
             float nDot = max(0.0f, dot(Normal, normalize(Vector)));
-            Color += nDot * Attenuation * Light_Color[i];
+            Color += nDot * Attenuation * Light_Color[i].rgb;
         }
     }
     

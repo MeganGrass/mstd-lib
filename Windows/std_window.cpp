@@ -475,6 +475,7 @@ void Standard_Window::ClearChildWindows(void)
 		Child.reset();
 	}
 	v_ChildWindows.clear();
+	v_ChildWindows.shrink_to_fit();
 }
 
 HWND Standard_Window::CreateTooltip(HWND hWndParent, ULONG ResourceID, StringW Tooltip)

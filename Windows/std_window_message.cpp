@@ -202,6 +202,7 @@ void Standard_Window::MsgDropFiles(WPARAM wParam, LPARAM lParam)
 	UINT Count = DragQueryFileW(hDrop, 0xFFFFFFFF, 0, 0);
 
 	s_DroppedFiles.clear();
+	s_DroppedFiles.shrink_to_fit();
 
 	for (UINT iFile = 0; iFile < Count; iFile++)
 	{

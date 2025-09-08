@@ -32,7 +32,9 @@ void Standard_Image::Close(void)
 	m_Width = 0;
 	m_Height = 0;
 	m_Palette.clear();
+	m_Palette.shrink_to_fit();
 	m_Pixels.clear();
+	m_Pixels.shrink_to_fit();
 }
 
 void Standard_Image::SetPalette(std::size_t iColor, DWORD Color)
@@ -750,6 +752,7 @@ static void PNG_Warning_Handler(png_structp png_ptr, png_const_charp warning_msg
 bool Standard_Image::DecompressPNG(const std::vector<uint8_t>&Input, std::vector<uint8_t>&OutPixels, std::vector<Pixel_32bpp> OutPalette) try
 {
 	OutPalette.clear();
+	OutPalette.shrink_to_fit();
 
 	png_image Image{};
 	Image.version = PNG_IMAGE_VERSION;

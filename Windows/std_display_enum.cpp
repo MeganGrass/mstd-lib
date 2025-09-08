@@ -72,4 +72,5 @@ void Windows_Devices::InitDisplayDevices(void)
 		Displays.push_back(std::move(Display));
 	}
 	_DisplayBuffer.clear();
+	_DisplayBuffer.shrink_to_fit();
 }

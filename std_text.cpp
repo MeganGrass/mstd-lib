@@ -670,18 +670,21 @@ void Standard_Text::Close(void) noexcept
 	}
 	if (validUTF8())
 	{
-		for (auto& Line : UTF8().Line) { Line.clear(); }
+		for (auto& Line : UTF8().Line) { Line.clear(); Line.shrink_to_fit(); }
 		UTF8().Line.clear();
+		UTF8().Line.shrink_to_fit();
 	}
 	if (validUTF16())
 	{
-		for (auto& Line : UTF16().Line) { Line.clear(); }
+		for (auto& Line : UTF16().Line) { Line.clear(); Line.shrink_to_fit(); }
 		UTF16().Line.clear();
+		UTF16().Line.shrink_to_fit();
 	}
 	if (validUTF32())
 	{
-		for (auto& Line : UTF32().Line) { Line.clear(); }
+		for (auto& Line : UTF32().Line) { Line.clear(); Line.shrink_to_fit(); }
 		UTF32().Line.clear();
+		UTF32().Line.shrink_to_fit();
 	}
 
 	m_UTF8.reset();
