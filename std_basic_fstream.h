@@ -76,6 +76,12 @@ static FileAccessMode operator | (FileAccessMode _Mode0, FileAccessMode _Mode1)
 
 
 /*
+	If true (1), functions in the StdFile class will clear the EOF and fail flags before reading, writing, seeking, or telling
+*/
+#define FILEIO_CLEAR  1
+
+
+/*
 	https://en.cppreference.com/w/cpp/io/basic_fstream
 */
 class Standard_Basic_FStream final :

@@ -1063,7 +1063,7 @@ bool Standard_Image::SavePNG(std::filesystem::path Path, std::uintmax_t pSource,
 	if (ColorType == PNG_COLOR_TYPE_PALETTE)
 	{
 		png_colorp Palette = new png_color[m_Palette.size()];
-		std::cout << sizeof(Palette) << std::endl;
+		//std::cout << sizeof(Palette) << std::endl;
 		for (std::size_t i = 0; i < m_Palette.size(); i++)
 		{
 			Palette[i].red = m_Palette[i].R;

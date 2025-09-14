@@ -134,6 +134,10 @@ std::uintmax_t Standard_Basic_FStream::read(std::fstream& _File, std::uintmax_t 
 	if (!_File.is_open()) { return 0; }
 #endif
 
+#if FILEIO_CLEAR
+	_File.clear();
+#endif
+
 	_File.seekg(_Ptr, std::ios_base::beg);
 
 	_File.read(reinterpret_cast<char*>(_Data), _ElementSize);
@@ -152,6 +156,10 @@ std::uintmax_t Standard_Basic_FStream::write(std::fstream& _File, std::uintmax_t
 	if (!_File.is_open()) { return 0; }
 #endif
 
+#if FILEIO_CLEAR
+	_File.clear();
+#endif
+
 	_File.seekp(_Ptr, std::ios_base::beg);
 
 	_File.write(reinterpret_cast<char*>(_Data), _ElementSize);
@@ -166,6 +174,10 @@ catch (...) { Exception(std::current_exception()); return 0; }
 
 void Standard_Basic_FStream::readNext(std::fstream& _File, std::uintmax_t _Ptr, void* _Data, std::uintmax_t _ElementSize) try
 {
+#if FILEIO_CLEAR
+	_File.clear();
+#endif
+
 	_File.seekg(_Ptr, std::ios_base::beg);
 
 	_File.read(reinterpret_cast<char*>(_Data), _ElementSize);
@@ -178,6 +190,10 @@ catch (...) { Exception(std::current_exception()); }
 
 void Standard_Basic_FStream::writeNext(std::fstream& _File, std::uintmax_t _Ptr, void* _Data, std::uintmax_t _ElementSize) try
 {
+#if FILEIO_CLEAR
+	_File.clear();
+#endif
+
 	_File.seekp(_Ptr, std::ios_base::beg);
 
 	_File.write(reinterpret_cast<char*>(_Data), _ElementSize);
@@ -450,6 +466,10 @@ std::uintmax_t Standard_Basic_FStream::size(std::fstream& _File) try
 	if (!_File.is_open()) { return 0; }
 #endif
 
+#if FILEIO_CLEAR
+	_File.clear();
+#endif
+
 	switch (std::to_underlying(m_Mode) & (READ | WRITE | APPEND | READ_EX | WRITE_EX | APPEND_EX))
 	{
 
@@ -475,6 +495,10 @@ std::uintmax_t Standard_Basic_FStream::tell(std::fstream& _File) try
 {
 #if FILEOPEN_CHECK
 	if (!_File.is_open()) { return 0; }
+#endif
+
+#if FILEIO_CLEAR
+	File().clear();
 #endif
 
 	switch (std::to_underlying(m_Mode) & (READ | WRITE | APPEND | READ_EX | WRITE_EX | APPEND_EX))
@@ -516,6 +540,10 @@ std::uintmax_t Standard_Basic_FStream::PosAlign(std::uintmax_t& _Ptr, std::uintm
 
 #if FILEOPEN_CHECK
 	if (!_File.is_open()) { return 0; }
+#endif
+
+#if FILEIO_CLEAR
+	File().clear();
 #endif
 
 	switch (std::to_underlying(m_Mode) & (READ | WRITE | APPEND | READ_EX | WRITE_EX | APPEND_EX))
